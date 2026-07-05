@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Grezto</string>
+    <string name="title_activity_main">Grezto</string>
+    <string name="package_name">com.my.grezto</string>
+    <string name="custom_url_scheme">com.my.grezto</string>
+</resources>

@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "976118890930",
+    "firebase_url": "https://project-4adf87a7-03c0-48e0-a8f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "project-4adf87a7-03c0-48e0-a8f",
+    "storage_bucket": "project-4adf87a7-03c0-48e0-a8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976118890930:android:bc2655abd74833566564ab",
+        "android_client_info": {
+          "package_name": "com.my.grezto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "976118890930-lqlqe7ftlo98jlfn6hfilj9nkchhkr9h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5EdUPslFYTmd4zgsf_xhUUJ_pm40JWDo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "976118890930-lqlqe7ftlo98jlfn6hfilj9nkchhkr9h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

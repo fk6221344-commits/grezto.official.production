@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;850;900&family=Syne:wght@800&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Outfit", sans-serif;
+}
+
+@keyframes redShine {
+  0% {
+    transform: translateX(-150%) skewX(-35deg);
+  }
+  100% {
+    transform: translateX(1200%) skewX(-35deg);
+  }
+}
+
+.animate-red-shine {
+  animation: redShine 4s ease-in-out infinite;
+}
+
+@keyframes floatRed {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -15px) scale(1.1);
+  }
+  66% {
+    transform: translate(-15px, 20px) scale(0.95);
+  }
+}
+
+@keyframes redScan {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(350%) skewX(-25deg);
+  }
+}
+
+.animate-float-red {
+  animation: floatRed 8s ease-in-out infinite;
+}
+
+.animate-float-red-reverse {
+  animation: floatRed 11s ease-in-out infinite reverse;
+}
+
+.animate-red-scan {
+  animation: redScan 5.5s infinite ease-in-out;
+}
+
+/* Hide Google reCAPTCHA Badge site-wide for clean UI */
+.grecaptcha-badge {
+    visibility: hidden !important;
+}
+
+/* Make lists and views scroll like butter with iOS-style inertial scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* Elegant Corner-to-Corner Animated Green Gradient for UI Header Header with Zero-Lag */
+@keyframes cornerGradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-green-gradient {
+  background: linear-gradient(115deg, #012419, #023828, #011e13, #022c22, #01281a, #012419) !important;
+  background-size: 280% 280% !important;
+  animation: cornerGradientMove 10s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  will-change: background-position;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* Smooth Scrolling & Hardware Acceleration optimization for native/web */
+html, body, #root {
+  background-color: #fffcf9 !important;
+  scroll-behavior: auto !important; /* Fast, non-laggy, direct natural momentum scroll instead of smooth-forcing */
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Disable accidental double-tap-to-zoom gestures globally across the container */
+  touch-action: manipulation !important;
+}
+
+/* Prevent accidental system highlights and selection layers during extreme high-speed scrolls or tap runs */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Enable high-speed scroll without selection-based layout stalls, but allow full text entries */
+html, body, #root, div, span, button, h1, h2, h3, h4, p, img, svg {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Global hardware acceleration for high-performance mobile scrolling to prevent white flashes */
+.overflow-y-auto, 
+.overflow-x-auto, 
+.overflow-auto,
+main {
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: auto !important; /* Instant inertial response */
+  overscroll-behavior-y: contain !important; /* Contain bounce limits to the pane and avoid top scroll lockouts */
+}
+
+/* Custom GPU promotion class for animated elements/categories/products to prevent rendering flashes */
+.motion-div,
+.product-card,
+.category-item {
+  will-change: transform, opacity !important;
+  transform: translate3d(0, 0, 0) !important;
+  -webkit-transform: translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+}
+
+/* Active transitions for touch controls and buttons - instant action delay-free */
+button, a, [role="button"], select {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important; /* Bypasses 300ms double-tap delay on Android / iOS WebView */
+  transition: transform 0.05s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.05s ease;
+}
+
+button:active:not(:disabled), a:active {
+  transform: scale(0.97) translate3d(0, 0, 0) !important;
+  opacity: 0.9 !important;
+}
+
+/* Enable absolutely flawless touch scroll on horizontal categories list */
+.category-scroll-container {
+  touch-action: pan-x pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain !important;
+}
+
+.category-scroll-item {
+  touch-action: pan-x pan-y !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Custom GPU-accelerated ultra-smooth micro-animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  will-change: opacity, transform;
+}
+
+

@@ -1,0 +1,5 @@
+# Project Rules & AI Guidelines
+
+1. **Strict Deletion Rule**: NEVER delete any existing feature, UI component, or system code from the app unless the user explicitly and comprehensively describes exactly what needs to be removed. If the request is generic or vague, do not remove code. Never unilaterally discard past work or functional components.
+2. **Android Native App Optimization (Capacitor)**: ALWAYS assume this codebase is being converted into a Native Android App (via Capacitor). All new features, plugins, location services, and error handling MUST be strictly optimized for Android behavior, not the web. If an error occurs, solve it with the Android environment in mind. You have full permission to modify Firebase rules to configure any permissions required for Android functionality.
+3. **Language preference (Hinglish)**: ALWAYS communicate with the user in Hinglish (a blend of Hindi and English written in the Latin/English script) for all conversation, status updates, and summaries.

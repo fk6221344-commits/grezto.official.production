@@ -1,0 +1,10 @@
+node_modules
+dist
+android
+.git
+.github
+.env
+*.zip
+*.rar
+*.tar.gz
+.gcloudignore

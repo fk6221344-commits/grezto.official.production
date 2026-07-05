@@ -1,0 +1,10 @@
+{
+  "name": "Grezto web 3 pro",
+  "description": "Guwahati\u0027s premier 30-minute organic grocery and farm-fresh vegetable delivery applet, featuring live delivery mapping, secure SMS OTP authentication, and smart Gemini AI assistant chat support.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,250 @@
+import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface ProfileLoginModalProps {
+  showLoginModal: boolean;
+  setShowLoginModal: (val: boolean) => void;
+  authMode: 'signup' | 'login';
+  setAuthMode: (mode: 'signup' | 'login') => void;
+  loginName: string;
+  setLoginName: (val: string) => void;
+  loginPhone: string;
+  setLoginPhone: (val: string) => void;
+  otpCode: string;
+  setOtpCode: (val: string) => void;
+  authLoading: boolean;
+  isOtpSent: boolean;
+  setIsOtpSent: (val: boolean) => void;
+  setServerOtp: (val: string) => void;
+  handleSendOtpInline: () => void;
+  handleVerifyAndLogin: (e: React.FormEvent) => void;
+  otpError?: string | null;
+  setOtpError?: (val: string | null) => void;
+  useFastOtp?: boolean;
+  setUseFastOtp?: (val: boolean) => void;
+}
+
+export default function ProfileLoginModal({
+  showLoginModal,
+  setShowLoginModal,
+  authMode,
+  setAuthMode,
+  loginName,
+  setLoginName,
+  loginPhone,
+  setLoginPhone,
+  otpCode,
+  setOtpCode,
+  authLoading,
+  isOtpSent,
+  setIsOtpSent,
+  setServerOtp,
+  handleSendOtpInline,
+  handleVerifyAndLogin,
+  otpError,
+  setOtpError,
+  useFastOtp = true,
+  setUseFastOtp,
+}: ProfileLoginModalProps) {
+  return (
+    <AnimatePresence>
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setShowLoginModal(false);
+              setIsOtpSent(false);
+            }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-[4px]"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ type: "spring", duration: 0.4 }}
+            className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 relative z-10 shadow-2xl border border-stone-100 max-h-[90vh] overflow-y-auto flex flex-col"
+          >
+            <button 
+              onClick={() => {
+                setShowLoginModal(false);
+                setIsOtpSent(false);
+              }} 
+              className="absolute top-4 right-4 p-2.5 bg-stone-50 hover:bg-stone-100/80 active:scale-95 text-stone-400 hover:text-stone-600 rounded-full border border-stone-150/40 transition-all cursor-pointer z-20"
+              title="Close"
+            >
+              <X size={14} className="stroke-[2.5]" />
+            </button>
+
+            <div className="flex flex-col items-center justify-center text-center mt-2 mb-5">
+              <div className="relative w-14 h-14 mb-2.5 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#0f9f6e] via-amber-400 via-orange-500 to-rose-600 animate-spin opacity-85" style={{ animationDuration: '4s' }} />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#0f9f6e] to-rose-600 blur-md opacity-35 animate-pulse" />
+                <div className="absolute inset-[3px] bg-white rounded-full flex items-center justify-center z-10 shadow-inner">
+                  <span className="text-lg">🌿</span>
+                </div>
+              </div>
+
+              <h3 className="text-sm font-black text-stone-900 tracking-wider uppercase font-sans">
+                {authMode === 'signup' ? 'Create Account' : 'Login'}
+              </h3>
+              <p className="text-[8px] text-stone-400 font-extrabold uppercase tracking-widest mt-1">
+                {authMode === 'signup' ? 'Get fresh ingredients on-demand' : 'Access your existing dashboard'}
+              </p>
+            </div>
+
+            {/* Secure Mode Switch Tabs inside Modal */}
+            <div className="grid grid-cols-2 bg-[#f4f7f4] p-1 rounded-xl mb-5 border border-[#ebf0eb]">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('signup');
+                  setLoginName('');
+                  setLoginPhone('');
+                  setOtpCode('');
+                  setIsOtpSent(false);
+                  setServerOtp('');
+                }}
+                className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
+                  authMode === 'signup' 
+                    ? 'bg-white text-emerald-800 shadow-xs border border-[#e6ebe6]' 
+                    : 'text-stone-400 hover:text-stone-600 bg-transparent'
+                }`}
+              >
+                Create Account
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setLoginName('Grezto Member');
+                  setLoginPhone('');
+                  setOtpCode('');
+                  setIsOtpSent(false);
+                  setServerOtp('');
+                }}
+                className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
+                  authMode === 'login' 
+                    ? 'bg-white text-emerald-800 shadow-xs border border-[#e6ebe6]' 
+                    : 'text-stone-400 hover:text-stone-600 bg-transparent'
+                }`}
+              >
+                Login
+              </button>
+            </div>
+
+            <form onSubmit={handleVerifyAndLogin} className="space-y-4">
+              {authMode === 'signup' ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                     <label className="text-[8.5px] font-black text-stone-400 uppercase tracking-widest ml-1">Your Full Name</label>
+                     <input 
+                       required
+                       type="text"
+                       value={loginName}
+                       onChange={e => setLoginName(e.target.value)}
+                       className="w-full bg-[#fcfdfc] border border-[#e2e8e2] px-4 py-3 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-bold text-stone-800 text-xs placeholder:text-stone-300 transition-all font-sans"
+                       placeholder="Enter your name"
+                     />
+                  </div>
+
+                  <div className="space-y-1">
+                     <label className="text-[8.5px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
+                     <div className="flex gap-2">
+                        <div className="relative flex-1">
+                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-xs border-r border-[#e2e8e2] pr-2.5">+91</div>
+                           <input 
+                             required
+                             type="tel"
+                             maxLength={10}
+                             pattern="[0-9]{10}"
+                             value={loginPhone}
+                             onChange={e => setLoginPhone(e.target.value.replace(/\D/g, ''))}
+                             className="w-full bg-[#fcfdfc] border border-[#e2e8e2] py-3 pl-14 pr-4 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-black text-stone-800 font-mono tracking-wider text-xs placeholder:text-stone-300 transition-all"
+                             placeholder="Phone code"
+                           />
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={handleSendOtpInline}
+                          disabled={authLoading || loginPhone.length !== 10 || !loginName.trim()}
+                          className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
+                        >
+                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
+                        </button>
+                     </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                     <label className="text-[8.5px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone Number</label>
+                     <div className="flex gap-2">
+                        <div className="relative flex-1">
+                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-xs border-r border-[#e2e8e2] pr-2.5">+91</div>
+                           <input 
+                             required
+                             type="tel"
+                             maxLength={10}
+                             pattern="[0-9]{10}"
+                             value={loginPhone}
+                             onChange={e => setLoginPhone(e.target.value.replace(/\D/g, ''))}
+                             className="w-full bg-[#fcfdfc] border border-[#e2e8e2] py-3 pl-14 pr-4 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-black text-stone-800 font-mono tracking-wider text-xs placeholder:text-stone-300 transition-all"
+                             placeholder="Phone code"
+                           />
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={handleSendOtpInline}
+                          disabled={authLoading || loginPhone.length !== 10}
+                          className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
+                        >
+                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
+                        </button>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Password/OTP Field */}
+              <div className="space-y-1 pt-1">
+                 <label className="text-[8.5px] font-black text-stone-400 uppercase tracking-widest ml-1">Verification OTP</label>
+                 <input 
+                   required
+                   type="text"
+                   maxLength={6}
+                   pattern="[0-9]{6}"
+                   value={otpCode}
+                   onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                   className="w-full bg-[#f4faf5] border border-emerald-100 py-3 rounded-xl text-center font-black text-base text-emerald-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-mono tracking-[0.25em] transition-all placeholder:text-emerald-300/60"
+                   placeholder="••••••"
+                 />
+              </div>
+
+              {otpError && (
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-left text-[10px] text-amber-950 font-semibold space-y-2 leading-relaxed animate-fadeIn">
+                   <p className="font-extrabold text-[10.5px] text-amber-800 flex items-center gap-1.5 uppercase tracking-wide">
+                     ⚠️ Real SMS Dispatch Failed
+                   </p>
+                   <p className="whitespace-pre-line text-[10px] text-amber-900">{otpError}</p>
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-[#0f9f6e] hover:bg-[#0d8c60] text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-md shadow-emerald-700/10 hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer mt-3 flex items-center justify-center gap-2 border-0"
+              >
+                {authLoading ? 'Verifying...' : (authMode === 'signup' ? 'Complete Create Account' : 'Complete Login')}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
