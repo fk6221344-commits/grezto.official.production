@@ -33,7 +33,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body,
     icon,
-    vibrate: [200, 100, 200, 100, 400, 200, 400],
+    vibrate: [1500, 200, 1500, 200, 2000, 300, 2000, 300, 2000, 300, 3000, 500, 3000],
     requireInteraction: true,
     data: data
   };

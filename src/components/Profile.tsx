@@ -632,7 +632,7 @@ export default function Profile({
         setIsOtpSent(false);
         setConfirmationResult(null);
 
-        const isOwner = loginPhone === '7577950272' || loginPhone === '8638089161';
+        const isOwner = loginPhone === '9864975438' || loginPhone === '8638089161';
         if (isOwner) {
           toast.success("Welcome Back Master Owner! 👑🌿");
         } else {

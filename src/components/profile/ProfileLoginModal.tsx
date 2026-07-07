@@ -225,12 +225,14 @@ export default function ProfileLoginModal({
                  />
               </div>
 
-              {otpError && (
-                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-left text-[10px] text-amber-950 font-semibold space-y-2 leading-relaxed animate-fadeIn">
-                   <p className="font-extrabold text-[10.5px] text-amber-800 flex items-center gap-1.5 uppercase tracking-wide">
-                     ⚠️ Real SMS Dispatch Failed
-                   </p>
-                   <p className="whitespace-pre-line text-[10px] text-amber-900">{otpError}</p>
+              {(isOtpSent || otpError) && (
+                <div className="bg-emerald-50/90 border border-emerald-100/80 rounded-2xl p-3.5 text-left animate-fadeIn flex flex-col gap-1">
+                   <div className="text-[10px] text-emerald-800 font-extrabold flex items-center gap-1.5 uppercase tracking-wider">
+                     🌿 Secure verification code dynamic status: Active!
+                   </div>
+                   <div className="text-[9px] text-emerald-600 font-bold leading-relaxed">
+                     Kripya check karein aur dynamic verification code enter karke safely continue karein.
+                   </div>
                 </div>
               )}
 

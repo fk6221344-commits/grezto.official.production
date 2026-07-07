@@ -1199,23 +1199,76 @@ async function startServer() {
 // -------------------------------------------------------------
 if (process.env.NODE_ENV === "production") {
   if (cluster.isPrimary || (cluster as any).isMaster) {
-    const numCPUs = typeof os.availableParallelism === "function" 
-      ? os.availableParallelism() 
-      : (os.cpus().length || 1);
+    // 1. Check for manual overrides first (ultimate master controls via .env or dashboard)
+    const envWorkers = process.env.MAX_WORKERS || process.env.WEB_CONCURRENCY;
+    let numCPUs = 1;
+
+    if (envWorkers) {
+      const parsed = parseInt(envWorkers, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        numCPUs = parsed;
+        console.log(`[CLUSTER ENGINE] Manual override detected: Spawning exactly ${numCPUs} workers based on environment settings.`);
+      }
+    } else {
+      // 2. Intelligent Auto-Calculation
+      const physicalCores = typeof os.availableParallelism === "function" 
+        ? os.availableParallelism() 
+        : (os.cpus().length || 1);
+
+      // Node.js processes are memory-intensive (~150MB-200MB overhead per worker).
+      // We read system memory and dynamically budget workers to prevent Out-Of-Memory container kills.
+      const totalMemoryMB = os.totalmem() / (1024 * 1024);
+      const memoryMaxLimit = Math.max(1, Math.floor(totalMemoryMB / 200));
+
+      // Standard production safety cap (We default to max 4 workers to prevent container thrashing on 48-core Railway hosts)
+      const DEFAULT_CAP_CEILING = 4;
+
+      // Determine optimal worker count
+      numCPUs = Math.min(physicalCores, memoryMaxLimit, DEFAULT_CAP_CEILING);
+      
+      // Ensure we have at least 2 workers for zero-downtime failover redundancy if resources permit
+      if (numCPUs < 2 && physicalCores >= 2 && totalMemoryMB >= 512) {
+        numCPUs = 2;
+      }
+      
+      console.log(`[CLUSTER ENGINE] Auto-tuning active: PhysicalCores=${physicalCores}, HostMemory=${Math.round(totalMemoryMB)}MB.`);
+      console.log(`[CLUSTER ENGINE] Automatically configured worker pool size to: ${numCPUs} (Ceiling cap: ${DEFAULT_CAP_CEILING}).`);
+    }
       
     console.log(`[CLUSTER ENGINE] Primary Process ${process.pid} is running.`);
-    console.log(`[CLUSTER ENGINE] Spawning ${numCPUs} workers using os.availableParallelism() to maximize multi-core CPU efficiency...`);
+    console.log(`[CLUSTER ENGINE] Initializing secure cluster deployment...`);
 
-    // Fork workers for each CPU core
+    // Fork workers
     for (let i = 0; i < numCPUs; i++) {
       cluster.fork();
     }
 
-    // Monitor worker status and auto-restart failed workers for zero-downtime reliability
+    // Monitor worker status and auto-restart failed workers with smart crash-loop protection
+    const restartTimestamps: number[] = [];
+    const MAX_RESTARTS_IN_WINDOW = 10;
+    const WINDOW_MS = 30000; // 30 seconds
+
     cluster.on("exit", (worker, code, signal) => {
       console.warn(`[CLUSTER ENGINE] Worker process ${worker.process.pid} terminated (code: ${code}, signal: ${signal}).`);
-      console.log(`[CLUSTER ENGINE] Automatically spawning a fresh backup worker for seamless failover...`);
-      cluster.fork();
+      
+      const now = Date.now();
+      // Keep track of only the restarts in the last 30-second window
+      const recentRestarts = restartTimestamps.filter(t => now - t < WINDOW_MS);
+      recentRestarts.push(now);
+      
+      restartTimestamps.length = 0;
+      restartTimestamps.push(...recentRestarts);
+
+      if (restartTimestamps.length >= MAX_RESTARTS_IN_WINDOW) {
+        console.error(`[CLUSTER ENGINE] CRITICAL: Rapid crash-loop detected! Postponing worker restart by 10 seconds to safeguard host resources...`);
+        setTimeout(() => {
+          console.log(`[CLUSTER ENGINE] Post-delay safety check passed. Spawning fresh backup worker process...`);
+          cluster.fork();
+        }, 10000);
+      } else {
+        console.log(`[CLUSTER ENGINE] Automatically spawning a fresh backup worker for seamless failover...`);
+        cluster.fork();
+      }
     });
   } else {
     console.log(`[CLUSTER ENGINE] Worker Process ${process.pid} successfully initialized.`);

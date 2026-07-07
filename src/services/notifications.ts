@@ -103,7 +103,7 @@ export function sendNativePushNotification(title: string, body: string, onClick?
     try {
       const systemNotification = new Notification(title, {
         body,
-        vibrate: [200, 100, 200, 100, 300],
+        vibrate: [1500, 200, 1500, 200, 2000, 300, 2000, 300, 2000, 300, 3000, 500, 3000],
         tag: 'new-grezto-order',
         requireInteraction: true,
         silent: false

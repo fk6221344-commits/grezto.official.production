@@ -18,28 +18,58 @@ export const isNativePlatform = () => {
  * -------------------
  */
 let longVibrationInterval: any = null;
+let webVibrationInterval: any = null;
 
 export const startContinuousCallVibration = () => {
-  // Use a long robust continuous looping pattern on Android WebViews
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    // 1000ms vibrate, 1000ms pause - looped for a very long duration (30 seconds)
-    const callPattern = Array(30).fill([1000, 1000]).flat();
-    navigator.vibrate(callPattern);
+  // Prevent duplicate vibration engines
+  if (longVibrationInterval || webVibrationInterval) {
+    return;
   }
 
-  // Double assurance using Capacitor Haptics API plugin Native engine
-  if (isNativePlatform() && !longVibrationInterval) {
-    Haptics.vibrate({ duration: 1000 }).catch(() => {});
-    longVibrationInterval = setInterval(() => {
-      Haptics.vibrate({ duration: 1000 }).catch(() => {});
-    }, 2000);
+  // 1. Web & WebView Engine (Vibration loop with shorter pattern to prevent OS-level truncation)
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    // Immediate call pattern trigger
+    navigator.vibrate([1500, 200, 1500, 200]);
+    webVibrationInterval = setInterval(() => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([1500, 200, 1500, 200]);
+      }
+    }, 3400); // Repetitive call loop to sustain physical feedback
+  }
+
+  // 2. Native Capacitor Haptics Engine (Optimized for Android taptic hardware)
+  if (isNativePlatform()) {
+    // Deliver heavy wake-up blasts to instantly awaken the hardware taptic engine
+    Haptics.impact({ style: ImpactStyle.Heavy })
+      .then(() => {
+        setTimeout(() => {
+          Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
+        }, 150);
+      })
+      .catch(() => {});
+
+    // High-frequency, intense vibration loop mimicking an incoming emergency/delivery call
+    // We run a 1800ms vibration block followed by a 200ms safety gap before the next loop
+    setTimeout(() => {
+      Haptics.vibrate({ duration: 1800 }).catch(() => {});
+      longVibrationInterval = setInterval(() => {
+        Haptics.vibrate({ duration: 1800 }).catch(() => {});
+      }, 2000);
+    }, 300);
   }
 };
 
 export const stopContinuousCallVibration = () => {
+  // Cancel Web/WebView vibrating state and clear its intervals
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(0); // 0 stops the vibration immediately
+    navigator.vibrate(0);
   }
+  if (webVibrationInterval) {
+    clearInterval(webVibrationInterval);
+    webVibrationInterval = null;
+  }
+
+  // Cancel Native physical vibration and clear its intervals
   if (longVibrationInterval) {
     clearInterval(longVibrationInterval);
     longVibrationInterval = null;
