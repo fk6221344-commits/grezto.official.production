@@ -92,7 +92,7 @@
 html, body, #root {
   background-color: #fffcf9 !important;
   scroll-behavior: auto !important; /* Fast, non-laggy, direct natural momentum scroll instead of smooth-forcing */
-  overscroll-behavior: contain !important;
+  overscroll-behavior: none !important; /* Disables web-view pull-to-refresh and rubber-band bounce scroll */
   -webkit-overflow-scrolling: touch !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

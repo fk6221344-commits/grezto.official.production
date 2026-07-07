@@ -407,8 +407,14 @@ export function useAdminProducts(
       toast.error("Please upload a valid image file!");
       return;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Image size exceeds 20MB. Please use a smaller image.");
+    if (file.size > 2.8 * 1024 * 1024) {
+      toast.error(
+        React.createElement('div', { className: 'text-left font-sans py-1' },
+          React.createElement('div', { className: 'font-bold text-red-600 text-sm' }, '🛑 Upload Blocked: File Too Large!'),
+          React.createElement('div', { className: 'text-xs text-gray-600 mt-1.5 leading-relaxed' }, 'To keep the experience super fast for your customers, product photos are limited to a maximum of 2.8MB. Please compress your image or choose a smaller file.')
+        ),
+        { duration: 6000 }
+      );
       return;
     }
 
@@ -435,7 +441,7 @@ export function useAdminProducts(
       const cleanName = `p_${target}_${Date.now()}_optimized.${ext}`;
       const folder = target === "admin" ? "admin" : "products";
 
-      const compressedBlob = await compressImage(file);
+      const compressedBlob = await compressImage(file, 2048, 0.95);
 
       const dlUrl = await uploadToR2(compressedBlob, folder, cleanName);
 
@@ -453,6 +459,28 @@ export function useAdminProducts(
       toast.success("Photo uploaded instantly! ⚡🚀✅");
     } catch (err: any) {
       console.error(err);
+      // Fallback: Generate a high quality compressed base64 string to prevent database bloating
+      try {
+        const compressedBlobForLocal = await compressImage(file, 2048, 0.95);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const compBase64 = reader.result as string;
+          if (target === "admin") setAdminOwnerPhoto(compBase64);
+          else if (target === "product")
+            setNewProduct((prev) => ({ ...prev, imageUrl: compBase64 }));
+          else if (target === "product2")
+            setNewProduct((prev) => ({ ...prev, imageUrl2: compBase64 }));
+          else if (target === "product3")
+            setNewProduct((prev) => ({ ...prev, imageUrl3: compBase64 }));
+          else if (target === "product4")
+            setNewProduct((prev) => ({ ...prev, imageUrl4: compBase64 }));
+          else if (target === "product5")
+            setNewProduct((prev) => ({ ...prev, imageUrl5: compBase64 }));
+        };
+        reader.readAsDataURL(compressedBlobForLocal);
+      } catch (compressErr) {
+        console.warn("Could not generate compressed base64 preview, keeping raw", compressErr);
+      }
       toast.success("Photo loaded in local/offline mode successfully! 📲✨");
     } finally {
       toast.dismiss(loadToast);

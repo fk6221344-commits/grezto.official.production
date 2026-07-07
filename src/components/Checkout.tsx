@@ -43,6 +43,7 @@ import {
 } from "../data/villageCoordinates";
 import { calculateDistance } from "../lib/distance";
 import { useCheckoutGPS, MORIGAON_CENTER } from "../hooks/useCheckoutGPS";
+import { triggerSuccessHapticVibration } from "../services/nativeService";
 
 export default function Checkout({
   onBack,
@@ -579,6 +580,7 @@ export default function Checkout({
         lng: computedLng,
         tag: "GPS Synced Form",
       });
+      triggerSuccessHapticVibration();
       clearCart();
     } catch (err: any) {
       console.warn("Database offline cache used:", err);

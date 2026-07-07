@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.my.grezto",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:83:C5:E9:9D:01:AE:C5:95:7B:F2:11:0B:E5:6C:C1:23:4B:9D:61:01:A2:8D:1F:B4:98:C3:FF:D2:C3",
+        "A8:86:E0:4F:7B:A2:00:3B:EE:B8:35:F9:89:D1:F9:D3:85:D4:6D:FE:71:06:CC:D3:A8:86:E0:4F:7B:A2:00:3B"
+      ]
+    }
+  }
+]

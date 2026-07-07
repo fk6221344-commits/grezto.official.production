@@ -62,14 +62,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { 
       name: '', 
       phone: '', 
-      address: 'Mitreno Tech, Kawarhagi, Assam (Pin - 782411)', 
+      address: '', 
       isLoggedIn: false, 
       avatar: '', 
       isAdmin: false, 
       role: 'Customer',
       lat: 26.243455,
       lng: 92.1306235,
-      activeCity: 'Kawarhagi',
+      activeCity: '', 
       points: 150,
       redeemedVouchers: []
     };

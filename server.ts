@@ -1,11 +1,14 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import cluster from "cluster";
+import os from "os";
 import { createServer as createViteServer } from "vite";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import redis, { safeGet, safeSet, safeDel, safeGetOrSet } from "./server/redisClient";
@@ -15,6 +18,7 @@ import { supabase, admin, getGeminiClient, firebaseConfig } from "./server/clien
 import { validateFirebaseToken, isMasterAdmin, verifyShopOwnershipOrTeam, verifyProductOwnership } from "./server/auth";
 import { sanitizeProductPayload, sanitizeShopUpdatePayload } from "./server/sanitizers";
 import { warmShopProductsCache, warmCategoryProductsCache, warmCityShopsCache } from "./server/cacheWarming";
+import { createRateLimiter } from "./server/rateLimiter";
 
 async function ensureDefaultDirectShop() {
   if (!supabase) return;
@@ -65,6 +69,7 @@ async function startServer() {
   ensureDefaultDirectShop();
 
   const app = express();
+  app.set('trust proxy', 1);
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   // 1. Helmet Integration to secure HTTP headers & prevent XSS attacks
@@ -80,6 +85,9 @@ async function startServer() {
     "http://localhost:5173",
     "capacitor://localhost",
     "https://grezto.vercel.app", // standard Vercel deploy example
+    "https://grezto.in",
+    "https://www.grezto.in",
+    "https://api.grezto.in"
   ];
 
   const corsOptions = {
@@ -93,7 +101,8 @@ async function startServer() {
         origin.startsWith("http://127.0.0.1") || 
         origin.startsWith("capacitor://") ||
         origin.includes(".run.app") || // AI Studio dev & preview links
-        origin.includes("vercel.app") // Vercel production deployment
+        origin.includes("vercel.app") || // Vercel production deployment
+        origin.includes("grezto.in") // Grezto production domains
       ) {
         return callback(null, true);
       }
@@ -112,27 +121,47 @@ async function startServer() {
 
   app.use(cors(corsOptions));
 
-  // 3. Express Rate Limiters (DDoS Protection)
+  // 2.5 Compression Middleware to drastically reduce JSON payload sizes over network (Gzip/Brotli)
+  app.use(compression({
+    level: 6, // Optimal Gzip compression level balance (1-9)
+    threshold: 1024, // Only compress responses that are larger than 1KB
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        return false; // Respect bypass headers
+      }
+      return compression.filter(req, res); // Use standard compression filter
+    }
+  }));
+
+  // 3. Express Rate Limiters (DDoS Protection) - Built on High-Availability Hybrid Redis/Memory Engine
   // General Rate Limiter for standard API endpoints
-  const generalLimiter = rateLimit({
+  const generalLimiter = createRateLimiter({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 300, // 300 requests per minute
     message: { success: false, error: "Too many requests, please try again after a minute." },
-    standardHeaders: true,
-    legacyHeaders: false,
+    prefix: "general"
   });
 
   // Stricter Rate Limiter for sensitive endpoints (e.g. login, payment, gateway, upload)
-  const sensitiveLimiter = rateLimit({
+  const sensitiveLimiter = createRateLimiter({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 45, // 45 requests per minute for sensitive operations
     message: { success: false, error: "Security Warning: Rate limit exceeded for sensitive operations. Please wait." },
-    standardHeaders: true,
-    legacyHeaders: false,
+    prefix: "sensitive"
+  });
+
+  // OTP-specific Rate Limiter - Protects send/verify routes against high-frequency automated bruteforce
+  // Designed with a balance of 10 requests per 5 minutes per IP to fully support genuine users with weak signals.
+  const otpLimiter = createRateLimiter({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 10, // 10 requests allowed
+    message: { success: false, error: "Too many OTP attempts. To protect your account, please wait 5 minutes before trying again." },
+    prefix: "otp"
   });
 
   app.use(generalLimiter);
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // 4. Advanced Anti-SQL Injection and Request Sanitization Layer
   const antiSqlInjection = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -192,6 +221,10 @@ async function startServer() {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      if (req.file.size > 2.8 * 1024 * 1024) {
+        return res.status(400).json({ error: "Upload Blocked: Photo size exceeds the 2.8MB limit! Please use a smaller or compressed file." });
       }
 
       const { folder, cleanName } = req.body;
@@ -457,7 +490,19 @@ async function startServer() {
 
       let categories = cachedCategories ? JSON.parse(cachedCategories) : null;
       let banners = cachedBanners ? JSON.parse(cachedBanners) : null;
-      let shops = cachedShops ? JSON.parse(cachedShops) : null;
+      
+      let rawShopsData = cachedShops ? JSON.parse(cachedShops) : null;
+      let shops = null;
+      let prewarmProducts: any[] = [];
+
+      if (rawShopsData) {
+        if (Array.isArray(rawShopsData)) {
+          shops = rawShopsData;
+        } else {
+          shops = rawShopsData.shops || [];
+          prewarmProducts = rawShopsData.prewarmProducts || [];
+        }
+      }
 
       const dbQueries: Promise<any>[] = [];
 
@@ -499,8 +544,32 @@ async function startServer() {
               return !addressLower.includes("guwahati") && !addressLower.includes("morigaon");
             }
           });
+
+          // Fetch the pre-warmed recommended products for these filtered shops
+          const pinnedShopIds = filteredShops
+            .filter((s: any) => s.pinned === true || s.pinned === 'true' || s.pinned === 1 || s.pinned === '1')
+            .map((s: any) => s.id);
+
+          let loadedProducts: any[] = [];
+          if (pinnedShopIds.length > 0) {
+            const { data: prodData, error: prodErr } = await supabase
+              .from('products')
+              .select('*')
+              .in('shopId', pinnedShopIds)
+              .is('deleted', false);
+            if (!prodErr && prodData) {
+              loadedProducts = prodData.map((p: any) => ({
+                ...p,
+                stock: p.stock !== undefined ? p.stock : (p.inStock ? 10 : 0)
+              }));
+            }
+          }
+
           shops = filteredShops;
-          await safeSet(`grezto:shops:city:${city}`, JSON.stringify(filteredShops), 3600); // Cache for 1 hour
+          prewarmProducts = loadedProducts;
+
+          const cacheValue = { shops: filteredShops, prewarmProducts: loadedProducts };
+          await safeSet(`grezto:shops:city:${city}`, JSON.stringify(cacheValue), 3600); // Cache for 1 hour
         })());
       }
 
@@ -508,13 +577,14 @@ async function startServer() {
         console.log(`[REDIS] Cache MISS for some home segments. Loading from Supabase... (${dbQueries.length} segments)`);
         await Promise.all(dbQueries);
       } else {
-        console.log(`[REDIS] Full cache HIT for home-data (city: ${city})`);
+        console.log(`[REDIS] Full cache HIT for home-data (city: ${city}) with ${prewarmProducts.length} pre-warmed recommended products.`);
       }
 
       return res.json({
         shops: shops || [],
         banners: banners || [],
         categories: categories || [],
+        recommendedProducts: prewarmProducts || [],
         timestamp: Date.now()
       });
     } catch (e: any) {
@@ -872,7 +942,7 @@ async function startServer() {
   });
 
   // POST /api/auth/verify-otp
-  app.post("/api/auth/verify-otp", sensitiveLimiter, async (req, res) => {
+  app.post("/api/auth/verify-otp", otpLimiter, async (req, res) => {
     try {
       const { phone, otp, verificationId, clientUid, idToken } = req.body;
       if (!phone || !otp) {
@@ -1124,4 +1194,35 @@ async function startServer() {
   });
 }
 
-startServer();
+// -------------------------------------------------------------
+// CLUSTER ORCHESTRATION ENGINE (Production Multi-Core Processing)
+// -------------------------------------------------------------
+if (process.env.NODE_ENV === "production") {
+  if (cluster.isPrimary || (cluster as any).isMaster) {
+    const numCPUs = typeof os.availableParallelism === "function" 
+      ? os.availableParallelism() 
+      : (os.cpus().length || 1);
+      
+    console.log(`[CLUSTER ENGINE] Primary Process ${process.pid} is running.`);
+    console.log(`[CLUSTER ENGINE] Spawning ${numCPUs} workers using os.availableParallelism() to maximize multi-core CPU efficiency...`);
+
+    // Fork workers for each CPU core
+    for (let i = 0; i < numCPUs; i++) {
+      cluster.fork();
+    }
+
+    // Monitor worker status and auto-restart failed workers for zero-downtime reliability
+    cluster.on("exit", (worker, code, signal) => {
+      console.warn(`[CLUSTER ENGINE] Worker process ${worker.process.pid} terminated (code: ${code}, signal: ${signal}).`);
+      console.log(`[CLUSTER ENGINE] Automatically spawning a fresh backup worker for seamless failover...`);
+      cluster.fork();
+    });
+  } else {
+    console.log(`[CLUSTER ENGINE] Worker Process ${process.pid} successfully initialized.`);
+    startServer();
+  }
+} else {
+  // In development, run on a single thread to avoid Vite middleware port conflicts and ensure smooth debugging
+  console.log(`[SINGLE THREAD] Development environment detected. Running single-threaded server on Process ${process.pid}...`);
+  startServer();
+}

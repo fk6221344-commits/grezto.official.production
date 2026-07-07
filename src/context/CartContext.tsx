@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, ShoppingBag, X, Lock } from 'lucide-react';
-import { triggerNativeImpactVibration, setSecureItem, getSecureItem } from '../services/nativeService';
+import { triggerNativeImpactVibration, setSecureItem, getSecureItem, triggerMediumHapticVibration } from '../services/nativeService';
 
 export interface CartItem {
   id: string;
@@ -219,7 +219,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
     
     // Trigger responsive, low-latency native haptic tap confirm
-    triggerNativeImpactVibration();
+    triggerMediumHapticVibration();
   };
 
   // Automated exclusive warning sliding banner active
@@ -227,7 +227,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeFromCart = (id: string) => {
     if (!id) return;
     setItems(prev => prev.filter(i => i.id !== id));
-    triggerNativeImpactVibration();
+    triggerMediumHapticVibration();
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -239,12 +239,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return i;
     }).filter(i => i.quantity > 0));
-    triggerNativeImpactVibration();
+    triggerMediumHapticVibration();
   };
 
   const clearCart = () => {
     setItems([]);
-    triggerNativeImpactVibration();
+    triggerMediumHapticVibration();
   };
 
   return (

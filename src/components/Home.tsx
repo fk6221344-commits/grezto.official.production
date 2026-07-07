@@ -395,6 +395,16 @@ export default function Home({
         }
       };
 
+      if (data && data.recommendedProducts && data.recommendedProducts.length > 0) {
+        setDbProducts((prev) => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newProducts = data.recommendedProducts.filter((p: any) => !existingIds.has(p.id));
+          const updated = [...prev, ...newProducts];
+          globalProductsCache = updated;
+          return updated;
+        });
+      }
+
       if (data && data.shops && data.shops.length > 0) {
         setDbShops(data.shops);
         globalShopsCache = data.shops;

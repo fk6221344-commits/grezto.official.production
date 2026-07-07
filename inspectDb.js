@@ -21,12 +21,23 @@ async function main() {
     console.log(shops);
   }
 
-  console.log("\n--- PRODUCTS ---");
-  const { data: products, error: productsErr } = await supabase.from('products').select('id, name, shopId').limit(10);
+  console.log("\n--- PRODUCTS FOR s_1782752614737 ---");
+  const { data: products, error: productsErr } = await supabase.from('products').select('*').eq('shopId', 's_1782752614737');
   if (productsErr) {
     console.error("Error fetching products:", productsErr);
   } else {
-    console.log(products);
+    products.forEach(p => {
+      console.log({
+        id: p.id,
+        name: p.name,
+        shopId: p.shopId,
+        category: p.category,
+        deleted: p.deleted,
+        price: p.price,
+        imageLength: p.image ? p.image.length : 0,
+        imageType: p.image ? typeof p.image : 'none'
+      });
+    });
   }
 }
 

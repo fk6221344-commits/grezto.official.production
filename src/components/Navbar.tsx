@@ -138,14 +138,14 @@ export default function Navbar({
           {activeTab === 'home' ? (
             <div className="flex flex-col relative z-50">
               <span className="text-[7.5px] text-emerald-200/70 font-black uppercase tracking-wider flex items-center gap-0.5">
-                📍 {user.activeCity || "Kawarhagi"} Hub
+                📍 {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam" || !user.isLoggedIn) ? "Grezto Hub" : `${user.activeCity || "Grezto"} Hub`}
               </span>
               <span 
                 onClick={() => setShowLocationMenu(!showLocationMenu)}
                 className="text-xs font-black text-[#fffdf5] flex items-center cursor-pointer select-none group"
               >
                 <span className="truncate max-w-[120px] inline-block">
-                  {user.address || "Kawarhagi, Assam"}
+                  {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam" || !user.isLoggedIn) ? "Add your location" : user.address}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 ml-1 text-emerald-300 transition-transform duration-300 group-hover:text-amber-300" />
               </span>

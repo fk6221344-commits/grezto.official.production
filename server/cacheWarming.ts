@@ -63,8 +63,30 @@ export async function warmCityShopsCache(city: string) {
           return !addressLower.includes("guwahati") && !addressLower.includes("morigaon");
         }
       });
-      await safeSet(`grezto:shops:city:${cleanCity}`, JSON.stringify(filteredShops), 3600);
-      console.log(`[PRE-WARM SUCCESS] Warm shops cache written for city: ${cleanCity}`);
+
+      // Also prewarm the recommended products
+      const pinnedShopIds = filteredShops
+        .filter((s: any) => s.pinned === true || s.pinned === 'true' || s.pinned === 1 || s.pinned === '1')
+        .map((s: any) => s.id);
+
+      let prewarmProducts: any[] = [];
+      if (pinnedShopIds.length > 0) {
+        const { data: prodData, error: prodErr } = await supabase
+          .from('products')
+          .select('*')
+          .in('shopId', pinnedShopIds)
+          .is('deleted', false);
+        if (!prodErr && prodData) {
+          prewarmProducts = prodData.map((p: any) => ({
+            ...p,
+            stock: p.stock !== undefined ? p.stock : (p.inStock ? 10 : 0)
+          }));
+        }
+      }
+
+      const cacheValue = { shops: filteredShops, prewarmProducts };
+      await safeSet(`grezto:shops:city:${cleanCity}`, JSON.stringify(cacheValue), 3600);
+      console.log(`[PRE-WARM SUCCESS] Warm shops cache with ${prewarmProducts.length} pre-warmed products written for city: ${cleanCity}`);
     }
   } catch (err: any) {
     console.error(`[PRE-WARM ERROR] Failed to pre-warm city shops cache for ${city}:`, err.message || err);

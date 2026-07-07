@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 
 // Central Configuration for Grezto Secure Backend
 // Replace this with your actual live Railway URL when deploying to production!
-export const RAILWAY_LIVE_URL = import.meta.env.VITE_RAILWAY_URL || import.meta.env.VITE_API_URL || "https://your-backend.up.railway.app";
+export const RAILWAY_LIVE_URL = import.meta.env.VITE_RAILWAY_URL || import.meta.env.VITE_API_URL || "https://api.grezto.in";
 export const LOCAL_DEV_URL = "http://localhost:3000";
 
 /**

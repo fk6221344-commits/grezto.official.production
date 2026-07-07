@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 import { compressImage, uploadToR2 } from '../../lib/utils';
@@ -64,8 +64,14 @@ export function useMerchantSettings(shop: ShopProp) {
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Image size exceeds 20MB. Please upload a smaller image.");
+    if (file.size > 2.8 * 1024 * 1024) {
+      toast.error(
+        React.createElement('div', { className: 'text-left font-sans py-1' },
+          React.createElement('div', { className: 'font-bold text-red-600 text-sm' }, '🛑 Upload Blocked: File Too Large!'),
+          React.createElement('div', { className: 'text-xs text-gray-600 mt-1.5 leading-relaxed' }, 'To keep the experience super fast for your customers, product photos are limited to a maximum of 2.8MB. Please compress your image or choose a smaller file.')
+        ),
+        { duration: 6000 }
+      );
       return;
     }
 

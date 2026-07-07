@@ -54,6 +54,38 @@ export const triggerNativeImpactVibration = () => {
   }
 };
 
+export const triggerLightHapticVibration = () => {
+  try {
+    if (isNativePlatform()) {
+      Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+    } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(12);
+    }
+  } catch (e) {}
+};
+
+export const triggerMediumHapticVibration = () => {
+  try {
+    if (isNativePlatform()) {
+      Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+    } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(35);
+    }
+  } catch (e) {}
+};
+
+export const triggerSuccessHapticVibration = () => {
+  try {
+    if (isNativePlatform()) {
+      Haptics.vibrate({ duration: 150 }).catch(() => {
+        Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
+      });
+    } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([80, 50, 120]);
+    }
+  } catch (e) {}
+};
+
 
 /**
  * 1. PERSISTENT KEY-VALUE STORAGE UTILITIES (WebView & Native Fallback)
