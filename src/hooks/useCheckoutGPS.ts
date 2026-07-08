@@ -129,8 +129,7 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
         updateProfile({
           address: compiledAddress,
           lat: coords.lat,
-          lng: coords.lng,
-          isLoggedIn: true
+          lng: coords.lng
         });
       }
     }, 1200);

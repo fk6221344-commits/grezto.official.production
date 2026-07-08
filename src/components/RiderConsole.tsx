@@ -45,6 +45,7 @@ import { RiderConfirmDeliveryModal } from './rider/RiderConfirmDeliveryModal';
 import { RiderSuccessCelebrationModal } from './rider/RiderSuccessCelebrationModal';
 import { unlockNotificationAudio } from '../services/notifications';
 import { groupMultiVendorOrders } from '../utils/orderGrouping';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 
 export default function RiderConsole({ onClose, initialProfile }: { onClose?: () => void; initialProfile?: any }) {
   const { user, logout } = useUser();
@@ -90,6 +91,42 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
 
   // Celebration state
   const [celebrationData, setCelebrationData] = useState<{ orderId: string, customerName: string, amount: number } | null>(null);
+
+  // Native back button interceptor for Rider Console subviews
+  useRegisterBackHandler(() => {
+    if (celebrationData) {
+      setCelebrationData(null);
+      return true;
+    }
+    if (orderToConfirm) {
+      setOrderToConfirm(null);
+      return true;
+    }
+    if (coPilotOrder) {
+      setCoPilotOrder(null);
+      return true;
+    }
+    if (selectedOrder) {
+      setSelectedOrder(null);
+      return true;
+    }
+    if (showRiderHistoryModal) {
+      setShowRiderHistoryModal(false);
+      return true;
+    }
+    if (showRiderInfoMenu) {
+      setShowRiderInfoMenu(false);
+      return true;
+    }
+    return false;
+  }, 35, [
+    celebrationData,
+    orderToConfirm,
+    coPilotOrder,
+    selectedOrder,
+    showRiderHistoryModal,
+    showRiderInfoMenu
+  ]);
 
   const pendingTabOrders = [...incomingOrders, ...activeOrders];
 

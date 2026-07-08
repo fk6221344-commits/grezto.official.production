@@ -233,7 +233,7 @@ export default function MerchantCalculation({ shop: initialShop, onClose }: { sh
                         <span className="bg-rose-200/50 text-rose-800 px-1.5 py-0.5 rounded text-[7.5px]">7%</span>
                       </p>
                       <h4 className="text-xl font-black text-rose-900 tracking-tight">-₹{platformFee}</h4>
-                      <p className="text-[8px] font-bold text-rose-600/70 uppercase tracking-wider mt-1">App Owner's Cut</p>
+                      <p className="text-[8px] font-bold text-rose-600/70 uppercase tracking-wider mt-1">Platform Fee Cut</p>
                   </div>
                   <div className="col-span-2 bg-[#2a303c] rounded-xl p-5 border border-[#1e232d] shadow-md relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-10 translate-x-10"></div>

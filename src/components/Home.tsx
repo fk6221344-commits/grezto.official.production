@@ -930,7 +930,7 @@ export default function Home({
 
       {/* Visual Mode Switching segment tabs */}
       {!searchQuery && (
-        <div className="px-2 mt-4 select-none flex gap-2.5" id="mode-switching-container">
+        <div className="px-2 mt-4 select-none flex items-center gap-2.5" id="mode-switching-container">
           {/* 🥬 Grezto Market Button */}
           <motion.button
             type="button"
@@ -938,19 +938,19 @@ export default function Home({
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className={`flex-1 py-3 rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-colors duration-200 flex items-center justify-center space-x-1.5 cursor-pointer select-none focus:outline-none border ${
+            className={`flex-1 h-[38px] rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center space-x-1.5 cursor-pointer select-none focus:outline-none border ${
               activeMode === 'grocery'
-                ? 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white border-slate-950 shadow-[0_12px_28px_rgba(15,23,42,0.65),_0_4px_12px_rgba(15,23,42,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
-                : 'bg-white text-slate-600 border-slate-200 shadow-[0_4px_14px_rgba(15,23,42,0.15)] hover:text-slate-800 hover:border-slate-300'
+                ? 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white border-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.45),_0_2px_8px_rgba(30,58,138,0.35),inset_0_1px_1px_rgba(255,255,255,0.2)] font-black'
+                : 'bg-white text-slate-700 border-slate-200 shadow-[0_4px_12px_rgba(15,23,42,0.06)] hover:bg-slate-50 hover:text-slate-900 font-extrabold'
             }`}
             id="mode-button-grocery"
           >
-            <span className={`transition-transform duration-300 inline-block ${activeMode === 'grocery' ? 'scale-115 rotate-3' : 'scale-100 rotate-0'}`}>
+            <span className={`transition-transform duration-300 inline-block shrink-0 ${activeMode === 'grocery' ? 'scale-115 rotate-3' : 'scale-100 rotate-0'}`}>
               🥬
             </span>
-            <span>Grezto Market</span>
+            <span className="truncate whitespace-nowrap">Grezto Market</span>
           </motion.button>
-
+ 
           {/* 🍔 Hotels & Restaurants Button */}
           <motion.button
             type="button"
@@ -958,17 +958,17 @@ export default function Home({
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className={`flex-1 py-3 rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-colors duration-200 flex items-center justify-center space-x-1.5 cursor-pointer select-none focus:outline-none border ${
+            className={`flex-1 h-[38px] rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 flex items-center justify-center space-x-1.5 cursor-pointer select-none focus:outline-none border ${
               activeMode === 'hotel'
-                ? 'bg-gradient-to-r from-[#cc0c23] via-[#ef233c] to-[#b7091a] text-white border-red-800 shadow-[0_12px_28px_rgba(204,12,35,0.65),_0_4px_12px_rgba(204,12,35,0.4),inset_0_1px_1px_rgba(255,255,255,0.25)]'
-                : 'bg-white text-slate-600 border-rose-100 shadow-[0_4px_14px_rgba(225,29,72,0.15)] hover:text-slate-800 hover:border-rose-200'
+                ? 'bg-gradient-to-r from-[#cc0c23] via-[#ef233c] to-[#b7091a] text-white border-red-900 shadow-[0_8px_22px_rgba(239,35,60,0.45),_0_2px_8px_rgba(204,12,35,0.35),inset_0_1px_1px_rgba(255,255,255,0.25)] font-black'
+                : 'bg-white text-slate-700 border-slate-200 shadow-[0_4px_12px_rgba(15,23,42,0.06)] hover:bg-slate-50 hover:text-slate-900 font-extrabold'
             }`}
             id="mode-button-hotel"
           >
-            <span className={`transition-transform duration-300 inline-block ${activeMode === 'hotel' ? 'scale-115 -rotate-3' : 'scale-100 rotate-0'}`}>
+            <span className={`transition-transform duration-300 inline-block shrink-0 ${activeMode === 'hotel' ? 'scale-115 -rotate-3' : 'scale-100 rotate-0'}`}>
               🍔
             </span>
-            <span>Hotels & Restaurants</span>
+            <span className="truncate whitespace-nowrap">Hotels & Restaurants</span>
           </motion.button>
         </div>
       )}

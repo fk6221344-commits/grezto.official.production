@@ -99,6 +99,10 @@ html, body, #root {
   
   /* Disable accidental double-tap-to-zoom gestures globally across the container */
   touch-action: manipulation !important;
+
+  /* Lock Webview text scaling to exactly 100% to prevent Android system font sizes from distorting/enlarging layouts */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
 }
 
 /* Prevent accidental system highlights and selection layers during extreme high-speed scrolls or tap runs */

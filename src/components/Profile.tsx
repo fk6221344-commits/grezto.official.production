@@ -11,6 +11,7 @@ import ProfileRewardsModal from './profile/ProfileRewardsModal';
 import { ChevronRight, MapPin, Headphones, Share2, Shield, ShieldCheck, LogOut, User, Phone, Edit2, X, Check, Bell, Info, Camera, Bike, Trash2, Plus, Globe, ChevronLeft, Copy, Send, BarChart, Gift, Sparkles, Ticket, Coins } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 import toast from 'react-hot-toast';
 import { supabase } from '../services/supabase';
 import { auth } from '../services/firebase';
@@ -184,6 +185,62 @@ export default function Profile({
 
   // Cropper specific high-performance visual state configurations
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+
+  // Back key interception for Profile sub-modals & drawers
+  useRegisterBackHandler(() => {
+    if (showAIChat) {
+      setShowAIChat(false);
+      return true;
+    }
+    if (cropImageSrc) {
+      setCropImageSrc(null);
+      return true;
+    }
+    if (showRewardsModal) {
+      setShowRewardsModal(false);
+      return true;
+    }
+    if (showAboutModal) {
+      setShowAboutModal(false);
+      return true;
+    }
+    if (showSignOutConfirm) {
+      setShowSignOutConfirm(false);
+      return true;
+    }
+    if (showPinModal) {
+      setShowPinModal(false);
+      return true;
+    }
+    if (showLoginModal) {
+      setShowLoginModal(false);
+      return true;
+    }
+    if (showAddNewAddress) {
+      setShowAddNewAddress(false);
+      return true;
+    }
+    if (isEditingAddress) {
+      setIsEditingAddress(false);
+      return true;
+    }
+    if (isEditing) {
+      setIsEditing(false);
+      return true;
+    }
+    return false;
+  }, 30, [
+    showAIChat,
+    cropImageSrc,
+    showRewardsModal,
+    showAboutModal,
+    showSignOutConfirm,
+    showPinModal,
+    showLoginModal,
+    showAddNewAddress,
+    isEditingAddress,
+    isEditing
+  ]);
   
   // Avatar Upload / Edit handler with automatic pre-downscaling to prevent slow performance
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -862,7 +919,7 @@ export default function Profile({
           
           <div className="relative z-10 space-y-1">
             <p className="text-[8.5px] text-emerald-50 font-extrabold leading-tight tracking-wide">
-              share Grezto with friends.. to get rs 100 off 🎉 your next order
+              share Grezto with friends.. to get upto 20% off 🎉 your next order
             </p>
 
             {/* Displaying Personal Link - Copy button removed completely to avoid clutter */}
@@ -879,7 +936,7 @@ export default function Profile({
                   const uPhoneSuffix = user.phone ? user.phone.slice(-4) : '100';
                   const refCode = `GREZ${uPhoneSuffix}`;
                   const refUrl = `${window.location.origin}/?download=grezto-app&ref=${refCode}`;
-                  const text = `*Grezto - 100% Fresh & Organic Grocery* 🥬🚀\n\nClick the invite link to safely download the Grezto Android App and instantly receive a ₹100 discount coupon!\n\n👉 *Click here to Download:* ${refUrl}\n\nCode: *${refCode}* 🌿🎁`;
+                  const text = `*Grezto - 100% Fresh & Organic Grocery* 🥬🚀\n\nClick the invite link to safely download the Grezto Android App and instantly receive an upto 20% discount coupon!\n\n👉 *Click here to Download:* ${refUrl}\n\nCode: *${refCode}* 🌿🎁`;
                   try {
                     const { Share } = await import('@capacitor/share');
                     const { Capacitor } = await import('@capacitor/core');
@@ -901,7 +958,7 @@ export default function Profile({
                   const uPhoneSuffix = user.phone ? user.phone.slice(-4) : '100';
                   const refCode = `GREZ${uPhoneSuffix}`;
                   const refUrl = `${window.location.origin}/?download=grezto-app&ref=${refCode}`;
-                  const text = `Grezto - 100% Fresh & Organic Grocery 🥬🚀\n\nClick the invite link to safely download the Grezto Android App and instantly receive a ₹100 discount coupon!\n\nCode: ${refCode} 🌿🎁`;
+                  const text = `Grezto - 100% Fresh & Organic Grocery 🥬🚀\n\nClick the invite link to safely download the Grezto Android App and instantly receive an upto 20% discount coupon!\n\nCode: ${refCode} 🌿🎁`;
                   try {
                     const { Share } = await import('@capacitor/share');
                     const { Capacitor } = await import('@capacitor/core');

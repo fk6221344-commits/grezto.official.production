@@ -114,19 +114,24 @@ export default function ProfileModals({
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {showAboutModal && (
-            <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5"
+            >
               <motion.div 
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: 0.5 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowAboutModal(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                className="absolute inset-0 bg-black backdrop-blur-sm"
               />
               <motion.div 
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 relative z-[9999] max-h-[85vh] overflow-y-auto text-display text-gray-800 shadow-2xl"
               >
                 <div className="flex justify-between items-center mb-6">
@@ -180,64 +185,77 @@ export default function ProfileModals({
                   <p className="text-[8.5px] text-center text-gray-400 uppercase tracking-widest font-black pt-4">Grezto Services India Pvt. Ltd. 🇮🇳</p>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>,
         document.body
       )}
 
       {/* Sign Out Confirmation Modal */}
-      <AnimatePresence>
-        {showSignOutConfirm && (
-          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-5">
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showSignOutConfirm && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowSignOutConfirm(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ y: '100%', scale: 0.95 }}
-              animate={{ y: 0, scale: 1 }}
-              exit={{ y: '100%', scale: 0.95 }}
-              transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="bg-white w-full max-w-sm rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 relative z-[120] text-center shadow-2xl border border-red-100"
+              className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5"
             >
-              <div className="mx-auto w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mb-5 text-red-500 shadow-inner">
-                <LogOut size={24} className="stroke-[2.5]" />
-              </div>
-              
-              <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">
-                Confirm Sign Out?
-              </h3>
-              
-              <p className="text-[11px] font-semibold text-gray-500 leading-relaxed mt-2.5 max-w-xs mx-auto">
-                You will need to login again to access your profile details or check live orders. Are you sure you want to sign out?
-              </p>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowSignOutConfirm(false)}
+                className="absolute inset-0 bg-black backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="bg-white w-full max-w-sm rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 relative z-[9999] text-center shadow-2xl border border-red-100/50"
+              >
+                {/* Visual Top Handle for Bottom Sheet physics */}
+                <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden" />
 
-              <div className="flex flex-col gap-2.5 mt-6 w-full">
-                <button 
-                  onClick={() => {
-                    logout();
-                    setShowSignOutConfirm(false);
-                    toast.success("Successfully Signed Out! See you soon. 👋");
-                  }}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-red-200 border-0"
-                >
-                  Yes, Sign Out
-                </button>
-                <button 
-                  onClick={() => setShowSignOutConfirm(false)}
-                  className="w-full bg-gray-50 hover:bg-gray-100 text-gray-500 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest border border-gray-150 transition-all cursor-pointer"
-                >
-                  Cancel / Back
-                </button>
-              </div>
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-red-50 to-rose-100/50 rounded-full flex items-center justify-center mb-4.5 text-red-600 shadow-inner ring-4 ring-red-50/40">
+                  <LogOut size={26} className="stroke-[2.5]" />
+                </div>
+                
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                  Confirm Sign Out?
+                </h3>
+                
+                <p className="text-[11px] font-bold text-gray-500 leading-relaxed mt-3 max-w-xs mx-auto">
+                  You will need to login again to access your profile details or check live orders. Are you sure you want to sign out?
+                </p>
+
+                <div className="flex flex-col gap-3 mt-7 w-full">
+                  <motion.button 
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setShowSignOutConfirm(false)}
+                    className="w-full bg-slate-950 active:bg-slate-900 text-white py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all cursor-pointer shadow-xl shadow-slate-950/15 border-0"
+                  >
+                    Cancel / Back
+                  </motion.button>
+                  <motion.button 
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      logout();
+                      setShowSignOutConfirm(false);
+                      toast.success("Successfully Signed Out! See you soon. 👋");
+                    }}
+                    className="w-full bg-rose-50/80 active:bg-rose-100 hover:bg-rose-100/80 text-rose-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest border border-rose-100/50 transition-all cursor-pointer"
+                  >
+                    Yes, Sign Out
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Secure Merchant PIN Validation Modal Overlay */}
       <AnimatePresence>

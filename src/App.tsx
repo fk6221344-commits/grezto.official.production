@@ -5,6 +5,8 @@ import { UserProvider, useUser } from './context/UserContext';
 import { CartProvider, useCart } from './context/CartContext';
 import toast, { Toaster } from 'react-hot-toast';
 import { X } from 'lucide-react';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 // Sub components
 import Splash from './components/Splash';
@@ -42,13 +44,14 @@ import { createOrderHandlers } from './services/orderHandlers';
 
 // Custom Hooks for ultra performance
 import { useHardwareBack } from './hooks/useHardwareBack';
+import { useRegisterBackHandler } from './hooks/useRegisterBackHandler';
 import { useOrderAlerts } from './hooks/useOrderAlerts';
 import { useRiderOrders } from './hooks/useRiderOrders';
 
 const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || (import.meta.env && import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY) || '';
 
 function MainAppLayout() {
-  const { user, firebaseAuthReady, userShop, logout } = useUser();
+  const { user, firebaseAuthReady, userShop, logout, updateProfile } = useUser();
   const { clearCart } = useCart();
 
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
@@ -203,6 +206,15 @@ function MainAppLayout() {
     popTabHistory
   });
 
+  // Intercept back key to close the Search Overlay first
+  useRegisterBackHandler(() => {
+    if (showSearchOverlay) {
+      setShowSearchOverlay(false);
+      return true;
+    }
+    return false;
+  }, 20, [showSearchOverlay]);
+
   // Sync state transitions to persistent Storage
   useEffect(() => {
     // Purge outdated transient states on mount to ensure clean, high-speed start
@@ -283,6 +295,72 @@ function MainAppLayout() {
     };
   }, []);
 
+  // Dynamic 500% Perfect Status Bar Synchronization for Premium Native Experience
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const syncStatusBar = async () => {
+      try {
+        // Step 1. Ensure WebView does not overlap the Status Bar (ensures it is pushed down)
+        await StatusBar.setOverlaysWebView({ overlay: false });
+
+        let color = '#fffdfa';
+        let style = Style.Dark;
+
+        if (!isSplashed) {
+          // Splash screen is white/off-white background
+          color = '#fffdfa';
+          style = Style.Dark;
+        } else if (showAdmin || showAnalyticsModal) {
+          // Admin Panel - Dark Slate Blue Theme
+          color = '#0f172a';
+          style = Style.Light;
+        } else if (showMerchant || showMerchantCalculationModal) {
+          // Merchant Panel - Dark Gray Theme
+          color = '#111827';
+          style = Style.Light;
+        } else if (showRider || showRiderManagement) {
+          // Rider Console - Slate Theme
+          color = '#0f172a';
+          style = Style.Light;
+        } else if (showCheckout || showOrderSuccess || trackingOrder) {
+          // Light pages: Checkout / Success / Tracking
+          color = '#fffdfa';
+          style = Style.Dark;
+        } else if (activeTab === 'home') {
+          // Home Screen: Deep Emerald Green Theme to match the beautiful top banner!
+          color = '#022c22';
+          style = Style.Light;
+        } else {
+          // Other tabs (Cart, Orders, Profile) - Crisp Premium Light Theme
+          color = '#fffdfa';
+          style = Style.Dark;
+        }
+
+        await StatusBar.setBackgroundColor({ color });
+        await StatusBar.setStyle({ style });
+      } catch (err) {
+        console.error('[Status Bar Sync] Failed to synchronize:', err);
+      }
+    };
+
+    // Execute with a tiny microtask delay to ensure state transitions have rendered
+    const timeoutId = setTimeout(syncStatusBar, 16);
+    return () => clearTimeout(timeoutId);
+  }, [
+    isSplashed,
+    showAdmin,
+    showAnalyticsModal,
+    showMerchant,
+    showMerchantCalculationModal,
+    showRider,
+    showRiderManagement,
+    showCheckout,
+    showOrderSuccess,
+    trackingOrder,
+    activeTab
+  ]);
+
   // System Initializations & Capacitor Native Lifecycle Integration (Smart Pause & Resume)
   useEffect(() => {
     initializeCrashlytics();
@@ -317,6 +395,77 @@ function MainAppLayout() {
       }
     };
   }, []);
+
+  // 100% Native Precise Geolocation Autodetect on Startup
+  useEffect(() => {
+    if (!firebaseAuthReady) return;
+
+    async function autoFetchLocation() {
+      // If user has manually entered/saved a genuine non-fallback address, do not overwrite it automatically
+      if (user.address && !user.address.includes("Mitreno Tech") && user.address !== "Kawarhagi, Assam") {
+        console.log("[Auto GPS] Real user address already present, skipping auto-fetch on startup.");
+        return;
+      }
+
+      try {
+        console.log("[Auto GPS] Checking permissions on startup...");
+        const { Geolocation } = await import('@capacitor/geolocation');
+        
+        let permResult = await Geolocation.checkPermissions();
+        let status = permResult.location;
+
+        // If permission is not granted yet, ask for precise & high accuracy permission immediately
+        if (status !== 'granted') {
+          console.log("[Auto GPS] Location permission not granted. Requesting native permissions...");
+          const reqResult = await Geolocation.requestPermissions();
+          status = reqResult.location;
+        }
+
+        if (status === 'granted') {
+          console.log("[Auto GPS] Native GPS permission granted. Querying coordinates with high accuracy...");
+          let pos;
+          try {
+            pos = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true,
+              timeout: 7000
+            });
+          } catch (highErr) {
+            console.warn("[Auto GPS] High accuracy getCurrentPosition failed, falling back to lower precision:", highErr);
+            pos = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: false,
+              timeout: 10000
+            });
+          }
+
+          console.log("[Auto GPS] Coordinates retrieved successfully:", pos.coords.latitude, pos.coords.longitude);
+          const { reverseGeocodeCoords } = await import('./lib/geocoder');
+          const result = await reverseGeocodeCoords(pos.coords.latitude, pos.coords.longitude);
+          
+          const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
+          
+          updateProfile({
+            address: compiledAddress,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            activeCity: result.city || "Kawarhagi"
+          });
+          
+          console.log("[Auto GPS] Location auto-locked & profile address set successfully:", compiledAddress);
+        } else {
+          console.log("[Auto GPS] User denied native location permissions.");
+        }
+      } catch (err) {
+        console.warn("[Auto GPS] Startup auto-location fetch failed:", err);
+      }
+    }
+
+    // Delay by 2.5 seconds to wait for Splash screen fadeout and rendering stabilization
+    const delayTimer = setTimeout(() => {
+      autoFetchLocation();
+    }, 2500);
+
+    return () => clearTimeout(delayTimer);
+  }, [firebaseAuthReady]);
 
   // -------------------
   // DEEP LINKING SETUP (WhatsApp and Web product redirection to Native Android App)
@@ -534,7 +683,7 @@ function MainAppLayout() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[130px] pointer-events-none hidden lg:block" />
 
       <AnimatePresence mode="wait">
-        {(!isSplashed || !firebaseAuthReady) ? (
+        {!isSplashed ? (
           <Splash key="splash-screen" onFinish={() => setIsSplashed(true)} />
         ) : (
           <div className="w-full h-full flex flex-col relative z-10">

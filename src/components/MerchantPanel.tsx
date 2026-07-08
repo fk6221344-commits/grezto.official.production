@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { unlockNotificationAudio } from '../services/notifications';
 import ShopAnalytics from './ShopAnalytics';
 import { useUser } from '../context/UserContext';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 
 // Import split modular hooks
 import { useMerchantSettings } from './merchant/useMerchantSettings';
@@ -89,6 +90,32 @@ export default function MerchantPanel({ onClose, shop }: MerchantPanelProps) {
     handleUpdateStatus,
     loading
   } = useMerchantOrders(shop, firebaseAuthReady);
+
+  // Catch native back button to dismiss any active merchant overlays cleanly
+  useRegisterBackHandler(() => {
+    if (showAddMenuModal) {
+      setShowAddMenuModal(false);
+      return true;
+    }
+    if (editingItem) {
+      setEditingItem(null);
+      return true;
+    }
+    if (showMerchantHistoryModal) {
+      setShowMerchantHistoryModal(false);
+      return true;
+    }
+    if (showMerchantInfoMenu) {
+      setShowMerchantInfoMenu(false);
+      return true;
+    }
+    return false;
+  }, 35, [
+    showAddMenuModal,
+    editingItem,
+    showMerchantHistoryModal,
+    showMerchantInfoMenu
+  ]);
 
   // Pre-emptive browser/Capacitor webview gesture unlock mechanism to guarantee 100% audio ringtone reliability
   useEffect(() => {

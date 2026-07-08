@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, X } from 'lucide-react';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 
 interface OrderedProductsModalProps {
   isOpen: boolean;
@@ -11,6 +12,15 @@ interface OrderedProductsModalProps {
 }
 
 export default function OrderedProductsModal({ isOpen, onClose, items, totalAmount }: OrderedProductsModalProps) {
+  // Catch native back button to close the Ordered Products modal/dialog cleanly
+  useRegisterBackHandler(() => {
+    if (isOpen) {
+      onClose();
+      return true;
+    }
+    return false;
+  }, 40, [isOpen, onClose]);
+
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;

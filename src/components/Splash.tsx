@@ -4,8 +4,8 @@ import { logoBase64 } from './SplashLogoBase64';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
   useEffect(() => {
-    // Exact 900ms duration for ultra-fast startup as per your requirement
-    const timer = setTimeout(onFinish, 900);
+    // Exact 1000ms duration (1 second) for ultra-fast startup as per your requirement
+    const timer = setTimeout(onFinish, 1000);
     return () => clearTimeout(timer);
   }, [onFinish]);
 

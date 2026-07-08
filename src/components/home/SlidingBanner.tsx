@@ -114,7 +114,7 @@ const SlidingBanner = React.memo(() => {
   }, []);
 
   return (
-    <div className="px-1 mb-8 mt-5 select-none" id="sliding-banner-container">
+    <div className="px-1 mb-3 mt-3 select-none" id="sliding-banner-container">
       <div className="relative h-40 rounded-3xl overflow-hidden shadow-lg shadow-gray-200/40 bg-stone-100 group" id="sliding-banner-frame">
         <AnimatePresence initial={false}>
           <motion.div

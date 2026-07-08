@@ -49,10 +49,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // Strict protection: A user CANNOT be logged in without a valid non-empty phone number
+        const hasValidPhone = parsed.phone && parsed.phone.trim() !== "";
         return {
           ...parsed,
           activeCity: parsed.activeCity || 'Kawarhagi',
           points: parsed.points !== undefined ? parsed.points : 150,
+          isLoggedIn: hasValidPhone ? (parsed.isLoggedIn ?? false) : false,
           redeemedVouchers: parsed.redeemedVouchers || []
         };
       } catch (e) {
@@ -147,10 +150,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const saved = await getSecureItem('grezto_user');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.phone) {
+          if (parsed && parsed.phone && parsed.phone.trim() !== '') {
             setUser(prev => ({
               ...prev,
-              ...parsed
+              ...parsed,
+              isLoggedIn: parsed.isLoggedIn ?? false
+            }));
+          } else {
+            // Force reset to clean guest mode if stored session is invalid/empty phone
+            setUser(prev => ({
+              ...prev,
+              isLoggedIn: false,
+              phone: ''
             }));
           }
         }
@@ -372,6 +383,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let nextUser: UserProfile;
     setUser(prev => {
       const next = { ...prev, ...data };
+      
+      // Strict safety guard: Force isLoggedIn to false if phone is missing or empty
+      if (!next.phone || next.phone.trim() === "") {
+        next.isLoggedIn = false;
+      }
+      
       const isKnown = next.phone === '9864975438' || next.phone === '8638089161';
       next.isAdmin = isKnown || prev.isAdmin || data.isAdmin || false;
       nextUser = next;

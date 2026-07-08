@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Heart, ShieldCheck, Clock } from 'lucide-react';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 
 interface AIChatModalProps {
   isOpen: boolean;
@@ -8,6 +10,15 @@ interface AIChatModalProps {
 }
 
 export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
+  // Catch native back button to close the help & support modal cleanly
+  useRegisterBackHandler(() => {
+    if (isOpen) {
+      onClose();
+      return true;
+    }
+    return false;
+  }, 50, [isOpen, onClose]);
+
   // WhatsApp Support State
   const [supportMessage, setSupportMessage] = useState('');
 
@@ -22,21 +33,29 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
     window.open(whatsappUrl, '_blank');
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-5">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-5"
+        >
           <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black backdrop-blur-sm"
           />
           <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] h-[80vh] sm:h-[70vh] flex flex-col relative z-[110] shadow-2xl overflow-hidden text-display"
           >
             {/* Header with Deep Burgundy Gradient */}
@@ -110,20 +129,6 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                     </h5>
                   </div>
 
-                  {/* Auto-type Query Input */}
-                  <div className="text-left">
-                    <label className="text-[7.5px] font-black text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">
-                      Describe your problem or order details (Optional)
-                    </label>
-                    <textarea
-                      value={supportMessage}
-                      onChange={(e) => setSupportMessage(e.target.value)}
-                      placeholder="E.g., My order is late / I want to cancel my last order..."
-                      rows={2}
-                      className="w-full bg-white text-[11px] font-bold text-gray-800 p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-gray-400 resize-none"
-                    />
-                  </div>
-
                   {/* WhatsApp Button */}
                   <button 
                     onClick={handleWhatsAppChat}
@@ -138,8 +143,9 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
               </div>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

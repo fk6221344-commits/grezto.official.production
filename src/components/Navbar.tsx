@@ -206,8 +206,7 @@ export default function Navbar({
                           updateProfile({
                             address: compiledAddress,
                             lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            isLoggedIn: true
+                            lng: pos.coords.longitude
                           });
                           
                           toast.success("🎯 GPS locked & address updated!", { id: toastId });

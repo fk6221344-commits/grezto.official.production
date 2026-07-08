@@ -64,7 +64,7 @@ export default function CategoryList({
   }, [onSelectCategory]);
 
   return (
-    <div className="mt-5 mx-2.5 p-4 bg-gradient-to-b from-[#fffaf9] to-[#fef5f3] rounded-3xl border border-[#ffeae7] shadow-[0_8px_30px_rgba(239,35,60,0.015)]" id="quick-categories-card">
+    <div className="mt-0.5 mx-2.5 p-4 bg-gradient-to-b from-[#fffaf9] to-[#fef5f3] rounded-3xl border border-[#ffeae7] shadow-[0_8px_30px_rgba(239,35,60,0.015)]" id="quick-categories-card">
       <div className="flex items-center justify-between mb-4 px-1" id="quick-categories-header">
         <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-1.5" id="quick-categories-title">
           <span className="w-1.5 h-3.5 bg-[#ef233c] rounded-full inline-block" id="quick-categories-badge-dot"></span>

@@ -1,12 +1,19 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Bell, X, Info, ShieldCheck } from 'lucide-react';
+import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
 
 interface GlobalNotificationsModalProps {
   onClose: () => void;
 }
 
 export default function GlobalNotificationsModal({ onClose }: GlobalNotificationsModalProps) {
+  // Catch native back button to close the notifications drawer cleanly
+  useRegisterBackHandler(() => {
+    onClose();
+    return true;
+  }, 45, []);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}

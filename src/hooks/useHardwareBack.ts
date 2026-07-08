@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { runBackHandlers } from '../utils/backButtonRegistry';
 
 /**
  * Highly optimized React Hook for handling native custom back navigation.
@@ -88,6 +89,11 @@ export function useHardwareBack(states: {
     let watchBack: any = null;
 
     const performBack = (): boolean => {
+      // 0. Check the general back handlers registry first (highest priority)
+      if (runBackHandlers()) {
+        return true;
+      }
+
       const current = statesRef.current;
       isPopStateRef.current = true;
       
