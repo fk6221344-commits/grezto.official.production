@@ -138,14 +138,14 @@ export default function Navbar({
           {activeTab === 'home' ? (
             <div className="flex flex-col relative z-50">
               <span className="text-[7.5px] text-emerald-200/70 font-black uppercase tracking-wider flex items-center gap-0.5">
-                📍 {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam" || !user.isLoggedIn) ? "Grezto Hub" : `${user.activeCity || "Grezto"} Hub`}
+                📍 {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam") ? "Grezto Hub" : `${user.activeCity || "Grezto"} Hub`}
               </span>
               <span 
                 onClick={() => setShowLocationMenu(!showLocationMenu)}
                 className="text-xs font-black text-[#fffdf5] flex items-center cursor-pointer select-none group"
               >
                 <span className="truncate max-w-[120px] inline-block">
-                  {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam" || !user.isLoggedIn) ? "Add your location" : user.address}
+                  {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam") ? "Add your location" : user.address}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 ml-1 text-emerald-300 transition-transform duration-300 group-hover:text-amber-300" />
               </span>
@@ -177,39 +177,20 @@ export default function Navbar({
                         const toastId = toast.loading("🛰️ Fetching current GPS location...");
                         try {
                           const { Geolocation } = await import('@capacitor/geolocation');
-                          const permResult = await Geolocation.checkPermissions();
-                          if (permResult.location !== 'granted' && permResult.coarseLocation !== 'granted') {
-                            const reqResult = await Geolocation.requestPermissions();
-                            if (reqResult.location !== 'granted' && reqResult.coarseLocation !== 'granted') {
-                              throw new Error("Location permission denied by user.");
-                            }
-                          }
-
-                          let pos;
-                          try {
-                            pos = await Geolocation.getCurrentPosition({
-                              enableHighAccuracy: true,
-                              timeout: 6000
-                            });
-                          } catch (highErr) {
-                            pos = await Geolocation.getCurrentPosition({
-                              enableHighAccuracy: false,
-                              timeout: 10000
-                            });
-                          }
-
-                          const { reverseGeocodeCoords } = await import('../lib/geocoder');
-                          const result = await reverseGeocodeCoords(pos.coords.latitude, pos.coords.longitude);
+                          const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('../lib/geocoder');
+                          const location = await getUnifiedHighSpeedLocation();
+                          const result = await reverseGeocodeCoords(location.latitude, location.longitude);
                           
                           const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
                           
                           updateProfile({
                             address: compiledAddress,
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude
+                            lat: location.latitude,
+                            lng: location.longitude,
+                            activeCity: result.city || "Kawarhagi"
                           });
                           
-                          toast.success("🎯 GPS locked & address updated!", { id: toastId });
+                          toast.success(`🎯 GPS locked & address updated! (${location.method})`, { id: toastId });
                         } catch (err: any) {
                           console.warn("Capacitor Geolocation failed:", err);
                           toast.error("GPS access failed. Please enable hardware location permissions.", { id: toastId });
@@ -388,39 +369,18 @@ export default function Navbar({
               onClick={async () => {
                 const toastId = toast.loading("🛰️ Fetching live physical GPS location...");
                 try {
-                  const { Geolocation } = await import('@capacitor/geolocation');
-                  const permResult = await Geolocation.checkPermissions();
-                  if (permResult.location !== 'granted' && permResult.coarseLocation !== 'granted') {
-                    const reqResult = await Geolocation.requestPermissions();
-                    if (reqResult.location !== 'granted' && reqResult.coarseLocation !== 'granted') {
-                      throw new Error("Location permission denied by user.");
-                    }
-                  }
-
-                  let pos;
-                  try {
-                    pos = await Geolocation.getCurrentPosition({
-                      enableHighAccuracy: true,
-                      timeout: 6000
-                    });
-                  } catch (highErr) {
-                    pos = await Geolocation.getCurrentPosition({
-                      enableHighAccuracy: false,
-                      timeout: 10000
-                    });
-                  }
-
-                  const { reverseGeocodeCoords } = await import('../lib/geocoder');
-                  const result = await reverseGeocodeCoords(pos.coords.latitude, pos.coords.longitude);
+                  const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('../lib/geocoder');
+                  const location = await getUnifiedHighSpeedLocation();
+                  const result = await reverseGeocodeCoords(location.latitude, location.longitude);
                   
                   setAddrState(result.state || 'Assam');
                   setAddrCity(result.city || 'Kawarhagi');
                   setAddrStreetArea(result.street || 'Kawarhagi, Mitreno Tech Road');
                   
-                  toast.success("🎯 Live GPS lock synchronized! Address autofilled.", { id: toastId });
+                  toast.success(`🎯 Live GPS lock synchronized! (${location.method})`, { id: toastId });
                 } catch (err: any) {
                   console.warn("Capacitor Geolocation failed:", err);
-                  toast.error("Geolocation is not supported or permission denied. Please type address manually.", { id: toastId });
+                  toast.error("Geolocation failed. Please type address manually.", { id: toastId });
                 }
               }}
               className="w-full flex items-center justify-center space-x-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3.5 px-4 mb-4 rounded-2xl text-[10.5px] font-black uppercase tracking-widest border border-dashed border-emerald-300 shadow-xs transition-colors cursor-pointer"

@@ -1,9 +1,15 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { logoBase64 } from './SplashLogoBase64';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
   useEffect(() => {
+    // Hide the native Android splash screen programmatically now that React is mounted and ready to show the UI
+    SplashScreen.hide().catch(err => {
+      console.warn("Native Splash screen hide failed (expected in browser/web environments):", err);
+    });
+
     // Exact 1000ms duration (1 second) for ultra-fast startup as per your requirement
     const timer = setTimeout(onFinish, 1000);
     return () => clearTimeout(timer);

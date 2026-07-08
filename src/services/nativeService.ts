@@ -169,28 +169,17 @@ export async function getDeviceLocation(): Promise<{
   isFallback?: boolean; 
   fallbackMethod?: string;
 }> {
-  // Always default to Capacitor Geolocation for true native hardware access
   try {
-    console.log("[GPS] Querying native device location via Capacitor Geolocation plugin...");
-    const permissions = await Geolocation.checkPermissions();
-    if (permissions.location !== 'granted') {
-      const req = await Geolocation.requestPermissions();
-      if (req.location !== 'granted') {
-        throw new Error("Location permission denied by user! App requires full GPS permissions.");
-      }
-    }
-    
-    const position = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    });
+    console.log("[GPS] Querying unified device location via multi-tier high speed locator...");
+    const { getUnifiedHighSpeedLocation } = await import('../lib/geocoder');
+    const location = await getUnifiedHighSpeedLocation();
     
     return {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      address: `My Location (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`,
-      isFallback: false
+      latitude: location.latitude,
+      longitude: location.longitude,
+      address: `My Location (${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)})`,
+      isFallback: location.method === 'Offline-Regional-Fallback',
+      fallbackMethod: location.method
     };
   } catch (err: any) {
     console.warn("[GPS] Native hardware location lookup failed, using reliable regional fallback:", err);

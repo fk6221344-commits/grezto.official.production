@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 import { calculateDistance } from '../lib/distance';
-import { reverseGeocodeCoords, forwardGeocodeAddress } from '../lib/geocoder';
+import { reverseGeocodeCoords, forwardGeocodeAddress, getUnifiedHighSpeedLocation } from '../lib/geocoder';
 
 export const MORIGAON_CENTER = { lat: 26.243461, lng: 92.130617 };
 
@@ -158,38 +158,13 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
         return;
       }
 
-      console.log("[Checkout GPS] Fetching native physical GPS coordinate maps...");
+      console.log("[Checkout GPS] Fetching multi-tier high speed location...");
       try {
-        const perm = await Geolocation.checkPermissions();
-        if (perm.location !== 'granted' && perm.coarseLocation !== 'granted') {
-          const reqStatus = await Geolocation.requestPermissions();
-          if (reqStatus.location !== 'granted' && reqStatus.coarseLocation !== 'granted') {
-            throw new Error("Location permission not granted by device OS.");
-          }
-        }
-        
-        let pos;
-        try {
-          pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 10000
-          });
-        } catch (highAccErr: any) {
-          console.warn("[Checkout GPS] High accuracy failed, retrying with network location...", highAccErr);
-          pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: false,
-            timeout: 12000,
-            maximumAge: 30000
-          });
-        }
-
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        applyLocationDetails(lat, lng); // No await, instantly move map
-        toast.success("Location locked instantly! 🛰️📡", { duration: 1500 });
+        const location = await getUnifiedHighSpeedLocation();
+        applyLocationDetails(location.latitude, location.longitude); // No await, instantly move map
+        toast.success(`Location locked instantly! (${location.method})`, { duration: 1500 });
       } catch (nativeErr: any) {
-        console.warn("[Checkout GPS] Native Geolocation lookup failed:", nativeErr);
+        console.warn("[Checkout GPS] Multi-tier Geolocation lookup failed:", nativeErr);
         toast.error("GPS access failed. Please enable hardware location services.");
       }
     } catch (err: any) {

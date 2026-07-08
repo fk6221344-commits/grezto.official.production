@@ -118,36 +118,15 @@ export default function ProfileAddressBook({
               onClick={async () => {
                 const toastId = toast.loading("🛰️ Fetching live physical GPS location...");
                 try {
-                  const { Geolocation } = await import('@capacitor/geolocation');
-                  const permResult = await Geolocation.checkPermissions();
-                  if (permResult.location !== 'granted' && permResult.coarseLocation !== 'granted') {
-                    const reqResult = await Geolocation.requestPermissions();
-                    if (reqResult.location !== 'granted' && reqResult.coarseLocation !== 'granted') {
-                      throw new Error("Location permission denied by user.");
-                    }
-                  }
-
-                  let pos;
-                  try {
-                    pos = await Geolocation.getCurrentPosition({
-                      enableHighAccuracy: true,
-                      timeout: 6000
-                    });
-                  } catch (highErr) {
-                    pos = await Geolocation.getCurrentPosition({
-                      enableHighAccuracy: false,
-                      timeout: 10000
-                    });
-                  }
-
-                  const { reverseGeocodeCoords } = await import('../../lib/geocoder');
-                  const result = await reverseGeocodeCoords(pos.coords.latitude, pos.coords.longitude);
+                  const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('../../lib/geocoder');
+                  const location = await getUnifiedHighSpeedLocation();
+                  const result = await reverseGeocodeCoords(location.latitude, location.longitude);
                   
                   setAddrState(result.state || 'Assam');
                   setAddrCity(result.city || 'Kawarhagi');
                   setAddrStreetArea(result.street || 'Kawarhagi, Mitreno Tech Road');
                   
-                  toast.success("🎯 Live GPS lock synchronized! Address autofilled.", { id: toastId });
+                  toast.success(`🎯 Live GPS lock synchronized! (${location.method})`, { id: toastId });
                 } catch (err: any) {
                   console.warn("Capacitor Geolocation failed:", err);
                   setAddrState('Assam');

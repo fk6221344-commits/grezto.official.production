@@ -301,43 +301,35 @@ function MainAppLayout() {
 
     const syncStatusBar = async () => {
       try {
-        // Step 1. Ensure WebView does not overlap the Status Bar (ensures it is pushed down)
-        await StatusBar.setOverlaysWebView({ overlay: false });
+        // Step 1. Enable True Transparent Overlay to let webview flow under the physical status bar
+        await StatusBar.setOverlaysWebView({ overlay: true });
+        await StatusBar.setBackgroundColor({ color: '#00000000' });
 
-        let color = '#fffdfa';
-        let style = Style.Dark;
+        let style = Style.Light;
 
         if (!isSplashed) {
           // Splash screen is white/off-white background
-          color = '#fffdfa';
-          style = Style.Dark;
+          style = Style.Light; // Suit light background (dark text/icons)
         } else if (showAdmin || showAnalyticsModal) {
           // Admin Panel - Dark Slate Blue Theme
-          color = '#0f172a';
-          style = Style.Light;
+          style = Style.Dark; // Suit dark background (light text/icons)
         } else if (showMerchant || showMerchantCalculationModal) {
           // Merchant Panel - Dark Gray Theme
-          color = '#111827';
-          style = Style.Light;
+          style = Style.Dark; // Suit dark background (light text/icons)
         } else if (showRider || showRiderManagement) {
           // Rider Console - Slate Theme
-          color = '#0f172a';
-          style = Style.Light;
+          style = Style.Dark; // Suit dark background (light text/icons)
         } else if (showCheckout || showOrderSuccess || trackingOrder) {
           // Light pages: Checkout / Success / Tracking
-          color = '#fffdfa';
-          style = Style.Dark;
+          style = Style.Light; // Suit light background (dark text/icons)
         } else if (activeTab === 'home') {
           // Home Screen: Deep Emerald Green Theme to match the beautiful top banner!
-          color = '#022c22';
-          style = Style.Light;
+          style = Style.Dark; // Suit dark background (light text/icons)
         } else {
           // Other tabs (Cart, Orders, Profile) - Crisp Premium Light Theme
-          color = '#fffdfa';
-          style = Style.Dark;
+          style = Style.Light; // Suit light background (dark text/icons)
         }
 
-        await StatusBar.setBackgroundColor({ color });
         await StatusBar.setStyle({ style });
       } catch (err) {
         console.error('[Status Bar Sync] Failed to synchronize:', err);
@@ -408,52 +400,24 @@ function MainAppLayout() {
       }
 
       try {
-        console.log("[Auto GPS] Checking permissions on startup...");
-        const { Geolocation } = await import('@capacitor/geolocation');
+        console.log("[Auto GPS] Fetching multi-tier high speed location on startup...");
+        const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('./lib/geocoder');
         
-        let permResult = await Geolocation.checkPermissions();
-        let status = permResult.location;
-
-        // If permission is not granted yet, ask for precise & high accuracy permission immediately
-        if (status !== 'granted') {
-          console.log("[Auto GPS] Location permission not granted. Requesting native permissions...");
-          const reqResult = await Geolocation.requestPermissions();
-          status = reqResult.location;
-        }
-
-        if (status === 'granted') {
-          console.log("[Auto GPS] Native GPS permission granted. Querying coordinates with high accuracy...");
-          let pos;
-          try {
-            pos = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: true,
-              timeout: 7000
-            });
-          } catch (highErr) {
-            console.warn("[Auto GPS] High accuracy getCurrentPosition failed, falling back to lower precision:", highErr);
-            pos = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: false,
-              timeout: 10000
-            });
-          }
-
-          console.log("[Auto GPS] Coordinates retrieved successfully:", pos.coords.latitude, pos.coords.longitude);
-          const { reverseGeocodeCoords } = await import('./lib/geocoder');
-          const result = await reverseGeocodeCoords(pos.coords.latitude, pos.coords.longitude);
-          
-          const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
-          
-          updateProfile({
-            address: compiledAddress,
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            activeCity: result.city || "Kawarhagi"
-          });
-          
-          console.log("[Auto GPS] Location auto-locked & profile address set successfully:", compiledAddress);
-        } else {
-          console.log("[Auto GPS] User denied native location permissions.");
-        }
+        // This will try Network Coarse -> GPS High Accuracy -> IP Geolocation -> Regional Fallback
+        const location = await getUnifiedHighSpeedLocation();
+        console.log("[Auto GPS] Coordinates retrieved successfully via:", location.method, location.latitude, location.longitude);
+        
+        const result = await reverseGeocodeCoords(location.latitude, location.longitude);
+        const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
+        
+        updateProfile({
+          address: compiledAddress,
+          lat: location.latitude,
+          lng: location.longitude,
+          activeCity: result.city || "Kawarhagi"
+        });
+        
+        console.log("[Auto GPS] Location auto-locked & profile address set successfully:", compiledAddress);
       } catch (err) {
         console.warn("[Auto GPS] Startup auto-location fetch failed:", err);
       }

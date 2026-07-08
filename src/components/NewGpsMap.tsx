@@ -132,121 +132,25 @@ export default function NewGpsMap({
   const fetchExactGPSLocation = async () => {
     setGpsLoading(true);
     try {
-      if (Capacitor.isNativePlatform()) {
-        console.log(
-          "[NewGpsMap] Fetching native device location via Capacitor Geolocation plugin...",
-        );
-        try {
-          const perm = await Geolocation.checkPermissions();
-          if (
-            perm.location !== "granted" &&
-            perm.coarseLocation !== "granted"
-          ) {
-            const reqStatus = await Geolocation.requestPermissions();
-            if (
-              reqStatus.location !== "granted" &&
-              reqStatus.coarseLocation !== "granted"
-            ) {
-              throw new Error("Location permission denied by user!");
-            }
-          }
+      console.log("[NewGpsMap] Fetching location via unified high-speed locator...");
+      const { getUnifiedHighSpeedLocation } = await import("../lib/geocoder");
+      const location = await getUnifiedHighSpeedLocation();
+      
+      const lat = location.latitude;
+      const lng = location.longitude;
 
-          let pos;
-          try {
-            // First attempt with high accuracy satellite lock (Fast load with cache)
-            pos = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: true,
-              timeout: 3000,
-              maximumAge: 300000, // 5 minutes cache
-            });
-          } catch (highAccErr) {
-            console.warn(
-              "[NewGpsMap] High accuracy failed, retrying with coarse network position...",
-              highAccErr,
-            );
-            // Coarse cellular network fallback
-            pos = await Geolocation.getCurrentPosition({
-              enableHighAccuracy: false,
-              timeout: 3000,
-              maximumAge: 3000000, // Accepts much older cache on fallback
-            });
-          }
-
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-
-          if (nativeMapRef.current) {
-            nativeMapRef.current.setCamera({
-              coordinate: { lat, lng },
-              animate: true,
-            });
-          } else {
-            setCoords({ lat, lng });
-          }
-          toast.success("Exact GPS location locked successfully! 🛰️🎯");
-        } catch (nativeErr: any) {
-          console.warn("[NewGpsMap] Native location failed:", nativeErr);
-          toast.error(
-            "GPS hardware access failed. Make sure device location is turned ON.",
-          );
-        }
+      if (nativeMapRef.current) {
+        nativeMapRef.current.setCamera({
+          coordinate: { lat, lng },
+          animate: true,
+        });
       } else {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              if (nativeMapRef.current) {
-                nativeMapRef.current.setCamera({
-                  coordinate: { lat, lng },
-                  animate: true,
-                });
-              } else {
-                setCoords({ lat, lng });
-              }
-              toast.success(
-                "Web GPS sensor locked & base coordinates updated! 🛰️📡",
-              );
-            },
-            async (err) => {
-              console.warn(
-                "Standard HTML5 geo-sensor failed, retrying with low accuracy:",
-                err,
-              );
-              try {
-                navigator.geolocation.getCurrentPosition(
-                  (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    if (nativeMapRef.current) {
-                      nativeMapRef.current.setCamera({
-                        coordinate: { lat, lng },
-                        animate: true,
-                      });
-                    } else {
-                      setCoords({ lat, lng });
-                    }
-                    toast.success("Standard GPS sensor locked! 🛰️📡");
-                  },
-                  () => {
-                    toast.error(
-                      "Browser location declined, timed out or blocked.",
-                    );
-                  },
-                  { enableHighAccuracy: false, timeout: 10000 },
-                );
-              } catch {
-                toast.error("Browser location declined or timed out.");
-              }
-            },
-            { enableHighAccuracy: true, timeout: 6000 },
-          );
-        } else {
-          toast.error("Geolocation is not supported by your browser.");
-        }
+        setCoords({ lat, lng });
       }
+      toast.success(`Exact location locked! (${location.method})`);
     } catch (err) {
       console.error("GPS telemetry sync failed:", err);
+      toast.error("Location lock failed. Please adjust manually.");
     } finally {
       setGpsLoading(false);
     }
