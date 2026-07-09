@@ -83,6 +83,8 @@ async function startServer() {
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://localhost",
+    "https://localhost:3000",
     "capacitor://localhost",
     "https://grezto.vercel.app", // standard Vercel deploy example
     "https://grezto.in",
@@ -98,6 +100,7 @@ async function startServer() {
       // Allow dynamic local development, Capacitor, or Cloud Run / Vercel previews
       if (
         origin.startsWith("http://localhost") || 
+        origin.startsWith("https://localhost") || // Support https://localhost for Android Capacitor webview!
         origin.startsWith("http://127.0.0.1") || 
         origin.startsWith("capacitor://") ||
         origin.includes(".run.app") || // AI Studio dev & preview links
@@ -116,10 +119,33 @@ async function startServer() {
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Grezto-Client-Signature"]
   };
 
   app.use(cors(corsOptions));
+
+  // 2.4 Unicorn-Level Client Verification Middleware
+  // Protects the server in production by verifying requests are signed by our official Android client
+  app.use((req, res, next) => {
+    // Skip verification for static assets, public files, and server health check
+    if (!req.path.startsWith('/api/') || req.path === '/api/health' || req.path === '/api/maps/config' || req.path === '/api/config') {
+      return next();
+    }
+    
+    // Check if the server has configured a custom client signature
+    const serverExpectedSignature = process.env.APP_CLIENT_SIGNATURE || "grezto_secure_app_signature_2026_unicorn";
+    const clientSignature = req.headers['x-grezto-client-signature'] || req.headers['X-Grezto-Client-Signature'];
+    
+    if (process.env.NODE_ENV === "production" && serverExpectedSignature && clientSignature !== serverExpectedSignature) {
+      console.warn(`[SECURITY VERIFICATION BLOCKED] Path: ${req.path}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
+      return res.status(403).json({
+        success: false,
+        error: "Access Denied: This API endpoint is protected and only accessible by the authorized Grezto Native Android application. 🛑"
+      });
+    }
+    
+    next();
+  });
 
   // 2.5 Compression Middleware to drastically reduce JSON payload sizes over network (Gzip/Brotli)
   app.use(compression({
@@ -401,6 +427,16 @@ async function startServer() {
       console.error("[GATEWAY ERROR]:", err);
       return res.status(500).json({ success: false, error: err.message || "Failed to execute database action through Gateway." });
     }
+  });
+
+  // GET /api/config (Exposes public client configurations dynamically for the APK to bootstrap)
+  app.get("/api/config", (req, res) => {
+    res.json({
+      supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
+      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || "",
+      googleMapsKey: process.env.GOOGLE_MAPS_PLATFORM_KEY || process.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || "",
+      firebaseProjectId: process.env.FIREBASE_PROJECT_ID || ""
+    });
   });
 
   // GET /api/maps/config

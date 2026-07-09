@@ -5,14 +5,20 @@ import { SplashScreen } from '@capacitor/splash-screen';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
   useEffect(() => {
-    // Hide the native Android splash screen programmatically now that React is mounted and ready to show the UI
-    SplashScreen.hide().catch(err => {
-      console.warn("Native Splash screen hide failed (expected in browser/web environments):", err);
-    });
+    // Wait for 150ms to ensure the WebView has painted the React Splash UI on the screen, preventing the blank/white flash gap!
+    const hideNativeTimer = setTimeout(() => {
+      SplashScreen.hide().catch(err => {
+        console.warn("Native Splash screen hide failed (expected in browser/web environments):", err);
+      });
+    }, 150);
 
-    // Exact 1000ms duration (1 second) for ultra-fast startup as per your requirement
-    const timer = setTimeout(onFinish, 1000);
-    return () => clearTimeout(timer);
+    // Exact 1200ms duration (1.2 seconds) to give a smooth, beautifully animated entry and exit transitions
+    const timer = setTimeout(onFinish, 1200);
+    
+    return () => {
+      clearTimeout(hideNativeTimer);
+      clearTimeout(timer);
+    };
   }, [onFinish]);
 
   return (

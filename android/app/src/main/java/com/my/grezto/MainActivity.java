@@ -12,6 +12,11 @@ public class MainActivity extends BridgeActivity {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         
+        // Match the WebView background to our Splash Screen color to prevent any white flash during boot!
+        if (this.bridge != null && this.bridge.getWebView() != null) {
+            this.bridge.getWebView().setBackgroundColor(android.graphics.Color.parseColor("#fffdfa"));
+        }
+
         try {
             FirebaseApp.initializeApp(this);
             // Log a test non-fatal exception to automatically wake-up/initialize the Crashlytics dashboard with com.my.grezto!

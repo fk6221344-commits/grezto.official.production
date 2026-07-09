@@ -44,7 +44,22 @@ if (typeof window !== 'undefined') {
     
     if (originalFetch) {
       const interceptedFetch = async function (this: any, input: RequestInfo | URL, init?: RequestInit) {
-        const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as any).url || '');
+        let url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as any).url || '');
+        
+        // Auto-redirect relative /api/ paths to the absolute API server URL (critical for Native Android APK)
+        const isRelativeApi = url.startsWith('/api/');
+        let modifiedInput = input;
+        
+        if (isRelativeApi) {
+          const absoluteUrl = getAbsoluteApiUrl(url);
+          console.log(`[Fetch Interceptor] Auto-rewriting relative API path ${url} to absolute: ${absoluteUrl}`);
+          url = absoluteUrl;
+          if (input instanceof Request) {
+            modifiedInput = new Request(absoluteUrl, input);
+          } else {
+            modifiedInput = absoluteUrl;
+          }
+        }
         
         // Check if it's an API route and not a third-party domain (or if it's our backend/maps url)
         const isApiRoute = url.includes('/api/') && !url.startsWith('https://maps.googleapis.com');
@@ -91,7 +106,7 @@ if (typeof window !== 'undefined') {
         }
 
         try {
-          const response = await originalFetch.call(this, input, modifiedInit);
+          const response = await originalFetch.call(this, modifiedInput, modifiedInit);
           
           // Zero-Crash Fail-Safe: Intercept 401 (Unauthorized) and 403 (Forbidden)
           if (isApiRoute && (response.status === 401 || response.status === 403)) {

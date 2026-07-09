@@ -1,33 +1,16 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import { Capacitor } from '@capacitor/core';
+import './utils/api'; // Ensure the global fetch interceptor is initialized early and runs first!
+import { syncRemoteConfig } from './services/apiConfig';
 import App from './App.tsx';
 import './index.css';
 
+// Preheat and sync dynamic configurations from server in background on launch
+syncRemoteConfig().catch((err) => console.warn("[Boot Config Sync Failed]", err));
+
 // Silently capture and suppress harmless background/HMR WebSocket connection closure errors
 if (typeof window !== 'undefined') {
-  // Override relative fetch calls in Native platform to hit our live public domain
-  if (Capacitor.isNativePlatform()) {
-    const originalFetch = window.fetch;
-    window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
-      const inputStr = typeof input === 'string' ? input : (input instanceof URL ? input.toString() : (input as Request).url);
-      if (inputStr.startsWith('/api/')) {
-        const savedUrl = localStorage.getItem('grezto_backend_url');
-        const baseUrl = savedUrl ? savedUrl.trim() : (import.meta.env.VITE_API_URL || "https://ais-pre-iwuffnv2dp6bitiu4stge2-8351944502.asia-southeast1.run.app");
-        const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        const remoteUrl = `${cleanBaseUrl}${inputStr}`;
-        console.log(`[Capacitor Native Fetch Redirect] Redirecting ${inputStr} to ${remoteUrl}`);
-        if (input instanceof Request) {
-          // If the input was a Request object, clone it with the new URL
-          const newRequest = new Request(remoteUrl, input);
-          return originalFetch(newRequest, init);
-        }
-        return originalFetch(remoteUrl, init);
-      }
-      return originalFetch(input, init);
-    } as any;
-  }
-
   window.addEventListener('unhandledrejection', (event) => {
     const reasonStr = String(event?.reason?.message || event?.reason || '');
     
