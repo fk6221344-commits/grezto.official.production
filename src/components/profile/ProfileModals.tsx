@@ -27,6 +27,20 @@ interface ProfileModalsProps {
   setOtpError?: (val: string | null) => void;
   useFastOtp?: boolean;
   setUseFastOtp?: (val: boolean) => void;
+  authError: {
+    show: boolean;
+    title: string;
+    message: string;
+    isOwner: boolean;
+    technicalDetails?: string;
+  } | null;
+  setAuthError: (val: {
+    show: boolean;
+    title: string;
+    message: string;
+    isOwner: boolean;
+    technicalDetails?: string;
+  } | null) => void;
 
   // About Modal
   showAboutModal: boolean;
@@ -68,6 +82,8 @@ export default function ProfileModals({
   setOtpError,
   useFastOtp,
   setUseFastOtp,
+  authError,
+  setAuthError,
 
   showAboutModal,
   setShowAboutModal,
@@ -382,6 +398,111 @@ export default function ProfileModals({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Premium Auth Error Diagnosis Modal */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {authError?.show && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+            >
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setAuthError(null)}
+                className="absolute inset-0 bg-black backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                transition={{ type: "spring", duration: 0.4 }}
+                className="bg-white w-full max-w-sm rounded-[2.5rem] p-7 relative z-[99999] shadow-2xl border border-stone-150/45 text-center flex flex-col"
+              >
+                {/* Close Button */}
+                <button 
+                  onClick={() => setAuthError(null)} 
+                  className="absolute top-4 right-4 p-2 bg-stone-50 hover:bg-stone-100 active:scale-95 text-stone-400 hover:text-stone-600 rounded-full border-0 transition-all cursor-pointer z-10"
+                >
+                  <X size={12} className="stroke-[2.5]" />
+                </button>
+
+                {/* Badge Icon */}
+                <div className={`mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4.5 shadow-inner ring-4 ${
+                  authError.isOwner 
+                    ? 'bg-amber-50 text-amber-600 ring-amber-100/50' 
+                    : 'bg-rose-50 text-rose-600 ring-rose-100/50'
+                }`}>
+                  <span className="text-2xl">{authError.isOwner ? '🛠️' : '⚠️'}</span>
+                </div>
+
+                {/* Title */}
+                <h3 className={`text-sm font-black tracking-tight uppercase font-sans ${
+                  authError.isOwner ? 'text-amber-800' : 'text-stone-900'
+                }`}>
+                  {authError.title}
+                </h3>
+
+                {/* Subtitle / Description */}
+                <p className="text-[9px] text-stone-400 font-extrabold uppercase tracking-widest mt-1">
+                  {authError.isOwner 
+                    ? "Owner/Developer Diagnostic Console" 
+                    : "Security Notice & Service Status"
+                  }
+                </p>
+
+                {/* Message Content */}
+                <div className="mt-4 text-left space-y-3">
+                  <p className={`text-[11px] font-bold leading-relaxed ${
+                    authError.isOwner ? 'text-stone-750' : 'text-stone-600 text-center'
+                  }`}>
+                    {authError.message}
+                  </p>
+
+                  {/* Technical details (Owner only) */}
+                  {authError.isOwner && authError.technicalDetails && (
+                    <div className="bg-stone-950 p-4 rounded-2xl border border-stone-900 text-left font-mono text-[9px] text-amber-400 overflow-x-auto whitespace-pre-wrap max-h-[160px] leading-relaxed shadow-inner">
+                      {authError.technicalDetails}
+                    </div>
+                  )}
+                </div>
+
+                {/* Buttons block */}
+                <div className="flex flex-col gap-2 mt-6">
+                  {authError.isOwner && authError.technicalDetails && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(authError.technicalDetails || '');
+                        toast.success("Diagnostic details copied! 📋");
+                      }}
+                      className="w-full bg-stone-900 hover:bg-stone-850 active:scale-97 text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer border-0"
+                    >
+                      Copy Diagnostic Report
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setAuthError(null)}
+                    className={`w-full text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-97 transition-all cursor-pointer border-0 ${
+                      authError.isOwner 
+                        ? 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-700/15' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-750/15'
+                    }`}
+                  >
+                    {authError.isOwner ? "Acknowledge & Close" : "Okay, Understood"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }

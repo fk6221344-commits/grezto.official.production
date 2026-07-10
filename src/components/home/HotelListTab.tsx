@@ -128,15 +128,35 @@ export default function HotelListTab({
       {activeSubTab === 'recommended' ? (
         /* Recommended View: Top Rated First with Products displayed below name */
         <div className="space-y-6" id="recommended-hotels-section">
+          {/* Elegant header segment exact replica of the user screenshot */}
+          <div className="flex items-center space-x-3 mb-5 mt-2 px-1 select-none" id="exclusive-recommendations-header">
+            <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs">
+              <Star className="w-4.5 h-4.5 fill-emerald-500 text-emerald-500" />
+            </div>
+            <div className="flex flex-col text-left">
+              <h3 className="text-[11.5px] font-black uppercase tracking-wider text-emerald-800 leading-none">
+                EXCLUSIVE RECOMMENDATIONS
+              </h3>
+              <div className="h-0.75 bg-emerald-500 w-11 rounded-full mt-1"></div>
+            </div>
+          </div>
+
           {isLoading ? (
             <>
               <RecommendedHotelSkeleton />
               <RecommendedHotelSkeleton />
             </>
           ) : recommendedHotels.length === 0 ? (
-            <div className="py-20 text-center text-gray-400 space-y-2 select-none" id="no-hotels-placeholder">
-              <ShoppingBag className="w-10 h-10 mx-auto text-gray-305 stroke-[1.5]" />
-              <p className="text-[10px] font-bold uppercase tracking-widest">No matching exclusive hotels registered!</p>
+            <div className="py-16 flex flex-col items-center justify-center text-center bg-transparent select-none" id="no-hotels-placeholder">
+              <div className="w-16 h-16 bg-slate-50 border border-slate-100/50 rounded-[1.5rem] flex items-center justify-center mb-4 text-slate-300 shadow-xs">
+                <ShoppingBag className="w-6 h-6 stroke-[1.8]" />
+              </div>
+              <h3 className="text-[11px] font-black text-slate-750 uppercase tracking-widest mb-2">
+                NO RECOMMENDED SHOPS ACTIVE!
+              </h3>
+              <p className="text-[9.5px] text-gray-400 font-extrabold uppercase tracking-widest px-8 max-w-xs leading-relaxed">
+                We couldn't find any exclusive recommended outlets online right now. Try looking at All Restaurants.
+              </p>
             </div>
           ) : (
             recommendedHotels.map((hotel) => {

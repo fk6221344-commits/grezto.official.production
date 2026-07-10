@@ -64,7 +64,7 @@ export default function Navbar({
 
   if (activeTab === 'home' && searchQuery) {
     return (
-      <div className="bg-white pt-[max(env(safe-area-inset-top),20px)] pb-3 px-4 sticky top-0 z-[100] border-b border-gray-100 shadow-sm flex items-center gap-2 transition-colors duration-100">
+      <div className="bg-white pt-[max(env(safe-area-inset-top),42px)] pb-3 px-4 sticky top-0 z-[100] border-b border-gray-100 shadow-sm flex items-center gap-2 transition-colors duration-100">
         <button 
           onClick={() => window.history.back()}
           className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
@@ -96,8 +96,8 @@ export default function Navbar({
   return (
     <div className={
       activeTab === 'home'
-        ? "px-3 pt-[max(env(safe-area-inset-top),20px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100"
-        : "bg-white/90 backdrop-blur-md px-3 pt-[max(env(safe-area-inset-top),20px)] pb-5 sticky top-0 z-[100] border-b border-gray-100 transition-colors duration-100"
+        ? "px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100"
+        : "bg-white/90 backdrop-blur-md px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-gray-100 transition-colors duration-100"
     }>
       {/* Background container that is absolute so it can have overflow-hidden, keeping Navbar's main div overflow visible for the dropdown */}
       {activeTab === 'home' && (

@@ -108,7 +108,17 @@ export async function safeGetOrSet<T>(
 
   // Asynchronous background cache update (non-blocking)
   if (freshData !== null && freshData !== undefined) {
-    safeSet(key, JSON.stringify(freshData), ttlSeconds).catch((err: any) => {
+    // ANTI-EMPTY SAFEGUARD: Do not cache empty arrays or empty objects for a long time (e.g. during server startup, DB lag or glitch)
+    let actualTtl = ttlSeconds;
+    const isEmptyArray = Array.isArray(freshData) && freshData.length === 0;
+    const isEmptyObject = typeof freshData === 'object' && freshData !== null && Object.keys(freshData).length === 0;
+    
+    if (isEmptyArray || isEmptyObject) {
+      console.warn(`[REDIS SAFEGUARD] freshData for key "${key}" is empty. Caching with 5 seconds TTL instead of ${ttlSeconds}s.`);
+      actualTtl = 5; // Cache for only 5 seconds to self-correct instantly
+    }
+
+    safeSet(key, JSON.stringify(freshData), actualTtl).catch((err: any) => {
       console.warn(`[REDIS FAIL-SAFE ACTIVE] Asynchronous background cache write failed for key "${key}":`, err.message || err);
     });
   }

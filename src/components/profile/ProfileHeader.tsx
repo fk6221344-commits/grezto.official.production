@@ -48,7 +48,7 @@ export default function ProfileHeader({
   statsTotalSpent,
 }: ProfileHeaderProps) {
   return (
-    <div className="sticky top-0 z-30 bg-[#f3f3f3]/95 backdrop-blur-md border-b border-gray-200/60 px-2 pt-[max(env(safe-area-inset-top),20px)] pb-3 overflow-hidden shadow-xs">
+    <div className="sticky top-0 z-30 bg-[#f3f3f3]/95 backdrop-blur-md border-b border-gray-200/60 px-2 pt-[max(env(safe-area-inset-top),42px)] pb-3 overflow-hidden shadow-xs">
       {/* Subtle decorative glow */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-550/5 rounded-full blur-[40px] -mr-16 -mt-16 pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-36 h-36 bg-gray-400/5 rounded-full blur-[30px] -ml-12 -mb-12 pointer-events-none"></div>

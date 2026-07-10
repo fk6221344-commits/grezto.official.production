@@ -364,6 +364,13 @@ export default function Profile({
   }, []);
 
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    isOwner: boolean;
+    technicalDetails?: string;
+  } | null>(null);
 
   React.useEffect(() => {
     if (showLoginModal && !Capacitor.isNativePlatform()) {
@@ -560,6 +567,50 @@ export default function Profile({
       }
 
       setOtpError(detailedMsg);
+
+      // Check if it is the owner's phone number
+      const isOwner = loginPhone === "9864975468" || loginPhone === "919864975468" || loginPhone.endsWith("9864975468");
+      
+      if (isOwner) {
+        let technicalInfo = `Error Code: ${errCode || 'N/A'}\nMessage: ${errMsg}`;
+        if (errCode === "auth/unauthorized-domain" || errMsg.includes("unauthorized") || errMsg.includes("domain")) {
+          technicalInfo += `\n\n[DIAGNOSIS] Domain "${window.location.hostname}" is not authorized in Firebase Console -> Authentication -> Settings.`;
+        } else if (errCode === "auth/operation-not-allowed" || errMsg.includes("operation-not-allowed")) {
+          technicalInfo += `\n\n[DIAGNOSIS] 'Phone' sign-in is not enabled under Authentication -> Sign-in Method.`;
+        } else if (errCode === "auth/too-many-requests" || errMsg.includes("too-many-requests")) {
+          technicalInfo += `\n\n[DIAGNOSIS] Too many requests / quota exceeded. Firebase blocks temporary requests for safety.`;
+        }
+
+        setAuthError({
+          show: true,
+          title: "🛠️ Developer Diagnostic Report",
+          message: detailedMsg || "Firebase OTP dispatch failed. Here is the direct system error report:",
+          isOwner: true,
+          technicalDetails: technicalInfo
+        });
+      } else {
+        const isQuotaOrRateLimit = errCode === "auth/too-many-requests" || 
+                                   errMsg.includes("too-many-requests") || 
+                                   errMsg.includes("quota") || 
+                                   errMsg.includes("limit") || 
+                                   errMsg.includes("exceeded");
+        
+        if (isQuotaOrRateLimit) {
+          setAuthError({
+            show: true,
+            title: "Verification Limit",
+            message: "Verification limit reached for today. Please try again after 24 hours.",
+            isOwner: false
+          });
+        } else {
+          setAuthError({
+            show: true,
+            title: "Server High Traffic",
+            message: "Our server is temporarily experiencing high traffic. Please try again in a few moments.",
+            isOwner: false
+          });
+        }
+      }
     }
     
     setAuthLoading(false);
@@ -870,6 +921,8 @@ export default function Profile({
         setOtpError={setOtpError}
         useFastOtp={useFastOtp}
         setUseFastOtp={setUseFastOtp}
+        authError={authError}
+        setAuthError={setAuthError}
         showAboutModal={showAboutModal}
         setShowAboutModal={setShowAboutModal}
         showSignOutConfirm={showSignOutConfirm}
@@ -1213,6 +1266,8 @@ export default function Profile({
         setOtpError={setOtpError}
         useFastOtp={useFastOtp}
         setUseFastOtp={setUseFastOtp}
+        authError={authError}
+        setAuthError={setAuthError}
         showAboutModal={showAboutModal}
         setShowAboutModal={setShowAboutModal}
         showSignOutConfirm={showSignOutConfirm}

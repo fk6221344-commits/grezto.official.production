@@ -514,8 +514,8 @@ async function startServer() {
         return res.status(500).json({ error: "Database client is not initialized on server." });
       }
 
-      const rawCity = req.query.city as string || "Kawarhagi";
-      const city = rawCity.trim().toLowerCase();
+      const rawCity = (req.query.city as string || "").trim();
+      const city = rawCity ? rawCity.toLowerCase() : "kawarhagi";
 
       // Check cache in parallel
       const [cachedCategories, cachedBanners, cachedShops] = await Promise.all([

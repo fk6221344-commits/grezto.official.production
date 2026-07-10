@@ -932,7 +932,13 @@ function MainAppLayout() {
                 {/* PWA custom Notification board overlay */}
                 <AnimatePresence>
                   {showNotifications && (
-                    <GlobalNotificationsModal onClose={() => setShowNotifications(false)} />
+                    <GlobalNotificationsModal 
+                      onClose={() => setShowNotifications(false)} 
+                      onTrackOrder={(order) => {
+                        setTrackingOrder(order);
+                        setShowNotifications(false);
+                      }}
+                    />
                   )}
                 </AnimatePresence>
 

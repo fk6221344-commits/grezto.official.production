@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,10 +49,17 @@ export default function ProfileLoginModal({
   useFastOtp = true,
   setUseFastOtp,
 }: ProfileLoginModalProps) {
-  return (
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = () => setIsFocused(true);
+  const handleBlur = () => setIsFocused(false);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {showLoginModal && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+        <div className={`fixed inset-0 z-[250] flex ${isFocused ? 'items-start pt-6 sm:items-center sm:pt-4' : 'items-center'} justify-center p-4 transition-all duration-300`}>
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,6 +67,7 @@ export default function ProfileLoginModal({
             onClick={() => {
               setShowLoginModal(false);
               setIsOtpSent(false);
+              setIsFocused(false);
             }}
             className="absolute inset-0 bg-black/60 backdrop-blur-[4px]"
           />
@@ -73,6 +82,7 @@ export default function ProfileLoginModal({
               onClick={() => {
                 setShowLoginModal(false);
                 setIsOtpSent(false);
+                setIsFocused(false);
               }} 
               className="absolute top-4 right-4 p-2.5 bg-stone-50 hover:bg-stone-100/80 active:scale-95 text-stone-400 hover:text-stone-600 rounded-full border border-stone-150/40 transition-all cursor-pointer z-20"
               title="Close"
@@ -108,6 +118,7 @@ export default function ProfileLoginModal({
                   setOtpCode('');
                   setIsOtpSent(false);
                   setServerOtp('');
+                  setIsFocused(false);
                 }}
                 className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
                   authMode === 'signup' 
@@ -126,6 +137,7 @@ export default function ProfileLoginModal({
                   setOtpCode('');
                   setIsOtpSent(false);
                   setServerOtp('');
+                  setIsFocused(false);
                 }}
                 className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
                   authMode === 'login' 
@@ -147,6 +159,8 @@ export default function ProfileLoginModal({
                        type="text"
                        value={loginName}
                        onChange={e => setLoginName(e.target.value)}
+                       onFocus={handleFocus}
+                       onBlur={handleBlur}
                        className="w-full bg-[#fcfdfc] border border-[#e2e8e2] px-4 py-3 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-bold text-stone-800 text-xs placeholder:text-stone-300 transition-all font-sans"
                        placeholder="Enter your name"
                      />
@@ -164,6 +178,8 @@ export default function ProfileLoginModal({
                              pattern="[0-9]{10}"
                              value={loginPhone}
                              onChange={e => setLoginPhone(e.target.value.replace(/\D/g, ''))}
+                             onFocus={handleFocus}
+                             onBlur={handleBlur}
                              className="w-full bg-[#fcfdfc] border border-[#e2e8e2] py-3 pl-14 pr-4 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-black text-stone-800 font-mono tracking-wider text-xs placeholder:text-stone-300 transition-all"
                              placeholder="Phone code"
                            />
@@ -193,6 +209,8 @@ export default function ProfileLoginModal({
                              pattern="[0-9]{10}"
                              value={loginPhone}
                              onChange={e => setLoginPhone(e.target.value.replace(/\D/g, ''))}
+                             onFocus={handleFocus}
+                             onBlur={handleBlur}
                              className="w-full bg-[#fcfdfc] border border-[#e2e8e2] py-3 pl-14 pr-4 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-black text-stone-800 font-mono tracking-wider text-xs placeholder:text-stone-300 transition-all"
                              placeholder="Phone code"
                            />
@@ -220,12 +238,14 @@ export default function ProfileLoginModal({
                    pattern="[0-9]{6}"
                    value={otpCode}
                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                   onFocus={handleFocus}
+                   onBlur={handleBlur}
                    className="w-full bg-[#f4faf5] border border-emerald-100 py-3 rounded-xl text-center font-black text-base text-emerald-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 font-mono tracking-[0.25em] transition-all placeholder:text-emerald-300/60"
                    placeholder="••••••"
                  />
               </div>
 
-              {(isOtpSent || otpError) && (
+              {isOtpSent && (
                 <div className="bg-emerald-50/90 border border-emerald-100/80 rounded-2xl p-3.5 text-left animate-fadeIn flex flex-col gap-1">
                    <div className="text-[10px] text-emerald-800 font-extrabold flex items-center gap-1.5 uppercase tracking-wider">
                      🌿 Secure verification code dynamic status: Active!
@@ -247,6 +267,7 @@ export default function ProfileLoginModal({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
