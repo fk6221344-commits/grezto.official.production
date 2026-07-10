@@ -35,6 +35,7 @@ import { useCart } from "../context/CartContext";
 import { auth } from "../services/firebase";
 import { useUser } from "../context/UserContext";
 import toast from "react-hot-toast";
+import { CartCalculationOverlay, AddressConfirmationSheet } from "./cart/CartDrawer";
 import { GoogleMap } from "@capacitor/google-maps";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -329,6 +330,49 @@ export default function Checkout({
         );
         setLoading(false);
         return;
+      }
+
+      // Live verification of stock and deletion status of all items in the cart
+      try {
+        const { supabase } = await import('../services/supabase');
+        if (supabase && items.length > 0) {
+          const productIds = items.map(item => item.id);
+          const { data: dbProds, error: dbErr } = await supabase
+            .from('products')
+            .select('*')
+            .in('id', productIds);
+
+          if (!dbErr && dbProds) {
+            const dbProdsMap = new Map<string, { name: string; stock: number; deleted: boolean }>();
+            dbProds.forEach((p: any) => {
+              const stockVal = p.stock !== undefined ? p.stock : (p.inStock ? 10 : 0);
+              dbProdsMap.set(p.id, {
+                name: p.name,
+                stock: stockVal,
+                deleted: p.deleted === true
+              });
+            });
+
+            const problematicItems: string[] = [];
+            items.forEach(item => {
+              const dbProd = dbProdsMap.get(item.id);
+              if (!dbProd || dbProd.deleted || dbProd.stock <= 0) {
+                problematicItems.push(item.name);
+              }
+            });
+
+            if (problematicItems.length > 0) {
+              toast.error(
+                `Aapke cart mein kuch products (${problematicItems.join(', ')}) out of stock ya store se delete ho chuke hain. Please unhe check karke remove karein.`,
+                { duration: 6000 }
+              );
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (valErr) {
+        console.error("Stock validation failed, bypass for offline mode safely:", valErr);
       }
 
       const uid = auth.currentUser?.uid || "anonymous_user";
@@ -766,47 +810,14 @@ export default function Checkout({
           {/* My Address Details - Auto triggers map coordinates movement upon edits */}
           <div className="pt-2 px-2.5 pb-2.5 bg-white shrink-0">
             {isDetailsSubmitted ? (
-              <div className="bg-white rounded-[16px] border border-stone-200/90 border-l-[5px] border-l-[#0b7a2d] p-2.5 shadow-sm flex items-start justify-between min-w-0 w-full" id="premium-address-card">
-                <div className="flex flex-col min-w-0 items-start">
-                  {/* Category Badge & Name Row */}
-                  <div className="flex items-center gap-1.5 flex-wrap" id="premium-address-header">
-                    <span className="bg-[#e2f3e7] text-[#0b7a2d] text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full leading-none" id="premium-address-badge">
-                      HOME
-                    </span>
-                    <span className="text-[12.5px] font-black text-stone-900 leading-none" id="premium-address-name">
-                      {nameVal}
-                    </span>
-                  </div>
-                  
-                  {/* Detailed Addresses */}
-                  <div className="text-[10.5px] tracking-tight leading-normal mt-0.5 flex flex-col gap-0.5" id="premium-address-details">
-                    <span className="font-black text-stone-800" id="premium-address-area">
-                      {areaVal}
-                    </span>
-                    <span className="text-stone-500 text-[9.5px] font-bold" id="premium-address-city">
-                      {cityVal}
-                    </span>
-                  </div>
-
-                  {/* High-fidelity GPS Coordinate Pill */}
-                  <div className="mt-1.5 px-2 py-0.5 bg-blue-50/75 rounded-md border border-blue-100 flex items-center gap-1 self-start shadow-3xs" id="premium-address-gps-pill">
-                    <span className="text-[#1d4ed8] text-[9px] font-black tracking-wide uppercase font-mono" id="premium-address-gps-text">
-                      GPS: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Aesthetic White Edit button */}
-                <button
-                  type="button"
-                  onClick={() => setIsDetailsSubmitted(false)}
-                  className="flex items-center gap-1 bg-white border border-stone-300 shadow-sm rounded-full text-stone-700 hover:bg-stone-50 transition-all text-[9px] font-black px-2.5 py-1 active:scale-95 shrink-0 ml-4"
-                  id="premium-address-edit-btn"
-                >
-                  <Pencil className="w-3 h-3 text-stone-600" />
-                  <span>EDIT</span>
-                </button>
-              </div>
+              <AddressConfirmationSheet
+                nameVal={nameVal}
+                areaVal={areaVal}
+                cityVal={cityVal}
+                lat={coords.lat}
+                lng={coords.lng}
+                onEdit={() => setIsDetailsSubmitted(false)}
+              />
             ) : (
               <div className="flex flex-col gap-1.5">
                 <div className="grid grid-cols-2 gap-1.5">
@@ -878,52 +889,16 @@ export default function Checkout({
 
         {/* 6. Itemized Cost Calculations Box */}
         <div id="itemized-cost-summary" className="px-3.5 mt-2">
-          <div className="bg-white border border-stone-150 rounded-[16px] p-3 shadow-[0_1px_6px_rgba(0,0,0,0.01)] space-y-2.5">
-            {/* Subtotal Row */}
-            <div className="flex justify-between items-center text-stone-600 tracking-wider">
-              <span className="flex items-center gap-2 text-[9.5px] font-black uppercase">
-                <ShoppingBag className="w-3.5 h-3.5 text-[#0e9f6e]" />
-                <span>Items Subtotal</span>
-              </span>
-              <span className="text-[13px] font-black text-stone-800 font-sans">
-                ₹{subtotal}
-              </span>
-            </div>
-
-            {/* Delivery Charges Row */}
-            <div className="pt-2 flex flex-col gap-1">
-              <div className="flex justify-between items-center text-stone-600 tracking-wider">
-                <span className="flex items-center gap-2 text-[9.5px] font-black uppercase">
-                  <Truck className="w-3.5 h-3.5 text-[#0e9f6e]" />
-                  <span>Delivery Charges</span>
-                </span>
-                <span className="text-[13px] font-black text-[#0e9f6e] font-sans">
-                  {finalDeliveryFee === 0 ? "FREE" : `₹${finalDeliveryFee}`}
-                </span>
-              </div>
-              {finalDeliveryFee > 0 && items.reduce((acc, item) => {
-                const rawId = (item as any).shopId || (item as any).productShopId || "admin";
-                acc.add(rawId);
-                return acc;
-              }, new Set<string>()).size > 1 && (
-                <div className="flex justify-between items-center text-[8.5px] font-black text-rose-600 uppercase tracking-widest pl-5.5 animate-pulse">
-                  <span>✨ Multi-Shop Surcharge Added</span>
-                  <span>Capped at ₹40</span>
-                </div>
-              )}
-            </div>
-
-            {/* Payable Amount Row */}
-            <div className="flex justify-between items-center text-stone-600 tracking-wider border-t border-stone-100 pt-2 mt-2">
-              <span className="flex items-center gap-2 text-[9.5px] font-black uppercase">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#0e9f6e] ml-0.5 mr-0.5" />
-                <span>Payable Amount</span>
-              </span>
-              <span className="text-[14px] font-black text-stone-900 font-sans">
-                ₹{finalTotal}
-              </span>
-            </div>
-          </div>
+          <CartCalculationOverlay
+            subtotal={subtotal}
+            deliveryFee={finalDeliveryFee}
+            total={finalTotal}
+            isMultiShop={items.reduce((acc, item) => {
+              const rawId = (item as any).shopId || (item as any).productShopId || "admin";
+              acc.add(rawId);
+              return acc;
+            }, new Set<string>()).size > 1}
+          />
         </div>
       </div>
 

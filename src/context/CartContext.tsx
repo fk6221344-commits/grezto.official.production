@@ -66,6 +66,70 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [exclusiveAlert]);
 
+  const syncCartItemsWithDatabase = async (currentItems: CartItem[]) => {
+    if (!supabase || currentItems.length === 0) return;
+
+    try {
+      const productIds = currentItems.map(item => item.id);
+      const { data: dbProducts, error } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds);
+
+      if (error) {
+        console.error("Error syncing cart items with db:", error);
+        return;
+      }
+
+      const dbProductsMap = new Map<string, { stock: number; deleted: boolean }>();
+      if (dbProducts) {
+        dbProducts.forEach((p: any) => {
+          // If stock is undefined, fall back to inStock boolean (true -> 10, false -> 0)
+          const stockVal = p.stock !== undefined ? p.stock : (p.inStock ? 10 : 0);
+          dbProductsMap.set(p.id, {
+            stock: stockVal,
+            deleted: p.deleted === true
+          });
+        });
+      }
+
+      let changed = false;
+      const updatedItems = currentItems.filter(item => {
+        const dbProd = dbProductsMap.get(item.id);
+        
+        // If the product is not found in the database, it means it is deleted completely.
+        if (!dbProd) {
+          changed = true;
+          return false;
+        }
+
+        // If product is explicitly marked as deleted, filter it out.
+        if (dbProd.deleted) {
+          changed = true;
+          return false;
+        }
+
+        // If stock is 0 or less, filter it out.
+        if (dbProd.stock <= 0) {
+          changed = true;
+          return false;
+        }
+
+        return true;
+      });
+
+      if (changed) {
+        setItems(updatedItems);
+        toast.error("Kuch items out of stock ya store se remove ho chuke hain, unhe aapke cart se automatically hata diya gaya hai.", {
+          duration: 5000,
+          id: 'cart-auto-sync'
+        });
+      }
+    } catch (err) {
+      console.error("Failed to execute syncCartItemsWithDatabase:", err);
+    }
+  };
+
   // Load cart from native Preferences on mount for bulletproof offline recovery
   useEffect(() => {
     async function recoverCart() {
@@ -75,6 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setItems(parsed);
+            syncCartItemsWithDatabase(parsed);
           }
         }
       } catch (err) {
@@ -82,6 +147,72 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
     recoverCart();
+  }, []);
+
+  // Periodic database validation (fail-safe) for stock and deletion status every 8 seconds
+  useEffect(() => {
+    if (items.length === 0) return;
+    const interval = setInterval(() => {
+      syncCartItemsWithDatabase(items);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [items]);
+
+  // Real-time Supabase postgres change subscription to handle out-of-stock and deletion instantly
+  useEffect(() => {
+    if (!supabase) return;
+
+    const channel = supabase.channel('realtime_products_cart_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          
+          setItems(prevItems => {
+            if (prevItems.length === 0) return prevItems;
+
+            const targetId = eventType === 'DELETE' ? oldRecord?.id : newRecord?.id;
+            if (!targetId) return prevItems;
+
+            const existsInCart = prevItems.some(i => i.id === targetId);
+            if (!existsInCart) return prevItems;
+
+            // Handle DELETE event
+            if (eventType === 'DELETE') {
+              const matchedItem = prevItems.find(i => i.id === targetId);
+              toast.error(`"${matchedItem?.name || 'Item'}" ab store se delete ho gaya hai aur aapke cart se hata diya gaya hai.`, {
+                id: `del-${targetId}`
+              });
+              return prevItems.filter(i => i.id !== targetId);
+            }
+
+            // Handle UPDATE event
+            if (eventType === 'UPDATE') {
+              const isDeleted = newRecord.deleted === true;
+              const isOutOfStock = newRecord.stock <= 0;
+
+              if (isDeleted || isOutOfStock) {
+                const matchedItem = prevItems.find(i => i.id === targetId);
+                if (matchedItem) {
+                  const reasonText = isDeleted ? "delete/remove" : "out of stock";
+                  toast.error(`"${matchedItem.name}" ab ${reasonText} ho gaya hai aur aapke cart se hata diya gaya hai.`, {
+                    id: `upd-${targetId}`
+                  });
+                  return prevItems.filter(i => i.id !== targetId);
+                }
+              }
+            }
+
+            return prevItems;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {

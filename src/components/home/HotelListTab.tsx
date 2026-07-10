@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ShoppingBag, MapPin, Award, Star, Utensils, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductCard from '../ProductCard';
+import AestheticImage from '../AestheticImage';
 
 const ProductCardSkeleton = () => (
   <div className="bg-white rounded-[1.25rem] p-1 pb-2 flex flex-col justify-between border border-slate-100 shadow-sm animate-pulse select-none">
@@ -195,14 +196,11 @@ export default function HotelListTab({
 
                     <div className="flex items-center space-x-3.5 min-w-0">
                       <div className="w-12 h-12 rounded-2xl overflow-hidden relative flex-shrink-0 bg-amber-50 border border-amber-100/50">
-                        <img 
-                          src={hotel.image || hotel.imageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"} 
-                          className="w-full h-full object-cover" 
+                        <AestheticImage 
+                          src={hotel.image || hotel.imageUrl || ""} 
+                          className="w-full h-full" 
                           alt="Hotel photo"
                           referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.src = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
-                          }}
                         />
                         {isClosed && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
@@ -314,15 +312,12 @@ export default function HotelListTab({
                   className={`bg-gray-900 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all overflow-hidden cursor-pointer relative flex flex-col aspect-[16/9] w-full ${isClosed ? 'opacity-[0.85] saturate-[0.85]' : ''}`}
                 >
                   {/* Banner Picture Frame */}
-                  <div className="absolute inset-0 w-full h-full">
-                    <img 
-                       src={hotel.image || hotel.imageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"} 
-                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                  <div className="absolute inset-0 w-full h-full overflow-hidden">
+                    <AestheticImage 
+                       src={hotel.image || hotel.imageUrl || ""} 
+                       className="w-full h-full hover:scale-105 transition-transform duration-500" 
                        alt="Hotel photo"
                        referrerPolicy="no-referrer"
-                       onError={(e) => {
-                         e.currentTarget.src = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
-                       }}
                     />
                     {/* Deep Smooth Shading Gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent"></div>

@@ -7,6 +7,7 @@ import { auth } from "../../../services/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, signInWithCustomToken } from "firebase/auth";
 import toast from "react-hot-toast";
 import { triggerCacheFlush } from "../../../utils/cacheApi";
+import { prefetchImage } from "../../../utils/imagePrefetcher";
 
 export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boolean, adminSelectedCityFilter: string, localTick: number) {
   const [dbShops, setDbShops] = useState<any[]>([]);
@@ -272,6 +273,10 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
       city: (newShop as any).city || (adminSelectedCityFilter !== "All" ? adminSelectedCityFilter : ""),
       joinedAt: new Date().toISOString(),
     };
+
+    if (shopData.imageUrl) {
+      prefetchImage(shopData.imageUrl).catch(() => {});
+    }
 
     try {
       const cachedShops = JSON.parse(localStorage.getItem("grezto_offline_shops") || "[]");

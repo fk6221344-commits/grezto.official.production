@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { toast } from 'react-hot-toast';
 import { getDeviceLocation } from '../services/nativeService';
+import HomeHeader from './home/HomeHeader';
 
 export default function Navbar({ 
   onOpenNotifications, 
@@ -61,6 +62,17 @@ export default function Navbar({
     }
     setShowAddressModal(true);
   };
+
+  if (activeTab === 'home') {
+    return (
+      <HomeHeader
+        onOpenNotifications={onOpenNotifications}
+        onProfileTap={onProfileTap}
+        searchQuery={searchQuery}
+        onSearchClick={onSearchClick}
+      />
+    );
+  }
 
   if (activeTab === 'home' && searchQuery) {
     return (

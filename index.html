@@ -227,7 +227,7 @@
     <style>
       /* Extreme hardware acceleration and matching canvas background to prevent white flashes */
       html, body, #root {
-        background-color: #fffcf9 !important;
+        background-color: #fffdfa !important;
         margin: 0;
         padding: 0;
         width: 100%;
@@ -244,7 +244,45 @@
     <link rel="icon" type="image/png" href="/grezto_organics_logo_1779291155265.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- High-Performance Pre-React Instant Splash Screen (Zero-Flicker Native Launch Shield) -->
+      <div id="pre-react-splash" style="position: fixed; inset: 0; background-color: #fffdfa; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding-left: 1.5rem; padding-right: 1.5rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box;">
+        
+        <!-- Logo Wrapper (Exact visual clone of Splash.tsx for seamless mounting transition) -->
+        <div style="width: 8rem; height: 8rem; background-color: #fffdfa; border-radius: 2.5rem; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(69, 10, 10, 0.2); border: 2px solid rgba(127, 29, 29, 0.1); box-sizing: border-box; animation: splashPulse 1.8s ease-in-out infinite;">
+          <img src="/grezto_organics_logo_1779291155265.png" alt="Grezto Logo" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+        </div>
+
+        <!-- App Name -->
+        <h1 style="margin-top: 2rem; margin-bottom: 0; font-size: 2.25rem; font-weight: 800; color: #7f1d1d; letter-spacing: -0.05em; text-align: center; line-height: 1; font-family: inherit;">
+          Grezto
+        </h1>
+
+        <!-- Tagline -->
+        <p style="margin-top: 0.75rem; margin-bottom: 0; color: rgba(127, 29, 29, 0.4); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.3em; text-align: center; line-height: 1.5; font-family: inherit;">
+          ASSAM FRESH HUB
+        </p>
+
+        <!-- Bouncing Loading Dots (CSS Keyframe Driven) -->
+        <div style="position: absolute; bottom: 4rem; display: flex; gap: 0.75rem; align-items: center; justify-content: center;">
+          <div class="pre-dot" style="width: 0.375rem; height: 0.375rem; background-color: #991b1b; border-radius: 50%; opacity: 0.2; animation: preDotBounce 1.5s infinite; animation-delay: 0s;"></div>
+          <div class="pre-dot" style="width: 0.375rem; height: 0.375rem; background-color: #991b1b; border-radius: 50%; opacity: 0.2; animation: preDotBounce 1.5s infinite; animation-delay: 0.2s;"></div>
+          <div class="pre-dot" style="width: 0.375rem; height: 0.375rem; background-color: #991b1b; border-radius: 50%; opacity: 0.2; animation: preDotBounce 1.5s infinite; animation-delay: 0.4s;"></div>
+        </div>
+
+      </div>
+
+      <style>
+        @keyframes splashPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.025); }
+        }
+        @keyframes preDotBounce {
+          0%, 100% { transform: scale(1); opacity: 0.2; }
+          50% { transform: scale(1.5); opacity: 1; }
+        }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

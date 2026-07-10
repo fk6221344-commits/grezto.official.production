@@ -2,10 +2,32 @@ import { Redis } from 'ioredis';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Use the Redis URL from the environment variables, or a fallback memory mock if missing
-const rawRedisUrl = process.env.REDIS_URL || '';
+// 1. Dual-Tier caching: L1 In-Memory cache storage to shield the database if Redis is offline
+interface CacheEntry {
+  value: string;
+  expiresAt: number;
+}
+const l1Cache = new Map<string, CacheEntry>();
 
-// Clean up any double or single quotes that often get injected from env parsing
+// Clean up expired L1 cache items periodically to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of l1Cache.entries()) {
+    if (now > entry.expiresAt) {
+      l1Cache.delete(key);
+    }
+  }
+}, 60000).unref(); // .unref() ensures this interval doesn't block process exit
+
+// 2. Multi-variable auto-detection for Railway internal/external Redis configurations
+const rawRedisUrl = 
+  process.env.REDISPRIVATE_URL || 
+  process.env.REDIS_PRIVATE_URL || 
+  process.env.REDIS_URL || 
+  process.env.REDISURL || 
+  '';
+
+// Clean up quotes from environment variables
 let redisUrl = rawRedisUrl.trim();
 if (redisUrl.startsWith('"') && redisUrl.endsWith('"')) {
   redisUrl = redisUrl.slice(1, -1);
@@ -18,13 +40,19 @@ let redis: Redis | null = null;
 
 if (redisUrl) {
   try {
+    console.log(`[REDIS] Initializing client... Connection URL detected: ${redisUrl.split('@')[1] || 'hidden'}`);
     redis = new Redis(redisUrl, {
-      maxRetriesPerRequest: null,
-      enableOfflineQueue: false, // Prevents hanging requests by failing fast if disconnected
+      connectTimeout: 1500,        // 1.5s connection timeout (kills the 10-second hanging issue!)
+      commandTimeout: 1000,        // 1.0s command timeout (fails fast if query blocks)
+      maxRetriesPerRequest: 0,     // Command fails instantly if offline, bypassing queue lag
+      enableOfflineQueue: false,   // Disable queueing while connection is down
       retryStrategy(times) {
+        if (times > 5) {
+          console.error(`[REDIS ERROR] Max reconnection attempts (5) exceeded. Suspending active retries.`);
+          return null; // Stop retrying to protect container resources
+        }
         console.warn(`[REDIS] Retrying connection (attempt: ${times})...`);
-        // Reconnect after (times * 2) seconds, up to a maximum of 30 seconds
-        return Math.min(times * 2000, 30000);
+        return Math.min(times * 1000, 3000); // Backoff rapidly
       },
     });
 
@@ -39,26 +67,52 @@ if (redisUrl) {
     console.error('[REDIS CACHE] Failed to initialize Redis Client:', error);
   }
 } else {
-  console.warn('[REDIS WARNING] No REDIS_URL found in environment variables. Caching will be disabled.');
+  console.warn('[REDIS WARNING] No REDISPRIVATE_URL or REDIS_URL found in environment variables. L2 Redis caching will be disabled.');
 }
-
-// Redis Client is prepared for fine-grained cache key operations in future phases.
 
 export function isRedisReady(): boolean {
   return redis !== null && redis.status === 'ready';
 }
 
 export async function safeGet(key: string): Promise<string | null> {
+  // Check L1 (In-Memory) Cache first - 0ms lookup!
+  const l1Entry = l1Cache.get(key);
+  if (l1Entry) {
+    if (Date.now() < l1Entry.expiresAt) {
+      console.log(`[CACHE HIT - L1 MEMORY] Instant delivery for key: ${key}`);
+      return l1Entry.value;
+    } else {
+      l1Cache.delete(key); // Evict expired L1 key
+    }
+  }
+
+  // Check L2 (Redis) Cache
   if (!isRedisReady()) return null;
   try {
-    return await redis!.get(key);
+    const val = await redis!.get(key);
+    if (val) {
+      // Rehydrate L1 cache with value fetched from L2
+      l1Cache.set(key, {
+        value: val,
+        expiresAt: Date.now() + 60000 // Cache locally for 1 minute to reduce Redis roundtrips
+      });
+      console.log(`[CACHE HIT - L2 REDIS] Retreived and populated L1 for key: ${key}`);
+    }
+    return val;
   } catch (err: any) {
     console.error(`[REDIS ERROR] safeGet failed for key "${key}":`, err.message || err);
     return null;
   }
 }
 
-export async function safeSet(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
+export async function safeSet(key: string, value: string, ttlSeconds: number = 3600): Promise<boolean> {
+  // Write to L1 (In-Memory) Cache
+  l1Cache.set(key, {
+    value,
+    expiresAt: Date.now() + ttlSeconds * 1000
+  });
+
+  // Write to L2 (Redis) Cache in background
   if (!isRedisReady()) return false;
   try {
     if (ttlSeconds) {
@@ -74,6 +128,10 @@ export async function safeSet(key: string, value: string, ttlSeconds?: number): 
 }
 
 export async function safeDel(key: string): Promise<boolean> {
+  // Delete from L1 Cache
+  l1Cache.delete(key);
+
+  // Delete from L2 Cache
   if (!isRedisReady()) return false;
   try {
     await redis!.del(key);

@@ -16,6 +16,7 @@ import { supabase } from '../../services/supabase';
 import { useCart } from '../../context/CartContext';
 import toast from 'react-hot-toast';
 import { getApiUrl, getAuthHeaders } from '../../utils/api';
+import AestheticImage from '../AestheticImage';
 
 interface HotelDetailsDrawerProps {
   hotel: any;
@@ -204,18 +205,13 @@ export default function HotelDetailsDrawer({
       >
         <div className="relative h-48 bg-stone-900 shrink-0" id="hotel-photos-carousel">
           <div className="w-full h-full relative" id="hotel-photo-container">
-            <motion.img 
+            <AestheticImage 
               key={activeHotelImgIdx}
               src={hotelPhotos[activeHotelImgIdx % hotelPhotos.length]} 
-              className="w-full h-full object-cover opacity-85" 
-              initial={{ opacity: 0.5 }}
-              animate={{ opacity: 0.85 }}
+              className="w-full h-full opacity-85" 
               alt="Restaurant logo"
               referrerPolicy="no-referrer"
               id="hotel-active-photo"
-              onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
-              }}
             />
             {hotelPhotos.length > 1 && (
               <>

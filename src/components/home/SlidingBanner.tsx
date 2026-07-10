@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import AestheticImage from '../AestheticImage';
 
 const getLuminance = (r: number, g: number, b: number) => {
   const a = [r, g, b].map(function (v) {
@@ -76,7 +77,7 @@ const banners = [
     line1: "ROYAL CHICKEN",
     line2: "BIRYANI",
     sub: "Delicious aromatic slow-cooked Basmati with juicy spiced leg pieces.", 
-    image: "https://images.unsplash.com/photo-1633945274405-b6c8069047b0?q=80&w=1200&auto=format&fit=crop"
+    image: "https://i.postimg.cc/TYKQ1gV9/36ddbea6-caba-43c3-87c4-e93b47a5a155.png"
   },
   { 
     id: 3, 
@@ -98,6 +99,7 @@ const banners = [
 
 const SlidingBanner = React.memo(() => {
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [direction, setDirection] = useState(1); // 1 for next, -1 for prev
 
   useEffect(() => {
     // Extract color and update status bar when banner changes
@@ -108,31 +110,67 @@ const SlidingBanner = React.memo(() => {
 
   useEffect(() => {
     const timer = setInterval(() => {
+      setDirection(1);
       setBannerIdx((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(timer);
   }, []);
 
+  const variants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? "100%" : "-100%",
+      opacity: 0.95
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (dir: number) => ({
+      x: dir < 0 ? "100%" : "-100%",
+      opacity: 0.95
+    })
+  };
+
   return (
     <div className="px-1 mb-3 mt-3 select-none" id="sliding-banner-container">
       <div className="relative h-40 rounded-3xl overflow-hidden shadow-lg shadow-gray-200/40 bg-stone-100 group" id="sliding-banner-frame">
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={bannerIdx}
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 160, damping: 24, mass: 0.9 }}
-            className="absolute inset-0 flex items-center p-5 sm:p-7 cursor-pointer w-full h-full"
-            onClick={() => setBannerIdx((prev) => (prev + 1) % banners.length)}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ type: "spring", stiffness: 220, damping: 26, mass: 0.8 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.5}
+            onDragEnd={(e, info) => {
+              const swipeThreshold = 50;
+              if (info.offset.x < -swipeThreshold) {
+                // Swiped Left -> Show next banner
+                setDirection(1);
+                setBannerIdx((prev) => (prev + 1) % banners.length);
+              } else if (info.offset.x > swipeThreshold) {
+                // Swiped Right -> Show prev banner
+                setDirection(-1);
+                setBannerIdx((prev) => (prev - 1 + banners.length) % banners.length);
+              }
+            }}
+            onTap={() => {
+              // Click/Tap to go next (only if not dragged)
+              setDirection(1);
+              setBannerIdx((prev) => (prev + 1) % banners.length);
+            }}
+            className="absolute inset-0 flex items-center p-5 sm:p-7 cursor-grab active:cursor-grabbing w-full h-full select-none touch-pan-y"
             id={`sliding-banner-slide-${bannerIdx}`}
           >
             {/* Background image covering full-width, bright and vibrant */}
             <div className="absolute inset-0 w-full h-full" id="sliding-banner-image-wrapper">
-              <img 
-                fetchPriority="high"
-                src={banners[bannerIdx].image || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} 
-                className="w-full h-full object-cover"
+              <AestheticImage 
+                src={banners[bannerIdx].image || ""} 
+                className="w-full h-full"
                 referrerPolicy="no-referrer"
                 alt=""
                 id="sliding-banner-img"

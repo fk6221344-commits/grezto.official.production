@@ -59,6 +59,7 @@ export function useOrderAlerts({
   useEffect(() => { showMerchantRef.current = showMerchant; }, [showMerchant]);
 
   const getListenerShopId = () => {
+    if (!user?.isLoggedIn) return null;
     if (userShop?.id) return userShop.id;
     if (activeMerchantShop?.id) return activeMerchantShop.id;
     try {
@@ -71,7 +72,7 @@ export function useOrderAlerts({
     return null;
   };
 
-  const isStoreUser = user?.isAdmin || !!getListenerShopId();
+  const isStoreUser = !!user?.isLoggedIn && (user?.isAdmin === true || user?.role === 'Admin' || user?.role === 'Merchant' || !!userShop || !!getListenerShopId());
   const shouldAlarmRing = !alarmMuted && activeRingCount > 0 && isStoreUser && !showRider;
 
   // Sound toggle reaction effect
@@ -116,7 +117,7 @@ export function useOrderAlerts({
 
   // 2. Main Real-time Order Listener
   useEffect(() => {
-    if (!firebaseAuthReady || !supabase) return;
+    if (!firebaseAuthReady || !supabase || !user?.isLoggedIn) return;
 
     const targetShopId = getListenerShopId();
     if (!user.isAdmin && !targetShopId) {
@@ -290,7 +291,7 @@ export function useOrderAlerts({
       if (sub) sub.unsubscribe();
       stopAlertAlarmLoop();
     };
-  }, [firebaseAuthReady, user.isAdmin, userShop?.id, activeMerchantShop?.id, showAdmin, showMerchant]);
+  }, [firebaseAuthReady, user?.isLoggedIn, user?.role, user.isAdmin, userShop?.id, activeMerchantShop?.id, showAdmin, showMerchant]);
 
   return {
     incomingOrderAlert,

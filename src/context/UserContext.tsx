@@ -366,6 +366,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     auth.signOut().catch(err => console.warn("Firebase signOut error:", err));
+    localStorage.removeItem('grezto_active_merchant_shop');
     setUser({ 
       name: '', 
       phone: '', 

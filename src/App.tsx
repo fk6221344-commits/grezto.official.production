@@ -5,8 +5,12 @@ import { UserProvider, useUser } from './context/UserContext';
 import { CartProvider, useCart } from './context/CartContext';
 import toast, { Toaster } from 'react-hot-toast';
 import { X } from 'lucide-react';
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import SessionExpiredModal from './components/SessionExpiredModal';
+import { useStatusBarSync } from './hooks/useStatusBarSync';
+import { useNativeLifecycle } from './hooks/useNativeLifecycle';
+import { useAutoLocation } from './hooks/useAutoLocation';
+import { useAppDeepLinking } from './hooks/useAppDeepLinking';
 
 // Sub components
 import Splash from './components/Splash';
@@ -37,7 +41,7 @@ import AssamOfflineBanner from './components/AssamOfflineBanner';
 import { DesktopBillboard } from './components/DesktopBillboard';
 
 // Services
-import { initializeCrashlytics, triggerLightHapticVibration } from './services/nativeService';
+import { triggerLightHapticVibration } from './services/nativeService';
 import { setupPushNotifications } from './services/NotificationService';
 import { unlockNotificationAudio, startAlertAlarmLoop, stopAlertAlarmLoop } from './services/notifications';
 import { createOrderHandlers } from './services/orderHandlers';
@@ -296,50 +300,7 @@ function MainAppLayout() {
   }, []);
 
   // Dynamic 500% Perfect Status Bar Synchronization for Premium Native Experience
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    const syncStatusBar = async () => {
-      try {
-        // Step 1. Enable True Transparent Overlay to let webview flow under the physical status bar
-        await StatusBar.setOverlaysWebView({ overlay: true });
-        await StatusBar.setBackgroundColor({ color: '#00000000' });
-
-        let style = Style.Light;
-
-        if (!isSplashed) {
-          // Splash screen is white/off-white background
-          style = Style.Light; // Suit light background (dark text/icons)
-        } else if (showAdmin || showAnalyticsModal) {
-          // Admin Panel - Dark Slate Blue Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
-        } else if (showMerchant || showMerchantCalculationModal) {
-          // Merchant Panel - Dark Gray Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
-        } else if (showRider || showRiderManagement) {
-          // Rider Console - Slate Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
-        } else if (showCheckout || showOrderSuccess || trackingOrder) {
-          // Light pages: Checkout / Success / Tracking
-          style = Style.Light; // Suit light background (dark text/icons)
-        } else if (activeTab === 'home') {
-          // Home Screen: Deep Emerald Green Theme to match the beautiful top banner!
-          style = Style.Dark; // Suit dark background (light text/icons)
-        } else {
-          // Other tabs (Cart, Orders, Profile) - Crisp Premium Light Theme
-          style = Style.Light; // Suit light background (dark text/icons)
-        }
-
-        await StatusBar.setStyle({ style });
-      } catch (err) {
-        console.error('[Status Bar Sync] Failed to synchronize:', err);
-      }
-    };
-
-    // Execute with a tiny microtask delay to ensure state transitions have rendered
-    const timeoutId = setTimeout(syncStatusBar, 16);
-    return () => clearTimeout(timeoutId);
-  }, [
+  useStatusBarSync({
     isSplashed,
     showAdmin,
     showAnalyticsModal,
@@ -351,224 +312,25 @@ function MainAppLayout() {
     showOrderSuccess,
     trackingOrder,
     activeTab
-  ]);
+  });
 
   // System Initializations & Capacitor Native Lifecycle Integration (Smart Pause & Resume)
-  useEffect(() => {
-    initializeCrashlytics();
-
-    let stateChangeListener: any = null;
-
-    async function registerLifecycleListener() {
-      try {
-        const { App: CapApp } = await import('@capacitor/app');
-        stateChangeListener = await CapApp.addListener('appStateChange', (state) => {
-          console.log('[Native Lifecycle] App state changed:', state);
-          if (!state.isActive) {
-            // App went to background (Pause)
-            console.log('[Native Lifecycle] App in background. Pausing alarms and heavy processes...');
-            stopAlertAlarmLoop();
-          } else {
-            // App returned to foreground (Resume)
-            console.log('[Native Lifecycle] App in foreground. Resuming sync channels...');
-            window.dispatchEvent(new CustomEvent('grezto-app-resumed'));
-          }
-        });
-      } catch (err) {
-        console.log('[Native Lifecycle] Bypassed register (non-native platform).');
-      }
-    }
-
-    registerLifecycleListener();
-
-    return () => {
-      if (stateChangeListener) {
-        stateChangeListener.remove().catch((e: any) => console.log('Lifecycle listener unregister fail:', e));
-      }
-    };
-  }, []);
+  useNativeLifecycle();
 
   // 100% Native Precise Geolocation Autodetect on Startup
-  useEffect(() => {
-    if (!firebaseAuthReady) return;
-
-    async function autoFetchLocation() {
-      // If user has manually entered/saved a genuine non-fallback address, do not overwrite it automatically
-      if (user.address && !user.address.includes("Mitreno Tech") && user.address !== "Kawarhagi, Assam") {
-        console.log("[Auto GPS] Real user address already present, skipping auto-fetch on startup.");
-        return;
-      }
-
-      try {
-        console.log("[Auto GPS] Fetching multi-tier high speed location on startup...");
-        const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('./lib/geocoder');
-        
-        // This will try Network Coarse -> GPS High Accuracy -> IP Geolocation -> Regional Fallback
-        const location = await getUnifiedHighSpeedLocation();
-        console.log("[Auto GPS] Coordinates retrieved successfully via:", location.method, location.latitude, location.longitude);
-        
-        const result = await reverseGeocodeCoords(location.latitude, location.longitude);
-        const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
-        
-        updateProfile({
-          address: compiledAddress,
-          lat: location.latitude,
-          lng: location.longitude,
-          activeCity: result.city || "Kawarhagi"
-        });
-        
-        console.log("[Auto GPS] Location auto-locked & profile address set successfully:", compiledAddress);
-      } catch (err) {
-        console.warn("[Auto GPS] Startup auto-location fetch failed:", err);
-      }
-    }
-
-    // Delay by 2.5 seconds to wait for Splash screen fadeout and rendering stabilization
-    const delayTimer = setTimeout(() => {
-      autoFetchLocation();
-    }, 2500);
-
-    return () => clearTimeout(delayTimer);
-  }, [firebaseAuthReady]);
+  useAutoLocation({
+    firebaseAuthReady,
+    user,
+    updateProfile
+  });
 
   // -------------------
   // DEEP LINKING SETUP (WhatsApp and Web product redirection to Native Android App)
   // -------------------
-  useEffect(() => {
-    let urlOpenListener: any = null;
-
-    async function registerUrlOpenListener() {
-      try {
-        const { App: CapApp } = await import('@capacitor/app');
-        
-        // Listen to deep linking events when the app is already open or resumed from a background state
-        urlOpenListener = await CapApp.addListener('appUrlOpen', (event) => {
-          console.log('[Deep Linking] App launched or resumed with URL:', event.url);
-          try {
-            const urlString = event.url;
-            if (!urlString) return;
-
-            // Handle standard schemes and custom app schemes
-            const parsedUrl = new URL(urlString);
-            
-            // 1. Referral Link Detection (e.g. ?ref=RIDE100)
-            const refCode = parsedUrl.searchParams.get('ref') || parsedUrl.searchParams.get('referrer');
-            if (refCode) {
-              console.log('[Deep Linking] referral code auto-detected:', refCode);
-              localStorage.setItem('grezto_referral_code', refCode);
-              toast.success(`Referral code "${refCode}" auto-applied! 🎉`, { id: 'grezto-ref-toast', duration: 4000 });
-              triggerLightHapticVibration();
-            }
-
-            // 2. Search Parameter Detection (e.g. ?search=Veggies or ?q=Milk)
-            const searchVal = parsedUrl.searchParams.get('search') || parsedUrl.searchParams.get('q');
-            if (searchVal) {
-              const decodedSearch = decodeURIComponent(searchVal);
-              console.log('[Deep Linking] Initiating search overlay with query:', decodedSearch);
-              setGrocerySearchQuery(decodedSearch);
-              setShowSearchOverlay(true);
-              triggerLightHapticVibration();
-              return;
-            }
-
-            // 3. Search Path Detection (e.g. /search?q=Fruit)
-            if (parsedUrl.pathname.startsWith('/search')) {
-              const q = parsedUrl.searchParams.get('q') || parsedUrl.searchParams.get('search');
-              if (q) {
-                const decodedQuery = decodeURIComponent(q);
-                setGrocerySearchQuery(decodedQuery);
-                setShowSearchOverlay(true);
-                triggerLightHapticVibration();
-                return;
-              }
-            }
-
-            // 4. Direct Product Slug Redirection (e.g. /product/fresh_coriander or /item/organic_milk)
-            if (parsedUrl.pathname.startsWith('/product/') || parsedUrl.pathname.startsWith('/item/')) {
-              const pathParts = parsedUrl.pathname.split('/');
-              const productSlug = pathParts[pathParts.length - 1];
-              if (productSlug) {
-                const decodedSlug = decodeURIComponent(productSlug).replace(/_/g, ' ').replace(/-/g, ' ');
-                console.log('[Deep Linking] Found product slug from URL:', decodedSlug);
-                setGrocerySearchQuery(decodedSlug);
-                setShowSearchOverlay(true);
-                triggerLightHapticVibration();
-                toast.success(`Opening "${decodedSlug}" ... 🛍️`, { id: 'grezto-deeplink-product', duration: 3000 });
-                return;
-              }
-            }
-          } catch (urlErr) {
-            console.error('[Deep Linking] Error parsing deep link URL:', urlErr);
-          }
-        });
-
-        // Parse launch URL if the app was completely closed and started via deep link
-        const launchUrl = await CapApp.getLaunchUrl();
-        if (launchUrl && launchUrl.url) {
-          console.log('[Deep Linking] App cold started with launch URL:', launchUrl.url);
-          // Manually fire the handler with launchUrl details
-          const dummyEvent = { url: launchUrl.url };
-          setTimeout(() => {
-            // Trigger with slight delay so context and components have loaded completely
-            window.dispatchEvent(new CustomEvent('grezto-handle-deeplink', { detail: dummyEvent }));
-          }, 1500);
-        }
-      } catch (err) {
-        console.log('[Deep Linking] Bypassed register (non-native platform).');
-      }
-    }
-
-    registerUrlOpenListener();
-
-    // Register a custom window listener for cold starts
-    const handleColdDeeplink = (e: Event) => {
-      const eventDetail = (e as CustomEvent).detail;
-      if (eventDetail && eventDetail.url) {
-        console.log('[Deep Linking] Handling cold started URL:', eventDetail.url);
-        try {
-          const parsedUrl = new URL(eventDetail.url);
-          const refCode = parsedUrl.searchParams.get('ref') || parsedUrl.searchParams.get('referrer');
-          if (refCode) {
-            localStorage.setItem('grezto_referral_code', refCode);
-            toast.success(`Referral code "${refCode}" auto-applied! 🎉`, { id: 'grezto-ref-toast', duration: 4000 });
-            triggerLightHapticVibration();
-          }
-
-          const searchVal = parsedUrl.searchParams.get('search') || parsedUrl.searchParams.get('q');
-          if (searchVal) {
-            const decodedSearch = decodeURIComponent(searchVal);
-            setGrocerySearchQuery(decodedSearch);
-            setShowSearchOverlay(true);
-            triggerLightHapticVibration();
-            return;
-          }
-
-          if (parsedUrl.pathname.startsWith('/product/') || parsedUrl.pathname.startsWith('/item/')) {
-            const pathParts = parsedUrl.pathname.split('/');
-            const productSlug = pathParts[pathParts.length - 1];
-            if (productSlug) {
-              const decodedSlug = decodeURIComponent(productSlug).replace(/_/g, ' ').replace(/-/g, ' ');
-              setGrocerySearchQuery(decodedSlug);
-              setShowSearchOverlay(true);
-              triggerLightHapticVibration();
-              toast.success(`Opening "${decodedSlug}" ... 🛍️`, { id: 'grezto-deeplink-product', duration: 3000 });
-            }
-          }
-        } catch (err) {
-          console.error('[Deep Linking] Error in cold start handler:', err);
-        }
-      }
-    };
-
-    window.addEventListener('grezto-handle-deeplink', handleColdDeeplink);
-
-    return () => {
-      if (urlOpenListener) {
-        urlOpenListener.remove().catch((e: any) => console.log('Url listener unregister fail:', e));
-      }
-      window.removeEventListener('grezto-handle-deeplink', handleColdDeeplink);
-    };
-  }, []);
+  useAppDeepLinking({
+    setGrocerySearchQuery,
+    setShowSearchOverlay
+  });
 
   // Zero-Crash Session Recovery / 401 & 403 Handler
   useEffect(() => {
@@ -998,46 +760,10 @@ function MainAppLayout() {
       />
 
       {/* Session Expired Fail-Safe Modal (Zero-Crash Shield) */}
-      <AnimatePresence>
-        {showSessionExpiredModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col items-center text-center"
-            >
-              {/* Alert Icon */}
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 text-red-500 animate-bounce">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-2">
-                Session Expired! 🛑
-              </h3>
-              
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                Bhai, security aur privacy reasons ki wajah se aapka login session expire ho gaya hai. Kripya fir se login karein taki aap smoothly orders aur menus manage kar sakein.
-              </p>
-
-              <button
-                onClick={handleSessionExpiredReset}
-                className="w-full py-3 px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-semibold rounded-2xl shadow-lg shadow-red-500/20 transition-all duration-200"
-              >
-                Login Fir Se Karein 🔐
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SessionExpiredModal 
+        showSessionExpiredModal={showSessionExpiredModal}
+        handleSessionExpiredReset={handleSessionExpiredReset}
+      />
 
     </div>
   );

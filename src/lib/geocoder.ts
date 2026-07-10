@@ -15,7 +15,8 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
     let permResult = await Geolocation.checkPermissions().catch(() => null);
     if (permResult) {
       let status = permResult.location;
-      if (status !== 'granted' && permResult.coarseLocation !== 'granted') {
+      // We strictly require precise 'granted' permission. If they only gave approximate or none, ask again.
+      if (status !== 'granted') {
         const reqResult = await Geolocation.requestPermissions().catch(() => null);
         if (reqResult) {
           status = reqResult.location;
@@ -23,44 +24,65 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
       }
     }
 
-    // 2. Multi-tier GPS/Network fetching
-    // Tier 1: Try Fast Network Coarse Location (enableHighAccuracy: false) first
-    // This connects to nearby cell towers or WiFi, which takes under 500ms and works inside buildings perfectly.
-    try {
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 1500,
-        maximumAge: 10000
-      });
-      console.log("[LocationService] Tier 1 (Network Coarse) Success:", pos.coords.latitude, pos.coords.longitude);
-      return {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        method: 'Network-Coarse'
-      };
-    } catch (tier1Err) {
-      console.warn("[LocationService] Tier 1 (Network Coarse) failed, trying Tier 2 (GPS High Accuracy)...", tier1Err);
-    }
-
-    // Tier 2: Try High Accuracy GPS Location (enableHighAccuracy: true)
+    // 2. High-performance precise location detection using GPS hardware & networks
+    // Tier 1: Try High Accuracy GPS Location (enableHighAccuracy: true) first to lock coordinates immediately!
     try {
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 2500,
-        maximumAge: 10000
+        timeout: 4500, // Balanced timeout
+        maximumAge: 0  // Fetch fresh GPS lock
       });
-      console.log("[LocationService] Tier 2 (GPS High Accuracy) Success:", pos.coords.latitude, pos.coords.longitude);
+      
+      console.log("[LocationService] Tier 1 (GPS High Accuracy) Lock. Accuracy:", pos.coords.accuracy);
+
+      // If accuracy is poor (e.g., > 120 meters), they probably chose "Approximate" (coarse) permission.
+      // We dynamically request location permissions again to trigger Android's "Change approximate to precise" system dialog!
+      if (pos.coords.accuracy > 120) {
+        console.warn("[LocationService] Detected poor accuracy (>120m). Prompting for Precise Upgrade...");
+        const upgradeResult = await Geolocation.requestPermissions().catch(() => null);
+        if (upgradeResult && upgradeResult.location === 'granted') {
+          const posRetry = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 4500,
+            maximumAge: 0
+          });
+          console.log("[LocationService] GPS Upgraded to Precise successfully! Accuracy:", posRetry.coords.accuracy);
+          return {
+            latitude: posRetry.coords.latitude,
+            longitude: posRetry.coords.longitude,
+            method: 'GPS-HighAccuracy-Upgraded'
+          };
+        }
+      }
+
       return {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         method: 'GPS-HighAccuracy'
       };
+    } catch (tier1Err) {
+      console.warn("[LocationService] Tier 1 (GPS High Accuracy) failed or timed out, attempting Coarse network fallback...", tier1Err);
+    }
+
+    // Tier 2: Try Coarse Network Location (enableHighAccuracy: false)
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 2500,
+        maximumAge: 5000
+      });
+      console.log("[LocationService] Tier 2 (Network Coarse) Fallback Success:", pos.coords.latitude, pos.coords.longitude);
+      return {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        method: 'Network-Coarse-Fallback'
+      };
     } catch (tier2Err) {
-      console.warn("[LocationService] Tier 2 (GPS High Accuracy) failed, trying Tier 3 (IP Geolocation)...", tier2Err);
+      console.warn("[LocationService] Tier 2 (Network Coarse) failed...", tier2Err);
     }
 
   } catch (err) {
-    console.warn("[LocationService] Capacitor Geolocation permission or call failed:", err);
+    console.warn("[LocationService] Capacitor Geolocation general error:", err);
   }
 
   // Tier 3: IP-based Geolocation fallback (under 1500ms, 100% success rate indoors/basements with weak GPS lock!)

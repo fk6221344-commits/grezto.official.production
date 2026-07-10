@@ -62,15 +62,31 @@ export default function GpsPressingActivator({ onUnlocked }: { onUnlocked: () =>
          }
       }
       
-      const pos = await Geolocation.getCurrentPosition({
+      let pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 15000,
         maximumAge: 0
       });
       
+      // If accuracy is poor, they likely selected "Approximate" (coarse location)
+      if (pos.coords.accuracy > 120) {
+        setTelemetryMsg('Approximate permission detected. Prompting for Precise Upgrade...');
+        const upgradeReq = await Geolocation.requestPermissions();
+        if (upgradeReq.location === 'granted') {
+          setTelemetryMsg('Precise permission granted! Calibrating exact coordinates...');
+          pos = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        } else {
+          throw new Error("Humein deliver karne ke liye precise location chahiye. Please Precise (patience) option select karein!");
+        }
+      }
+      
       const currentLat = pos.coords.latitude;
       const currentLng = pos.coords.longitude;
-      updateProfileAndSave(currentLat, currentLng);
+      await updateProfileAndSave(currentLat, currentLng);
     } catch (err: any) {
       console.error("GPS telemetry sync failed:", err);
       toast.error(err.message || "Strict Native GPS Enforced. Please enable real hardware location.");
@@ -79,15 +95,28 @@ export default function GpsPressingActivator({ onUnlocked }: { onUnlocked: () =>
     }
   };
 
-  const updateProfileAndSave = (latitude: number, longitude: number) => {
-    // Generate simulated address format depending on coordinates
+  const updateProfileAndSave = async (latitude: number, longitude: number) => {
     let regionAddress = "Live GPS Coordinate Tracked";
+    let activeCity = "Kawarhagi";
+    
+    // Reverse geocode to get actual address name instead of raw coordinates
+    try {
+      const { reverseGeocodeCoords } = await import('../lib/geocoder');
+      const result = await reverseGeocodeCoords(latitude, longitude);
+      if (result && result.address) {
+        regionAddress = result.address;
+        activeCity = result.city || "Kawarhagi";
+      }
+    } catch (geoErr) {
+      console.warn("Reverse geocode inside activator failed, fallback to generic:", geoErr);
+    }
 
     setTimeout(() => {
       updateProfile({
         lat: latitude,
         lng: longitude,
-        address: regionAddress
+        address: regionAddress,
+        activeCity: activeCity
       });
 
       localStorage.setItem('grezto_gps_pressed', 'true');

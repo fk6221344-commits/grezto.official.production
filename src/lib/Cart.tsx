@@ -4,6 +4,7 @@ import { Trash2, Plus, Minus, ShoppingBag, AlertTriangle, Zap, ChevronLeft } fro
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import toast from 'react-hot-toast';
+import { CartItemRow } from '../components/cart/CartDrawer';
 
 export default function Cart({ onCheckout }: { onCheckout: () => void }) {
   const { items, updateQuantity, removeFromCart, subtotal, deliveryFee, total } = useCart();
@@ -182,61 +183,16 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
           order from WhatsApp
         </span>
       </div>
-
       {/* Extreme Compact Cart List */}
       <div className="space-y-2.5">
         <AnimatePresence initial={false}>
           {items.map((item) => (
-            <motion.div
+            <CartItemRow
               key={item.id}
-              layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="bg-white p-2.5 px-3.5 rounded-2xl flex items-center justify-between border border-gray-100 shadow-sm gap-3"
-            >
-              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
-                  {(item.imageUrl && item.imageUrl !== "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=") ? (
-                    <img src={item.imageUrl} className="w-full h-full object-cover" alt={item.name} />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center border-dashed border-gray-300">
-                       <span className="text-[8px] font-bold text-gray-400 uppercase">Image</span>
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-gray-800 text-[11px] leading-tight line-clamp-1">{item.name}</h4>
-                  <p className="text-[9px] text-gray-400 font-bold mt-0.5 uppercase tracking-tight">₹{item.price} / unit</p>
-                  <div className="text-[10px] font-extrabold text-emerald-600 mt-0.5">₹{item.price * item.quantity}</div>
-                </div>
-              </div>
-
-              {/* Compact Inline Actions */}
-              <div className="flex items-center space-x-3 flex-shrink-0">
-                <div className="flex items-center bg-gray-50/80 rounded-lg p-0.5 border border-gray-100">
-                  <button 
-                    onClick={() => updateQuantity(item.id, -1)} 
-                    className="p-1 px-1.5 text-gray-400 hover:text-emerald-500 transition-colors"
-                  >
-                    <Minus className="w-2.5 h-2.5" />
-                  </button>
-                  <span className="text-[10px] font-black text-gray-800 px-1 min-w-[12px] text-center">{item.quantity}</span>
-                  <button 
-                    onClick={() => updateQuantity(item.id, 1)} 
-                    className="p-1 px-1.5 text-gray-400 hover:text-emerald-500 transition-colors"
-                  >
-                    <Plus className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-                <button 
-                  onClick={() => removeFromCart(item.id)}
-                  className="p-1 text-gray-300 hover:text-red-400 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
+              item={item}
+              onUpdateQuantity={updateQuantity}
+              onRemove={removeFromCart}
+            />
           ))}
         </AnimatePresence>
       </div>

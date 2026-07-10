@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
+import { prefetchImage } from '../../../utils/imagePrefetcher';
 
 interface ShopModalProps {
   showAddShopModal: boolean;
@@ -345,6 +346,7 @@ export default function ShopModal({
                       };
                       const selectedUrl = presets[newShop.category] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800";
                       setNewShop({...newShop, imageUrl: selectedUrl});
+                      prefetchImage(selectedUrl);
                     }}
                     className="text-[8px] font-black text-emerald-600 uppercase tracking-wider bg-transparent border-0 cursor-pointer hover:underline"
                   >
@@ -354,7 +356,13 @@ export default function ShopModal({
                 <input 
                   type="url" 
                   value={newShop.imageUrl || ''}
-                  onChange={(e) => setNewShop({...newShop, imageUrl: e.target.value})}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    setNewShop({...newShop, imageUrl: url});
+                    if (url && url.startsWith('http')) {
+                      prefetchImage(url);
+                    }
+                  }}
                   placeholder="Provide image link or tap auto-fill above"
                   className="w-full bg-gray-50 border border-gray-100 text-gray-700 py-3 px-4 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500/10"
                 />
