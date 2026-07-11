@@ -156,10 +156,32 @@ export default function NewGpsMap({
     }
   };
 
-  // Automatic updating of input fields removed to support $0 billing hybrid entry
+  // Automatic updating of input fields using free OSM Nominatim reverse geocoding to keep billing hamesha ₹0
   useEffect(() => {
-    // Intentionally empty: We just take the lat-long from dragging,
-    // and rely on manual entry for the actual human-readable address.
+    let active = true;
+    const fetchAddress = async () => {
+      try {
+        const result = await reverseGeocodeCoords(coords.lat, coords.lng);
+        if (active && result) {
+          if (result.state) setStateVal(result.state);
+          if (result.pincode) setPincodeVal(result.pincode);
+          if (result.city) setCityVal(result.city);
+          if (result.street) setStreetVal(result.street);
+        }
+      } catch (err) {
+        console.warn("[NewGpsMap] Nominatim auto reverse geocoding failed:", err);
+      }
+    };
+    
+    // Debounce to avoid hitting API too frequently while dragging
+    const delayTimer = setTimeout(() => {
+      fetchAddress();
+    }, 800);
+
+    return () => {
+      active = false;
+      clearTimeout(delayTimer);
+    };
   }, [coords.lat, coords.lng]);
 
   const handleCameraChange = useCallback((ev: any) => {

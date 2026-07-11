@@ -88,6 +88,15 @@
   -webkit-transform: translate3d(0, 0, 0);
 }
 
+.animated-navy-gradient {
+  background: linear-gradient(115deg, #020c1b, #071933, #030e20, #05142a, #010814, #020c1b) !important;
+  background-size: 280% 280% !important;
+  animation: cornerGradientMove 10s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  will-change: background-position;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
 /* Smooth Scrolling & Hardware Acceleration optimization for native/web */
 html, body, #root {
   background-color: #fffcf9 !important;
@@ -109,6 +118,8 @@ html, body, #root {
 * {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
 }
 
 /* Enable high-speed scroll without selection-based layout stalls, but allow full text entries */

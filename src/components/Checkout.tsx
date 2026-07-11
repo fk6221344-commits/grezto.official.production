@@ -146,10 +146,29 @@ export default function Checkout({
     isOutOfRange,
   } = useCheckoutGPS({ user, updateProfile, subtotal, items });
 
-  // Synchronize landmarkVal to exact native/GPS coordinates as read-only value
+  const [nominatimAddress, setNominatimAddress] = useState<string>("");
+  const [nominatimLoading, setNominatimLoading] = useState<boolean>(false);
+
+  // Synchronize landmarkVal to exact Nominatim OSM reverse geocoded address for ₹0 billing
   useEffect(() => {
     if (coords && coords.lat && coords.lng) {
-      setLandmarkVal(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+      setNominatimLoading(true);
+      import('../lib/geocoder').then(({ fetchNominatimAddress }) => {
+        fetchNominatimAddress(coords.lat, coords.lng)
+          .then((addr) => {
+            setNominatimAddress(addr);
+            setLandmarkVal(addr);
+          })
+          .catch((err) => {
+            console.error("Failed to reverse geocode:", err);
+            const fallbackAddr = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+            setNominatimAddress(fallbackAddr);
+            setLandmarkVal(fallbackAddr);
+          })
+          .finally(() => {
+            setNominatimLoading(false);
+          });
+      });
     }
   }, [coords, setLandmarkVal]);
 
@@ -265,7 +284,7 @@ export default function Checkout({
       return;
     }
 
-    const finalAddress = `${areaVal.trim()}, ${cityVal.trim()} (GPS: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`;
+    const finalAddress = `${areaVal.trim()}, ${cityVal.trim()} (GPS Address: ${nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`})`;
 
     // Save details to localStorage for future orders and mark details submitted
     if (typeof window !== "undefined") {
@@ -647,8 +666,8 @@ export default function Checkout({
     if (distanceDegrees < 0.25) {
       return findNearestLandmark(coords.lat, coords.lng).name;
     }
-    return `Location coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
-  }, [coords.lat, coords.lng, cityVal, areaVal]);
+    return nominatimAddress || `Location coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+  }, [coords.lat, coords.lng, cityVal, areaVal, nominatimAddress]);
 
   const handleSaveDetails = () => {
      if (!nameVal.trim() || !cityVal.trim() || !areaVal.trim() || !landmarkVal.trim()) {
@@ -874,10 +893,10 @@ export default function Checkout({
                     </label>
                     <input
                       type="text"
-                      value={`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`}
+                      value={nominatimLoading ? "Locating exact address..." : (nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)}
                       readOnly
                       disabled
-                      className="w-full text-[11px] font-black text-[#1d4ed8] bg-transparent outline-none p-0 border-none cursor-not-allowed focus:ring-0"
+                      className="w-full text-[11px] font-black text-[#1d4ed8] bg-transparent outline-none p-0 border-none cursor-not-allowed focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap"
                     />
                   </div>
                 </div>

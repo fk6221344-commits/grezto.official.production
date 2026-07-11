@@ -32,6 +32,7 @@ export default function Navbar({
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showOrdersMenu, setShowOrdersMenu] = useState(false);
+  const isDarkHeader = activeTab === 'home' || activeTab === 'cart' || activeTab === 'orders';
 
   // Structured address input states
   const [addrState, setAddrState] = useState('Assam');
@@ -107,13 +108,15 @@ export default function Navbar({
 
   return (
     <div className={
-      activeTab === 'home'
-        ? "px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100"
+      isDarkHeader
+        ? activeTab === 'cart'
+          ? "px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-slate-950/20 shadow-lg shadow-slate-950/10 transition-colors duration-100"
+          : "px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100"
         : "bg-white/90 backdrop-blur-md px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-gray-100 transition-colors duration-100"
     }>
       {/* Background container that is absolute so it can have overflow-hidden, keeping Navbar's main div overflow visible for the dropdown */}
-      {activeTab === 'home' && (
-        <div className="absolute inset-0 animated-green-gradient overflow-hidden z-0 pointer-events-none">
+      {isDarkHeader && (
+        <div className={`absolute inset-0 ${activeTab === 'cart' ? 'animated-navy-gradient' : 'animated-green-gradient'} overflow-hidden z-0 pointer-events-none`}>
           <div className="absolute inset-y-0 w-36 bg-gradient-to-r from-transparent via-rose-500/20 to-transparent skew-x-[-20deg] filter blur-[3px] animate-red-scan" style={{ animationDuration: '6.5s' }} />
         </div>
       )}
@@ -123,7 +126,11 @@ export default function Navbar({
             <button 
               onClick={onBack}
               className={`p-2 -ml-2 rounded-xl transition-colors ${
-                activeTab === 'home' ? 'text-emerald-200 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-emerald-500 hover:bg-gray-50'
+                isDarkHeader 
+                  ? activeTab === 'cart'
+                    ? 'text-blue-200 hover:text-white hover:bg-white/5'
+                    : 'text-emerald-200 hover:text-white hover:bg-white/5' 
+                  : 'text-gray-400 hover:text-emerald-500 hover:bg-gray-50'
               }`}
             >
               <ChevronLeft className="w-6 h-6" />
@@ -134,8 +141,10 @@ export default function Navbar({
           <button 
             onClick={onProfileTap}
             className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 hover:shadow-lg active:scale-95 transition-all cursor-pointer overflow-hidden ${
-              activeTab === 'home' 
-                ? 'bg-white/10 text-white border-white/15' 
+              isDarkHeader 
+                ? activeTab === 'cart'
+                  ? 'bg-white/10 text-white border-white/15'
+                  : 'bg-white/10 text-white border-white/15' 
                 : 'bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-700 border-white'
             }`}
             title="View Profile"
@@ -143,7 +152,7 @@ export default function Navbar({
             {user.avatar ? (
               <img src={user.avatar} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" alt="Profile" />
             ) : (
-              <User className={`w-5 h-5 ${activeTab === 'home' ? 'text-white' : 'text-emerald-600'}`} />
+              <User className={`w-5 h-5 ${isDarkHeader ? 'text-white' : 'text-emerald-600'}`} />
             )}
           </button>
 
@@ -252,14 +261,14 @@ export default function Navbar({
               )}
               {activeTab === 'cart' && (
                 <>
-                  <span className="text-[8px] text-gray-400 font-black uppercase tracking-wider">My Cart</span>
-                  <span className="text-xs font-bold text-gray-850 uppercase italic tracking-tight">Shopping Bag</span>
+                  <span className="text-[8px] text-blue-200/70 font-black uppercase tracking-wider">My Cart</span>
+                  <span className="text-xs font-bold text-[#fffdf5] uppercase italic tracking-tight">Shopping Bag</span>
                 </>
               )}
               {activeTab === 'orders' && (
                 <>
-                  <span className="text-[8px] text-gray-400 font-black uppercase tracking-wider">My Purchase</span>
-                  <span className="text-xs font-bold text-gray-850 uppercase italic tracking-tight">Order History</span>
+                  <span className="text-[8px] text-emerald-200/70 font-black uppercase tracking-wider">My Purchase</span>
+                  <span className="text-xs font-bold text-[#fffdf5] uppercase italic tracking-tight">Order History</span>
                 </>
               )}
             </div>
@@ -270,7 +279,7 @@ export default function Navbar({
           <button 
             onClick={() => setLanguage(language === 'en' ? 'as' : 'en')}
             className={`p-2 rounded-xl transition-colors flex items-center space-x-1 border ${
-              activeTab === 'home' 
+              isDarkHeader 
                 ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' 
                 : 'bg-white hover:bg-gray-50 border-gray-100 text-gray-500'
             }`}
@@ -281,12 +290,20 @@ export default function Navbar({
           <button 
             onClick={onOpenNotifications}
             className={`relative p-2 transition-colors ${
-              activeTab === 'home' ? 'text-emerald-100 hover:text-white' : 'text-gray-400 hover:text-emerald-500'
+              isDarkHeader 
+                ? activeTab === 'cart'
+                  ? 'text-blue-100 hover:text-white'
+                  : 'text-emerald-100 hover:text-white' 
+                : 'text-gray-400 hover:text-emerald-500'
             }`}
           >
             <Bell className="w-6 h-6" />
             <span className={`absolute top-1 right-1 w-3 h-3 rounded-full border-2 shadow-sm ${
-              activeTab === 'home' ? 'bg-amber-400 border-[#043315]' : 'bg-red-500 border-white'
+              isDarkHeader 
+                ? activeTab === 'cart'
+                  ? 'bg-amber-400 border-[#020c1b]'
+                  : 'bg-amber-400 border-[#043315]' 
+                : 'bg-red-500 border-white'
             }`}></span>
           </button>
           
@@ -298,7 +315,7 @@ export default function Navbar({
                 className="p-2 rounded-xl transition-all hover:bg-gray-50 border border-transparent text-gray-400 hover:text-emerald-500 cursor-pointer flex items-center justify-center bg-transparent focus:outline-none active:scale-95"
                 title="Info"
               >
-                <Info className="w-5 h-5 text-gray-400 hover:text-gray-600 stroke-[2.5]" />
+                <Info className={`w-5 h-5 stroke-[2.5] ${isDarkHeader ? 'text-emerald-200 hover:text-white' : 'text-gray-400 hover:text-gray-650'}`} />
               </button>
               
               {showOrdersMenu && (

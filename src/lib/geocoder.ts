@@ -25,43 +25,69 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
     }
 
     // 2. High-performance precise location detection using GPS hardware & networks
-    // Tier 1: Try High Accuracy GPS Location (enableHighAccuracy: true) first to lock coordinates immediately!
+    // Tier 1: Try High Accuracy GPS Location with Sensor Warm-Up & Precision Locked Filtering (up to 3 samples)
     try {
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 4500, // Balanced timeout
-        maximumAge: 0  // Fetch fresh GPS lock
-      });
-      
-      console.log("[LocationService] Tier 1 (GPS High Accuracy) Lock. Accuracy:", pos.coords.accuracy);
+      let bestPosition: any = null;
+      let samplesCount = 0;
+      const maxSamples = 3;
+      const desiredAccuracy = 25; // 25 meters or better is our gold standard for delivery address matching!
 
-      // If accuracy is poor (e.g., > 120 meters), they probably chose "Approximate" (coarse) permission.
-      // We dynamically request location permissions again to trigger Android's "Change approximate to precise" system dialog!
-      if (pos.coords.accuracy > 120) {
-        console.warn("[LocationService] Detected poor accuracy (>120m). Prompting for Precise Upgrade...");
-        const upgradeResult = await Geolocation.requestPermissions().catch(() => null);
-        if (upgradeResult && upgradeResult.location === 'granted') {
-          const posRetry = await Geolocation.getCurrentPosition({
+      for (let i = 0; i < maxSamples; i++) {
+        samplesCount++;
+        try {
+          console.log(`[LocationService] Sampling GPS hardware lock (Sample ${samplesCount}/${maxSamples})...`);
+          const pos = await Geolocation.getCurrentPosition({
             enableHighAccuracy: true,
-            timeout: 4500,
-            maximumAge: 0
+            timeout: 6000, // 6 seconds for this specific sample
+            maximumAge: 0  // Force bypass cached coordinates to fetch real-time fresh lock
           });
-          console.log("[LocationService] GPS Upgraded to Precise successfully! Accuracy:", posRetry.coords.accuracy);
-          return {
-            latitude: posRetry.coords.latitude,
-            longitude: posRetry.coords.longitude,
-            method: 'GPS-HighAccuracy-Upgraded'
-          };
+
+          console.log(`[LocationService] Sample ${samplesCount} acquired. Accuracy:`, pos.coords.accuracy, "meters");
+
+          // Keep track of the absolute most accurate reading (lowest accuracy value is best)
+          if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
+            bestPosition = pos;
+          }
+
+          // If we achieved our gold standard accuracy (< 25m), lock it and break immediately!
+          if (pos.coords.accuracy <= desiredAccuracy) {
+            console.log(`[LocationService] Gold standard accuracy (${pos.coords.accuracy}m <= ${desiredAccuracy}m) achieved on sample ${samplesCount}!`);
+            break;
+          }
+
+          // If the accuracy is poor (>120m) on the first sample, we check and request permissions again
+          // in case they accidentally chose "Approximate" coarse location.
+          if (i === 0 && pos.coords.accuracy > 120) {
+            console.warn("[LocationService] Detected poor accuracy (>120m) on initial sample. Prompting for Precise Upgrade...");
+            const upgradeResult = await Geolocation.requestPermissions().catch(() => null);
+            if (upgradeResult && upgradeResult.location === 'granted') {
+              // Quick small delay to let settings apply
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+
+          // If we have not met the target accuracy yet, wait 500ms to allow the hardware GPS sensor to "warm up" and find more satellites
+          if (i < maxSamples - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+        } catch (sampleErr) {
+          console.warn(`[LocationService] GPS sample ${samplesCount} failed:`, sampleErr);
+          // If the sensor is completely off or disabled, we don't block the loop if it's the first sample and failed
         }
       }
 
-      return {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        method: 'GPS-HighAccuracy'
-      };
+      // If we got at least one valid GPS coordinate sample, use the absolute best one
+      if (bestPosition) {
+        console.log("[LocationService] GPS Filtering complete. Chosen best accuracy:", bestPosition.coords.accuracy, "meters");
+        return {
+          latitude: bestPosition.coords.latitude,
+          longitude: bestPosition.coords.longitude,
+          method: `GPS-PrecisionLocked-${bestPosition.coords.accuracy.toFixed(0)}m`
+        };
+      }
     } catch (tier1Err) {
-      console.warn("[LocationService] Tier 1 (GPS High Accuracy) failed or timed out, attempting Coarse network fallback...", tier1Err);
+      console.warn("[LocationService] Tier 1 GPS Precision Filter failed, attempting Coarse network fallback...", tier1Err);
     }
 
     // Tier 2: Try Coarse Network Location (enableHighAccuracy: false)
@@ -138,6 +164,28 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
   };
 }
 
+export async function fetchNominatimAddress(latitude: number, longitude: number): Promise<string> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'GreztoApp'
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.display_name) {
+        console.log("[Geocoder] fetchNominatimAddress Success:", data.display_name);
+        return data.display_name;
+      }
+    }
+  } catch (err) {
+    console.warn("[Geocoder] fetchNominatimAddress exception:", err);
+  }
+  return `Location Coords (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
+}
+
 export async function reverseGeocodeCoords(lat: number, lng: number): Promise<GeocodeResult> {
   // Determine distance to master Morigaon center (Kawarhagi)
   const morigaonLat = 26.243455;
@@ -150,7 +198,45 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
   const isCloseToHub = distanceDegrees < 0.25;
 
   try {
-    // 1. Try Google Maps Geocoder if loaded in context
+    // 1. Prioritize Nominatim (OSM) as direct free geocoding to ensure hamesha ₹0 Google Maps billing
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'GreztoApp-GPS-Precision-Locator/2.0 (contact: fk6221344@gmail.com)'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.address) {
+          const ad = data.address;
+          const state = ad.state || ad.region || (isCloseToHub ? 'Assam' : '');
+          const pincode = ad.postcode || (isCloseToHub ? '782411' : '');
+          const city = ad.city || ad.town || ad.village || ad.suburb || ad.locality || (isCloseToHub ? 'Kawarhagi' : '');
+          const street = ad.road || ad.suburb || ad.neighborhood || ad.neighbourhood || ad.pedestrian || ad.house_number || ad.amenity || '';
+
+          const formattedParts = data.display_name ? data.display_name.split(',') : [];
+          const streetVal = street || (formattedParts.length > 0 ? formattedParts[0].trim() : 'Location Point');
+          const finalAddr = data.display_name || `${streetVal}, ${city}, ${state} (Pin - ${pincode})`;
+
+          return {
+            state: state || 'Other State',
+            pincode: pincode || '',
+            city: city || 'City/Village',
+            street: streetVal,
+            address: finalAddr
+          };
+        }
+      }
+    } catch (osmErr) {
+      console.warn("[Geocoder] Free Nominatim geocoder failed, falling back to other layers:", osmErr);
+    }
+
+    // 2. Try Google Maps Geocoder as secondary fallback if loaded in context
     if (typeof window !== 'undefined' && typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
       try {
         const geocoder = new google.maps.Geocoder();
@@ -207,41 +293,7 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
           return { state, pincode, city, street: street || 'Street Point', address };
         }
       } catch (gErr) {
-        console.warn("[Geocoder] Google Map Geocoder failed or blocked, trying Nominatim fallback...", gErr);
-      }
-    }
-
-    // 2. Try Nominatim (OSM) as a direct network geocode with safe custom User-Agent to avoid blocks
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'GreztoApp-GPS-Precision-Locator/2.0 (contact: fk6221344@gmail.com)'
-        }
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.address) {
-        const ad = data.address;
-        const state = ad.state || ad.region || (isCloseToHub ? 'Assam' : '');
-        const pincode = ad.postcode || (isCloseToHub ? '782411' : '');
-        const city = ad.city || ad.town || ad.village || ad.suburb || ad.locality || (isCloseToHub ? 'Kawarhagi' : '');
-        const street = ad.road || ad.suburb || ad.neighborhood || ad.neighbourhood || ad.pedestrian || ad.house_number || ad.amenity || '';
-
-        const formattedParts = data.display_name ? data.display_name.split(',') : [];
-        const streetVal = street || (formattedParts.length > 0 ? formattedParts[0].trim() : 'Location Point');
-        const finalAddr = data.display_name || `${streetVal}, ${city}, ${state} (Pin - ${pincode})`;
-
-        return {
-          state: state || 'Other State',
-          pincode: pincode || '',
-          city: city || 'City/Village',
-          street: streetVal,
-          address: finalAddr
-        };
+        console.warn("[Geocoder] Google Map Geocoder failed or blocked as well.", gErr);
       }
     }
   } catch (error) {
