@@ -183,65 +183,96 @@ export default function Checkout({
 
   const [showOutOfRangeModal, setShowOutOfRangeModal] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const nativeMapRef = useRef<GoogleMap | null>(null);
+  const nativeMapRef = useRef<any>(null);
+  const liveDotMarkerRef = useRef<any>(null);
 
-  // Initialize Native Google Map
+  // Initialize Interactive Google Map (Web + Native Unified)
   useEffect(() => {
     if (!mapContainerRef.current || !googleMapsKey) return;
 
     let isMounted = true;
+    let map: any = null;
+    let liveDotMarker: any = null;
 
     const initMap = async () => {
-      // Check if running on Web (browser). Prevent Native SDK initialization which crashes if JS API is not imported.
-      if (!Capacitor.isNativePlatform()) {
-        console.warn(
-          "Running in Web mode. Capacitor Native Maps SDK skipped. Using basic UI fallback.",
-        );
-        return;
-      }
-
       try {
-        const newMap = await GoogleMap.create({
-          id: "native-checkout-map",
-          element: mapContainerRef.current!,
-          apiKey: googleMapsKey,
-          forceCreate: true,
-          config: {
-            center: {
-              lat: coords.lat,
-              lng: coords.lng,
-            },
-            zoom: 16,
-            disableDefaultUI: true,
-            androidLiteMode: false,
-          },
-        });
-
-        if (!isMounted) {
-          newMap.destroy();
-          return;
-        }
-
-        nativeMapRef.current = newMap;
-
-        // Active original blue blinking dot + jump to my location target
-        try {
-          await newMap.enableCurrentLocation(true);
-        } catch (e) {
-          console.warn("Native location dot requires permissions first", e);
-        }
-
-        // Fused event wrapper bridging native dragging to hybrid manual input logic
-        newMap.setOnCameraIdleListener((camera) => {
-          handleCameraChange({
-            detail: { center: { lat: camera.latitude, lng: camera.longitude } },
+        const loadScript = () => {
+          return new Promise<any>((resolve, reject) => {
+            if ((window as any).google && (window as any).google.maps) {
+              resolve((window as any).google);
+              return;
+            }
+            const existingScript = document.getElementById("google-maps-js-sdk");
+            if (existingScript) {
+              const interval = setInterval(() => {
+                if ((window as any).google && (window as any).google.maps) {
+                  clearInterval(interval);
+                  resolve((window as any).google);
+                }
+              }, 100);
+              return;
+            }
+            const script = document.createElement("script");
+            script.id = "google-maps-js-sdk";
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places,geometry`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve((window as any).google);
+            script.onerror = (err) => reject(err);
+            document.head.appendChild(script);
           });
+        };
+
+        const google = await loadScript();
+        if (!isMounted) return;
+
+        // Render the interactive Google Map instance directly in the container
+        map = new google.maps.Map(mapContainerRef.current!, {
+          center: { lat: coords.lat, lng: coords.lng },
+          zoom: 16,
+          disableDefaultUI: true,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          scaleControl: false,
+          rotateControl: false,
+          fullscreenControl: false,
+          gestureHandling: "greedy", // Essential for super smooth fluid drag on mobile touchscreens
         });
+
+        nativeMapRef.current = map;
+
+        // Place a high-contrast glowing green indicator representing actual GPS current location (hilta dulta button)
+        if (gpsCoords && gpsCoords.lat && gpsCoords.lng) {
+          liveDotMarker = new google.maps.Marker({
+            position: { lat: gpsCoords.lat, lng: gpsCoords.lng },
+            map: map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#0b7a2d", // Beautiful Grezto Brand Green
+              fillOpacity: 1,
+              strokeColor: "#FFFFFF", // High-contrast crisp border
+              strokeWeight: 3,
+            },
+            title: "My Live Location",
+            zIndex: 999,
+          });
+          liveDotMarkerRef.current = liveDotMarker;
+        }
+
+        // Camera Idle Listener translating drag positions back to coords
+        map.addListener("idle", () => {
+          const center = map.getCenter();
+          if (center) {
+            handleCameraChange({
+              detail: { center: { lat: center.lat(), lng: center.lng() } },
+            });
+          }
+        });
+
       } catch (err) {
-        console.warn(
-          "Native Map Init Failed (Web fallback may be required):",
-          err,
-        );
+        console.error("Google Maps JS API Init Failed:", err);
       }
     };
 
@@ -249,22 +280,25 @@ export default function Checkout({
 
     return () => {
       isMounted = false;
-      if (nativeMapRef.current) {
-        nativeMapRef.current.destroy();
-        nativeMapRef.current = null;
-      }
     };
-  }, [googleMapsKey]); // Only reinit if key changes
+  }, [googleMapsKey]);
 
-  // Update map center when coordinates change manually via input (forward geocode)
+  // Center map when coords change manually via search/text input
   useEffect(() => {
     if (nativeMapRef.current && lastInteraction === "text") {
-      nativeMapRef.current.setCamera({
-        coordinate: { lat: coords.lat, lng: coords.lng },
-        animate: true,
-      });
+      const map = nativeMapRef.current;
+      if (typeof map.setCenter === "function") {
+        map.setCenter({ lat: coords.lat, lng: coords.lng });
+      }
     }
   }, [coords.lat, coords.lng, lastInteraction]);
+
+  // Sync green live location dot marker when gpsCoords change
+  useEffect(() => {
+    if (liveDotMarkerRef.current && gpsCoords) {
+      liveDotMarkerRef.current.setPosition({ lat: gpsCoords.lat, lng: gpsCoords.lng });
+    }
+  }, [gpsCoords]);
 
   const handlePlaceOrder = async () => {
     if (loading) return;
@@ -755,30 +789,14 @@ export default function Checkout({
             className="relative w-full flex-1 min-h-[185px] h-[185px] bg-transparent overflow-hidden select-none transition-all duration-300 z-10"
           >
             {/* Native Capacitor Map is injected here */}
-            {!googleMapsKey ? (
+            {!googleMapsKey && (
               <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center gap-2 text-stone-500">
                 <span className="w-6 h-6 border-2 border-[#0b7a2d] border-t-transparent rounded-full animate-spin" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-stone-600">
                   Syncing Secure Map API Key...
                 </span>
               </div>
-            ) : !Capacitor.isNativePlatform() ? (
-              <div className="w-full h-full bg-[#f8f9fa] flex flex-col items-center justify-center gap-3 text-stone-500 rounded-2xl border-4 border-white shadow-inner">
-                <div className="w-12 h-12 bg-[#0b7a2d]/10 rounded-full flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-[#0b7a2d]" />
-                </div>
-                <div className="text-center px-4">
-                  <span className="block text-xs font-black uppercase tracking-wider text-stone-800 mb-1">
-                    Native Map Emulator
-                  </span>
-                  <span className="block text-[10px] text-stone-500 leading-tight">
-                    Web preview active. Build for Android
-                    <br />
-                    to experience 100x Native Maps.
-                  </span>
-                </div>
-              </div>
-            ) : null}
+            )}
 
             {/* Locked screen center red needle map pin */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">

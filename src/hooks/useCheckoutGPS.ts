@@ -64,26 +64,43 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   // Track last interaction mode to prevent geocoding loop feedback
   const [lastInteraction, setLastInteraction] = useState<'map' | 'text'>('map');
 
-  const [googleMapsKey, setGoogleMapsKey] = useState<string>(cachedGoogleMapsKey);
+  const [googleMapsKey, setGoogleMapsKey] = useState<string>(() => {
+    if (cachedGoogleMapsKey) return cachedGoogleMapsKey;
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("grezto_google_maps_key");
+      if (cached) return cached;
+    }
+    return "";
+  });
 
   // Fetch verified API Key securely from Server Configuration on component load
   useEffect(() => {
-    if (cachedGoogleMapsKey) {
-      setGoogleMapsKey(cachedGoogleMapsKey);
+    if (googleMapsKey) return;
+
+    // 1. Check direct env variable
+    const directEnvKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY;
+    if (directEnvKey) {
+      cachedGoogleMapsKey = directEnvKey;
+      setGoogleMapsKey(directEnvKey);
       return;
     }
-    fetch('/api/maps/config')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.key) {
-          cachedGoogleMapsKey = data.key;
-          setGoogleMapsKey(data.key);
-        }
-      })
-      .catch(err => {
-        console.error("Error loading maps dynamic key in Checkout GPS hook:", err);
-      });
-  }, []);
+
+    // 2. Fetch using dynamic absolute path to support APK remote host address
+    import("../services/apiConfig").then(({ getAbsoluteApiUrl }) => {
+      fetch(getAbsoluteApiUrl("/api/maps/config"))
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.key) {
+            cachedGoogleMapsKey = data.key;
+            localStorage.setItem("grezto_google_maps_key", data.key);
+            setGoogleMapsKey(data.key);
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading maps dynamic key in Checkout GPS hook:", err);
+        });
+    });
+  }, [googleMapsKey]);
 
   // Automatic GPS Sync and calculations
   const [gpsLoading, setGpsLoading] = useState(false);

@@ -41,80 +41,126 @@ export default function NewGpsMap({
   const [googleMapsKey, setGoogleMapsKey] = useState<string>("");
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const nativeMapRef = useRef<GoogleMap | null>(null);
+  const nativeMapRef = useRef<any>(null);
+  const liveDotMarkerRef = useRef<any>(null);
 
   // Fetch verified API Key securely from Server Configuration on component load
   useEffect(() => {
-    // Synchronous Preheating: Bind network key dependency directly through Environment.
-    const directEnvKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    // 1. Check direct env variable
+    const directEnvKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY;
     if (directEnvKey) {
       setGoogleMapsKey(directEnvKey);
-      console.log("[NewGpsMap] Loaded dynamic Google Maps API key directly from Env.");
-    } else {
-      fetch("/api/maps/config")
+      return;
+    }
+    
+    // 2. Check localStorage cached key
+    const cachedKey = localStorage.getItem('grezto_google_maps_key');
+    if (cachedKey) {
+      setGoogleMapsKey(cachedKey);
+      return;
+    }
+
+    // 3. Dynamic fetch fallback with absolute path
+    import('../services/apiConfig').then(({ getAbsoluteApiUrl }) => {
+      fetch(getAbsoluteApiUrl('/api/maps/config'))
         .then((res) => res.json())
         .then((data) => {
           if (data && data.key) {
+            localStorage.setItem('grezto_google_maps_key', data.key);
             setGoogleMapsKey(data.key);
           }
         })
         .catch((err) => {
           console.error("[NewGpsMap] Failed fetching dynamic Google Maps Config:", err);
         });
-    }
+    });
   }, []);
 
-  // Initialize Native Capacitor Google Map
+  // Initialize Interactive Google Map (Web + Native Unified)
   useEffect(() => {
     if (!mapContainerRef.current || !googleMapsKey) return;
 
     let isMounted = true;
+    let map: any = null;
+    let liveDotMarker: any = null;
 
     const initMap = async () => {
-      if (!Capacitor.isNativePlatform()) {
-        console.warn(
-          "Running in Web mode. Capacitor Native Maps SDK skipped. Using basic UI fallback.",
-        );
-        return;
-      }
-
       try {
-        const newMap = await GoogleMap.create({
-          id: "native-select-gps-map",
-          element: mapContainerRef.current!,
-          apiKey: googleMapsKey,
-          forceCreate: true,
-          config: {
-            center: {
-              lat: coords.lat,
-              lng: coords.lng,
-            },
-            zoom: 16,
-            disableDefaultUI: true,
-            androidLiteMode: false,
-          },
-        });
-
-        if (!isMounted) {
-          newMap.destroy();
-          return;
-        }
-
-        nativeMapRef.current = newMap;
-
-        try {
-          await newMap.enableCurrentLocation(true);
-        } catch (e) {
-          console.warn("Native location dot requires permissions first", e);
-        }
-
-        newMap.setOnCameraIdleListener((camera) => {
-          handleCameraChange({
-            detail: { center: { lat: camera.latitude, lng: camera.longitude } },
+        const loadScript = () => {
+          return new Promise<any>((resolve, reject) => {
+            if ((window as any).google && (window as any).google.maps) {
+              resolve((window as any).google);
+              return;
+            }
+            const existingScript = document.getElementById("google-maps-js-sdk");
+            if (existingScript) {
+              const interval = setInterval(() => {
+                if ((window as any).google && (window as any).google.maps) {
+                  clearInterval(interval);
+                  resolve((window as any).google);
+                }
+              }, 100);
+              return;
+            }
+            const script = document.createElement("script");
+            script.id = "google-maps-js-sdk";
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places,geometry`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve((window as any).google);
+            script.onerror = (err) => reject(err);
+            document.head.appendChild(script);
           });
+        };
+
+        const google = await loadScript();
+        if (!isMounted) return;
+
+        // Render the interactive Google Map instance directly in the container
+        map = new google.maps.Map(mapContainerRef.current!, {
+          center: { lat: coords.lat, lng: coords.lng },
+          zoom: 16,
+          disableDefaultUI: true,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          scaleControl: false,
+          rotateControl: false,
+          fullscreenControl: false,
+          gestureHandling: "greedy", // Fluid touchscreen support
         });
+
+        nativeMapRef.current = map;
+
+        // Place a high-contrast glowing green indicator representing actual GPS current location (hilta dulta button)
+        liveDotMarker = new google.maps.Marker({
+          position: { lat: coords.lat, lng: coords.lng },
+          map: map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: "#0b7a2d", // Grezto Brand Green
+            fillOpacity: 1,
+            strokeColor: "#FFFFFF", // High-contrast border
+            strokeWeight: 3,
+          },
+          title: "My Exact GPS Location",
+          zIndex: 999,
+        });
+        liveDotMarkerRef.current = liveDotMarker;
+
+        // Camera Idle Listener translating drag positions back to coords
+        map.addListener("idle", () => {
+          const center = map.getCenter();
+          if (center) {
+            handleCameraChange({
+              detail: { center: { lat: center.lat(), lng: center.lng() } },
+            });
+          }
+        });
+
       } catch (err) {
-        console.warn("Native Map Init Failed:", err);
+        console.error("[NewGpsMap] Google Maps JS API Init Failed:", err);
       }
     };
 
@@ -122,12 +168,23 @@ export default function NewGpsMap({
 
     return () => {
       isMounted = false;
-      if (nativeMapRef.current) {
-        nativeMapRef.current.destroy();
-        nativeMapRef.current = null;
-      }
     };
   }, [googleMapsKey]);
+
+  // Center map when coords change manually via search/text input or GPS button
+  useEffect(() => {
+    const map = nativeMapRef.current;
+    if (map && typeof map.setCenter === "function" && coords) {
+      const currentCenter = map.getCenter();
+      if (currentCenter) {
+        const currentLat = currentCenter.lat();
+        const currentLng = currentCenter.lng();
+        if (Math.abs(currentLat - coords.lat) > 0.0001 || Math.abs(currentLng - coords.lng) > 0.0001) {
+          map.setCenter({ lat: coords.lat, lng: coords.lng });
+        }
+      }
+    }
+  }, [coords.lat, coords.lng]);
 
   const fetchExactGPSLocation = async () => {
     setGpsLoading(true);
@@ -139,14 +196,17 @@ export default function NewGpsMap({
       const lat = location.latitude;
       const lng = location.longitude;
 
-      if (nativeMapRef.current) {
-        nativeMapRef.current.setCamera({
-          coordinate: { lat, lng },
-          animate: true,
-        });
-      } else {
-        setCoords({ lat, lng });
+      setCoords({ lat, lng });
+
+      const map = nativeMapRef.current;
+      if (map && typeof map.setCenter === "function") {
+        map.setCenter({ lat, lng });
       }
+
+      if (liveDotMarkerRef.current) {
+        liveDotMarkerRef.current.setPosition({ lat, lng });
+      }
+
       toast.success(`Exact location locked! (${location.method})`);
     } catch (err) {
       console.error("GPS telemetry sync failed:", err);
@@ -266,30 +326,14 @@ export default function NewGpsMap({
           </button>
         </div>
 
-        {!googleMapsKey ? (
+        {!googleMapsKey && (
           <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center gap-2.5 text-stone-500 p-8 text-center">
             <span className="w-8 h-8 border-3 border-[#0b7a2d] border-t-transparent rounded-full animate-spin" />
             <span className="text-[10px] font-extrabold uppercase text-stone-600 tracking-wider">
               Syncing Secure Map API Key...
             </span>
           </div>
-        ) : !Capacitor.isNativePlatform() ? (
-          <div className="w-full h-full bg-[#f8f9fa] flex flex-col items-center justify-center gap-3 text-stone-500 p-8 text-center">
-            <div className="w-12 h-12 bg-[#0b7a2d]/10 rounded-full flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-[#0b7a2d]" />
-            </div>
-            <div className="text-center">
-              <span className="block text-xs font-black uppercase tracking-wider text-stone-800 mb-1">
-                Native Map Emulator
-              </span>
-              <span className="block text-[10px] text-stone-500 leading-tight">
-                Web preview active. Build for Android
-                <br />
-                to experience 100x Native Maps.
-              </span>
-            </div>
-          </div>
-        ) : null}
+        )}
 
         {/* Map drag UI hint indicator overlay */}
         <div className="absolute top-2.5 left-2.5 bg-stone-900/80 backdrop-blur-xs px-3 py-1.5 rounded-lg text-[8px] font-black text-[#fcb316] uppercase tracking-widest flex items-center gap-1.5 z-40 pointer-events-none">
