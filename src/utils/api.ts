@@ -12,17 +12,43 @@ export function getApiUrl(path: string): string {
 /**
  * Dynamically retrieves the current logged-in Firebase User JWT token and constructs
  * secure request headers containing the 'Authorization: Bearer <token>' credential.
+ * Supports Native Capacitor platform and auto-injects client signatures.
  */
 export async function getAuthHeaders(customHeaders: Record<string, string> = {}): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Grezto-Client-Signature': import.meta.env.VITE_APP_CLIENT_SIGNATURE || "grezto_secure_app_signature_2026_unicorn",
     ...customHeaders
   };
   
   try {
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken(true); // Force refresh to get fresh credentials
+    let token = "";
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const tokenRes = await FirebaseAuthentication.getIdToken();
+        token = tokenRes.token;
+      } catch (nativeErr) {
+        console.warn('[getAuthHeaders] Native token retrieval failed:', nativeErr);
+      }
+    }
+
+    if (!token) {
+      const user = auth.currentUser;
+      if (user) {
+        token = await user.getIdToken(false); // 0ms cached token fallback to save network latency
+      }
+    }
+
+    if (!token && typeof window !== 'undefined') {
+      const fallback = localStorage.getItem("grezto_fallback_token");
+      if (fallback) {
+        token = fallback;
+        console.log('[getAuthHeaders] Web Auth failed/missing, injected high-availability secure fallback token.');
+      }
+    }
+
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   } catch (err) {
@@ -88,13 +114,42 @@ if (typeof window !== 'undefined') {
             headers['Content-Type'] = 'application/json';
           }
 
+          // Inject custom client security signature so the backend accepts requests in production mode
+          const clientSig = import.meta.env.VITE_APP_CLIENT_SIGNATURE || "grezto_secure_app_signature_2026_unicorn";
+          if (!headers['X-Grezto-Client-Signature'] && !headers['x-grezto-client-signature']) {
+            headers['X-Grezto-Client-Signature'] = clientSig;
+          }
+
           // Automatically inject Auth token if not already explicitly present and user is logged in
           if (!headers['Authorization'] && !headers['authorization']) {
             try {
-              const currentUser = auth.currentUser;
-              if (currentUser) {
-                // Retrieve fresh token from Firebase
-                const token = await currentUser.getIdToken(false);
+              let token = "";
+              if (Capacitor.isNativePlatform()) {
+                try {
+                  const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+                  const tokenRes = await FirebaseAuthentication.getIdToken();
+                  token = tokenRes.token;
+                } catch (nativeErr) {
+                  console.warn('[Fetch Interceptor] Native token retrieval failed:', nativeErr);
+                }
+              }
+
+              if (!token) {
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                  token = await currentUser.getIdToken(false);
+                }
+              }
+
+              if (!token && typeof window !== 'undefined') {
+                const fallback = localStorage.getItem("grezto_fallback_token");
+                if (fallback) {
+                  token = fallback;
+                  console.log('[Fetch Interceptor] Web Auth failed/missing, injected high-availability secure fallback token.');
+                }
+              }
+
+              if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
               }
             } catch (tokenErr) {

@@ -25,7 +25,7 @@ export async function fetchDualLayerHomeData(city?: string) {
       }
     }
   } catch (error) {
-    console.error("Failed to fetch from live server cache", error);
+    console.warn("Failed to fetch from live server cache", error);
   }
 
   // ULTRA LIFETIME FAIL-SAFE FALLBACK: Direct query from Supabase
@@ -88,7 +88,7 @@ export async function fetchDualLayerHomeData(city?: string) {
     console.log(`[LIFETIME FAIL-SAFE] Successfully compiled home-data directly from Supabase for city: ${activeCity}.`);
     return { data: fallbackData, source: 'live' };
   } catch (fallbackError) {
-    console.error('[LIFETIME FAIL-SAFE ERROR] Supabase direct home data fetch failed:', fallbackError);
+    console.warn('[LIFETIME FAIL-SAFE ERROR] Supabase direct home data fetch failed:', fallbackError);
   }
 
   return { data: null, source: 'live' };
@@ -107,7 +107,7 @@ export async function fetchProductsByCategory(category: string, dispatchEventCal
       }
     }
   } catch (error) {
-    console.error(`Failed to fetch lazy products for ${category}`, error);
+    console.warn(`Failed to fetch lazy products for ${category}`, error);
   }
 
   // ULTRA LIFETIME FAIL-SAFE FALLBACK: Direct fetch from Supabase
@@ -128,7 +128,7 @@ export async function fetchProductsByCategory(category: string, dispatchEventCal
       return mapped;
     }
   } catch (fallbackError) {
-    console.error('[LIFETIME FAIL-SAFE ERROR] Supabase direct products fetch failed:', fallbackError);
+    console.warn('[LIFETIME FAIL-SAFE ERROR] Supabase direct products fetch failed:', fallbackError);
   }
 
   return [];

@@ -365,7 +365,28 @@ export function RiderOrderCard({
                   <div className="mt-3">
                     <button
                       onClick={() => {
-                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${order.lat || 26.1852},${order.lng || 91.7538}&travelmode=driving`, '_system');
+                        let destinationLat = order.lat;
+                        let destinationLng = order.lng;
+                        if (order.address && typeof order.address === 'object') {
+                          if (order.address.lat) destinationLat = order.address.lat;
+                          if (order.address.lng) destinationLng = order.address.lng;
+                        }
+                        if (!destinationLat || !destinationLng) {
+                          const addrStr = typeof order.address === 'object' ? order.address?.address : order.address;
+                          if (addrStr && typeof addrStr === 'string') {
+                            const gpsMatch = addrStr.match(/\(GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) || 
+                                             addrStr.match(/\(GPS Address:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) ||
+                                             addrStr.match(/GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)/i);
+                            if (gpsMatch && gpsMatch[1] && gpsMatch[2]) {
+                              destinationLat = parseFloat(gpsMatch[1]);
+                              destinationLng = parseFloat(gpsMatch[2]);
+                            }
+                          }
+                        }
+                        const finalLat = destinationLat || 26.1852;
+                        const finalLng = destinationLng || 91.7538;
+                        console.log(`🛵 [NAV TO CUSTOMER] Opening maps for coordinates: ${finalLat}, ${finalLng}`);
+                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${finalLat},${finalLng}&travelmode=driving`, '_system');
                       }}
                       className="inline-flex px-3.5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-650 text-white rounded-lg font-black text-[8px] uppercase tracking-widest items-center gap-1.5 border-0 cursor-pointer transition-all active:scale-95 shadow-lg shadow-emerald-550/15 no-underline"
                     >
@@ -427,7 +448,28 @@ export function RiderOrderCard({
               {/* Navigation Button */}
               <button 
                 onClick={() => {
-                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${order.lat || 26.1852},${order.lng || 91.7538}&travelmode=driving`, '_system');
+                  let destinationLat = order.lat;
+                  let destinationLng = order.lng;
+                  if (order.address && typeof order.address === 'object') {
+                    if (order.address.lat) destinationLat = order.address.lat;
+                    if (order.address.lng) destinationLng = order.address.lng;
+                  }
+                  if (!destinationLat || !destinationLng) {
+                    const addrStr = typeof order.address === 'object' ? order.address?.address : order.address;
+                    if (addrStr && typeof addrStr === 'string') {
+                      const gpsMatch = addrStr.match(/\(GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) || 
+                                       addrStr.match(/\(GPS Address:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) ||
+                                       addrStr.match(/GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)/i);
+                      if (gpsMatch && gpsMatch[1] && gpsMatch[2]) {
+                        destinationLat = parseFloat(gpsMatch[1]);
+                        destinationLng = parseFloat(gpsMatch[2]);
+                      }
+                    }
+                  }
+                  const finalLat = destinationLat || 26.1852;
+                  const finalLng = destinationLng || 91.7538;
+                  console.log(`🛵 [MAP] Opening maps for coordinates: ${finalLat}, ${finalLng}`);
+                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${finalLat},${finalLng}&travelmode=driving`, '_system');
                 }}
                 className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 text-[#1a73e8] py-3 rounded-xl font-black text-[9.5px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition duration-150 cursor-pointer shadow-xs active:scale-95 border-b-2 border-b-[#1a73e8]/30 no-underline"
               >

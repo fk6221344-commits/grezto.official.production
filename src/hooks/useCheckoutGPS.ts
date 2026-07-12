@@ -166,9 +166,11 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
     setGpsLoading(true);
     setLastInteraction('text');
     try {
-      // If we are running in Web/Preview (iframe), skip native GPS lookup which hangs for 10s due to browser permissions.
-      if (!Capacitor.isNativePlatform()) {
-        console.log("[Checkout GPS] Web environment detected. Skipping native GPS timeout to load instantly (0ms).");
+      // Check if we are inside an iframe (like the AI Studio editor preview window)
+      const isIframe = typeof window !== 'undefined' && window.self !== window.top;
+
+      if (isIframe) {
+        console.log("[Checkout GPS] Iframe environment detected. Skipping live GPS to prevent iframe-lock.");
         const lat = user.lat || MORIGAON_CENTER.lat;
         const lng = user.lng || MORIGAON_CENTER.lng;
         applyLocationDetails(lat, lng);
@@ -182,7 +184,12 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
         toast.success(`Location locked instantly! (${location.method})`, { duration: 1500 });
       } catch (nativeErr: any) {
         console.warn("[Checkout GPS] Multi-tier Geolocation lookup failed:", nativeErr);
-        toast.error("GPS access failed. Please enable hardware location services.");
+        
+        // Final fallback: use previous coords or center
+        const lat = user.lat || MORIGAON_CENTER.lat;
+        const lng = user.lng || MORIGAON_CENTER.lng;
+        applyLocationDetails(lat, lng);
+        toast.error("GPS access failed. Please enable location services on your device.");
       }
     } catch (err: any) {
       console.warn("Location synchronization error:", err);

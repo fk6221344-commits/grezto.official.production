@@ -52,8 +52,15 @@ export const startContinuousCallVibration = () => {
     // We run a 1800ms vibration block followed by a 200ms safety gap before the next loop
     setTimeout(() => {
       Haptics.vibrate({ duration: 1800 }).catch(() => {});
+      // Also trigger webview native vibration as a robust dual-engine fallback on Android
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([1800]);
+      }
       longVibrationInterval = setInterval(() => {
         Haptics.vibrate({ duration: 1800 }).catch(() => {});
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([1800]);
+        }
       }, 2000);
     }, 300);
   }
@@ -79,6 +86,10 @@ export const stopContinuousCallVibration = () => {
 export const triggerNativeImpactVibration = () => {
   if (isNativePlatform()) {
     Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
+    // Dual safety trigger for Android WebView
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([200, 100, 200]);
+    }
   } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
     navigator.vibrate([200, 100, 200]);
   }
@@ -88,6 +99,9 @@ export const triggerLightHapticVibration = () => {
   try {
     if (isNativePlatform()) {
       Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(12);
+      }
     } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(12);
     }
@@ -98,6 +112,9 @@ export const triggerMediumHapticVibration = () => {
   try {
     if (isNativePlatform()) {
       Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(35);
+      }
     } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(35);
     }
@@ -110,6 +127,9 @@ export const triggerSuccessHapticVibration = () => {
       Haptics.vibrate({ duration: 150 }).catch(() => {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       });
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([80, 50, 120]);
+      }
     } else if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate([80, 50, 120]);
     }
@@ -218,17 +238,18 @@ export async function initializeFCMNotifications() {
       // CREATE THE CUSTOM SOUND CHANNEL FOR PUSH NOTIFICATIONS
       try {
         await PushNotifications.createChannel({
-          id: 'grezto_order_channel',
-          name: 'Grezto New Orders',
-          description: 'Loud alarm for new incoming orders.',
+          id: 'grezto_order_channel_v4',
+          name: 'Grezto New Orders v4',
+          description: 'Loud alarm with persistent vibration for new incoming orders.',
           importance: 5, // 5 = High importance (MAX)
           visibility: 1, // 1 = Public
           sound: 'spaceship_alarm', // Name of the sound file WITHOUT extension (spaceship_alarm.mp3 -> spaceship_alarm)
           vibration: true,
+          vibrationPattern: [0, 1500, 200, 1500, 200, 1500, 200, 1500], // High-power vibration pattern
           lights: true,
           lightColor: '#10b981'
-        });
-        console.log("Custom Push sound notification channel created!");
+        } as any);
+        console.log("Custom Push sound notification channel created (v4)!");
       } catch (channelErr) {
         console.warn("Could not create Push notification channel:", channelErr);
       }
@@ -236,17 +257,18 @@ export async function initializeFCMNotifications() {
       // CREATE THE CUSTOM SOUND CHANNEL FOR LOCAL NOTIFICATIONS (Saves sound for Oreo+)
       try {
         await LocalNotifications.createChannel({
-          id: 'grezto_order_channel',
-          name: 'Grezto New Orders',
-          description: 'Loud alarm for new incoming orders.',
+          id: 'grezto_order_channel_v4',
+          name: 'Grezto New Orders v4',
+          description: 'Loud alarm with persistent vibration for new incoming orders.',
           importance: 5, // 5 = High importance (MAX)
           visibility: 1, // 1 = Public
-          sound: 'spaceship_alarm', // Name of the sound file
+          sound: 'spaceship_alarm', // Name of the sound file WITHOUT extension
           vibration: true,
+          vibrationPattern: [0, 1500, 200, 1500, 200, 1500, 200, 1500], // High-power vibration pattern
           lights: true,
           lightColor: '#10b981'
-        });
-        console.log("Custom Local sound notification channel created!");
+        } as any);
+        console.log("Custom Local sound notification channel created (v4)!");
       } catch (localChannelErr) {
         console.warn("Could not create Local notification channel:", localChannelErr);
       }

@@ -300,6 +300,8 @@ CREATE POLICY "Public Team" ON public.team FOR ALL TO anon, authenticated USING 
 -- 17.1 Order Placement RPC
 -- Fully backward-compatible with original Checkout.tsx payloads,
 -- yet properly stores all essential user tracking and address variables.
+-- Automatically registers/syncs the user to public.users and public.profiles 
+-- to completely prevent foreign key (orders_userId_fkey) constraint violations.
 CREATE OR REPLACE FUNCTION place_order(
   p_customer_phone TEXT,
   p_customer_name TEXT,
@@ -319,14 +321,65 @@ CREATE OR REPLACE FUNCTION place_order(
 DECLARE
   v_order_id TEXT;
   v_final_amt NUMERIC;
+  v_resolved_user_id TEXT;
 BEGIN
-  -- Generate order ID if not provided, matching the beautiful Grezto pattern
+  -- 1. Intelligently resolve the customer's User ID to maintain strict relational integrity
+  -- Resolve anonymous or dummy guest IDs to NULL first
+  IF p_user_id = 'anonymous_user' OR p_user_id = '' THEN
+    v_resolved_user_id := NULL;
+  ELSE
+    v_resolved_user_id := p_user_id;
+  END IF;
+
+  -- Try to locate an existing user registration in our system by phone number
+  IF v_resolved_user_id IS NULL AND p_customer_phone IS NOT NULL AND p_customer_phone <> '' THEN
+    SELECT id INTO v_resolved_user_id FROM public.users WHERE phone = p_customer_phone LIMIT 1;
+    
+    IF v_resolved_user_id IS NULL THEN
+      SELECT id INTO v_resolved_user_id FROM public.profiles WHERE phone = p_customer_phone LIMIT 1;
+    END IF;
+  END IF;
+
+  -- 2. If a valid user ID is associated, ensure it exists in both users & profiles to satisfy FKEYs
+  IF v_resolved_user_id IS NOT NULL THEN
+    -- Satisfy 'orders_userId_fkey' by ensuring the row exists in public.users first!
+    INSERT INTO public.users (id, phone, name, role, "createdAt", "updatedAt")
+    VALUES (
+      v_resolved_user_id,
+      p_customer_phone,
+      COALESCE(p_customer_name, 'Grezto Member'),
+      'Customer',
+      timezone('utc'::text, now()),
+      timezone('utc'::text, now())
+    )
+    ON CONFLICT (phone) DO UPDATE
+    SET 
+      name = COALESCE(p_customer_name, public.users.name),
+      "updatedAt" = timezone('utc'::text, now());
+
+    -- Also sync public.profiles to keep legacy/secondary views aligned
+    INSERT INTO public.profiles (id, phone, name, role, "createdAt", "updatedAt")
+    VALUES (
+      v_resolved_user_id,
+      p_customer_phone,
+      COALESCE(p_customer_name, 'Grezto Member'),
+      'Customer',
+      timezone('utc'::text, now()),
+      timezone('utc'::text, now())
+    )
+    ON CONFLICT (phone) DO UPDATE
+    SET 
+      name = COALESCE(p_customer_name, public.profiles.name),
+      "updatedAt" = timezone('utc'::text, now());
+  END IF;
+
+  -- 3. Generate order ID if not provided, matching the beautiful Grezto pattern
   v_order_id := COALESCE(p_order_id, 'OR-' || upper(substring(gen_random_uuid()::text from 1 for 6)));
   
   -- Calculate final amount if not supplied
   v_final_amt := COALESCE(p_final_amount, p_total_amount + p_delivery_charge + p_platform_fee);
 
-  -- Insert order securely
+  -- 4. Insert order securely
   INSERT INTO public.orders (
     id,
     "userId",
@@ -345,7 +398,7 @@ BEGIN
     "updatedAt"
   ) VALUES (
     v_order_id,
-    p_user_id,
+    v_resolved_user_id,
     p_customer_name,
     p_customer_phone,
     p_shop_ids,
@@ -364,21 +417,6 @@ BEGIN
     timezone('utc'::text, now()),
     timezone('utc'::text, now())
   );
-
-  -- Sync/Create the customer profile automatically if they don't have one!
-  INSERT INTO public.profiles (id, phone, name, role, "createdAt", "updatedAt")
-  VALUES (
-    COALESCE(p_user_id, 'usr_' || upper(substring(gen_random_uuid()::text from 1 for 8))),
-    p_customer_phone,
-    p_customer_name,
-    'Customer',
-    timezone('utc'::text, now()),
-    timezone('utc'::text, now())
-  )
-  ON CONFLICT (phone) DO UPDATE
-  SET 
-    name = COALESCE(p_customer_name, public.profiles.name),
-    "updatedAt" = timezone('utc'::text, now());
 
   RETURN v_order_id;
 END;

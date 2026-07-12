@@ -22,15 +22,30 @@ isSupported().then((supported) => {
 
 export const auth = getAuth(app);
 
-// Automatically authenticate client session anonymously on startup to ensure a valid request.auth is present
+// Automatically authenticate client session anonymously on startup if there is no active/saved phone credential
 try {
-  signInAnonymously(auth)
-    .then((userCred) => {
-      console.log("[Firebase Auth] Production anonymous credentials established successfully:", userCred.user.uid);
-    })
-    .catch((err) => {
-      console.warn("[Firebase Auth] Anonymous sign-in failed (offline or container mode):", err);
-    });
+  const saved = localStorage.getItem('grezto_user');
+  let hasPhone = false;
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.phone && parsed.phone.trim() !== "") {
+        hasPhone = true;
+      }
+    } catch (e) {}
+  }
+
+  if (!hasPhone) {
+    signInAnonymously(auth)
+      .then((userCred) => {
+        console.log("[Firebase Auth] Production anonymous credentials established successfully:", userCred.user.uid);
+      })
+      .catch((err) => {
+        console.warn("[Firebase Auth] Anonymous sign-in failed (offline or container mode):", err);
+      });
+  } else {
+    console.log("[Firebase Auth] Saved phone session detected. Skipping auto-anonymous fallback during module loading to protect user state.");
+  }
 } catch (e) {
   console.warn("[Firebase Auth] Init error:", e);
 }

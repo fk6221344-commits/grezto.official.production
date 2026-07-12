@@ -341,6 +341,11 @@ export function useRiderOperations() {
 
       console.log("[SERVER RIDER OTP VERIFICATION SUCCESS]", resData);
 
+      if (resData.fallbackToken) {
+        localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
+        console.log("[Fallback Auth] Cryptographic fallback token stored securely (Rider mode).");
+      }
+
       // Support native client session association if desired
       if (resData.customToken && !isVerified) {
         try {

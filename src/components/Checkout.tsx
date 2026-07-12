@@ -30,14 +30,17 @@ import {
   X,
   LocateFixed,
   Pencil,
+  Plus,
+  Leaf,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { auth } from "../services/firebase";
 import { useUser } from "../context/UserContext";
 import toast from "react-hot-toast";
 import { CartCalculationOverlay, AddressConfirmationSheet } from "./cart/CartDrawer";
-import { GoogleMap } from "@capacitor/google-maps";
 import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
+import { getUnifiedHighSpeedLocation } from "../lib/geocoder";
 import {
   LOCAL_MAP_LANDMARKS,
   findNearestLandmark,
@@ -45,6 +48,19 @@ import {
 import { calculateDistance } from "../lib/distance";
 import { useCheckoutGPS, MORIGAON_CENTER } from "../hooks/useCheckoutGPS";
 import { triggerSuccessHapticVibration } from "../services/nativeService";
+
+interface SavedAddress {
+  id: string;
+  name: string;
+  state: string;
+  pincode: string;
+  city: string;
+  houseNo: string;
+  area: string;
+  landmark: string;
+  lat: number;
+  lng: number;
+}
 
 export default function Checkout({
   onBack,
@@ -59,6 +75,71 @@ export default function Checkout({
   const [selectedVoucher, setSelectedVoucher] = useState<any | null>(null);
   const [shopsData, setShopsData] = useState<any[]>([]);
   const [isPreorder, setIsPreorder] = useState(false);
+
+  // Saved addresses list initialized from localStorage (or legacy address migration)
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => {
+    try {
+      const saved = localStorage.getItem("grezto_saved_addresses");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+
+    try {
+      const legacy = localStorage.getItem("grezto_delivery_details");
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (parsed.name && parsed.city) {
+          const migrated: SavedAddress = {
+            id: "addr_migrated_" + Date.now(),
+            name: parsed.name,
+            state: "Assam",
+            pincode: parsed.pincode || "782411",
+            city: parsed.city,
+            houseNo: parsed.houseNo || "",
+            area: parsed.area || "",
+            landmark: parsed.landmark || "",
+            lat: user.lat || 26.243455,
+            lng: user.lng || 92.1306235
+          };
+          return [migrated];
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem("grezto_saved_addresses");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed[0].id;
+        }
+      }
+    } catch (e) {}
+    const legacy = localStorage.getItem("grezto_delivery_details");
+    if (legacy) {
+      return "addr_migrated_"; // Falls back to first active migrated address
+    }
+    return null;
+  });
+
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [isCreatingNewAddress, setIsCreatingNewAddress] = useState<boolean>(() => {
+    return savedAddresses.length === 0;
+  });
+
+  // Form inputs matching the 2x4 layout
+  const [stateInput, setStateInput] = useState("Assam");
+  const [pincodeInput, setPincodeInput] = useState("");
+  const [cityInput, setCityInput] = useState("");
+  const [houseNoInput, setHouseNoInput] = useState("");
+  const [areaInput, setAreaInput] = useState("");
+  const [landmarkInput, setLandmarkInput] = useState("");
+  const [nameInput, setNameInput] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -146,6 +227,42 @@ export default function Checkout({
     isOutOfRange,
   } = useCheckoutGPS({ user, updateProfile, subtotal, items });
 
+  // Find currently active selected address
+  const activeAddress = useMemo(() => {
+    return savedAddresses.find((addr) => addr.id === selectedAddressId) || null;
+  }, [savedAddresses, selectedAddressId]);
+
+  // Sync state between activeAddress / form inputs and useCheckoutGPS hook variables
+  useEffect(() => {
+    if (isCreatingNewAddress || editingAddressId) {
+      // In Form View: Sync inputs to useCheckoutGPS
+      setNameVal(nameInput);
+      setCityVal(cityInput);
+      setAreaVal(areaInput);
+      setLandmarkVal(landmarkInput);
+    } else if (activeAddress) {
+      // In Saved Address View: Sync activeAddress to useCheckoutGPS
+      setNameVal(activeAddress.name);
+      setCityVal(activeAddress.city);
+      setAreaVal(activeAddress.area);
+      setLandmarkVal(activeAddress.landmark);
+      setCoords({ lat: activeAddress.lat, lng: activeAddress.lng });
+    }
+  }, [
+    isCreatingNewAddress,
+    editingAddressId,
+    activeAddress,
+    nameInput,
+    cityInput,
+    areaInput,
+    landmarkInput,
+    setNameVal,
+    setCityVal,
+    setAreaVal,
+    setLandmarkVal,
+    setCoords
+  ]);
+
   const [nominatimAddress, setNominatimAddress] = useState<string>("");
   const [nominatimLoading, setNominatimLoading] = useState<boolean>(false);
 
@@ -186,119 +303,128 @@ export default function Checkout({
   const nativeMapRef = useRef<any>(null);
   const liveDotMarkerRef = useRef<any>(null);
 
-  // Initialize Interactive Google Map (Web + Native Unified)
+  // Google Maps interactive initialization is removed per user request to provide a clean, 100% stable layout without map loading errors.
+  // All native GPS satellite locking, reverse geocoding, and zone distance calculations are fully preserved.
+
+  // Pre-fill landmarkInput and cityInput from nominatim geocoder results during creation/editing
   useEffect(() => {
-    if (!mapContainerRef.current || !googleMapsKey) return;
-
-    let isMounted = true;
-    let map: any = null;
-    let liveDotMarker: any = null;
-
-    const initMap = async () => {
-      try {
-        const loadScript = () => {
-          return new Promise<any>((resolve, reject) => {
-            if ((window as any).google && (window as any).google.maps) {
-              resolve((window as any).google);
-              return;
-            }
-            const existingScript = document.getElementById("google-maps-js-sdk");
-            if (existingScript) {
-              const interval = setInterval(() => {
-                if ((window as any).google && (window as any).google.maps) {
-                  clearInterval(interval);
-                  resolve((window as any).google);
-                }
-              }, 100);
-              return;
-            }
-            const script = document.createElement("script");
-            script.id = "google-maps-js-sdk";
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsKey}&libraries=places,geometry`;
-            script.async = true;
-            script.defer = true;
-            script.onload = () => resolve((window as any).google);
-            script.onerror = (err) => reject(err);
-            document.head.appendChild(script);
-          });
-        };
-
-        const google = await loadScript();
-        if (!isMounted) return;
-
-        // Render the interactive Google Map instance directly in the container
-        map = new google.maps.Map(mapContainerRef.current!, {
-          center: { lat: coords.lat, lng: coords.lng },
-          zoom: 16,
-          disableDefaultUI: true,
-          zoomControl: false,
-          mapTypeControl: false,
-          streetViewControl: false,
-          scaleControl: false,
-          rotateControl: false,
-          fullscreenControl: false,
-          gestureHandling: "greedy", // Essential for super smooth fluid drag on mobile touchscreens
-        });
-
-        nativeMapRef.current = map;
-
-        // Place a high-contrast glowing green indicator representing actual GPS current location (hilta dulta button)
-        if (gpsCoords && gpsCoords.lat && gpsCoords.lng) {
-          liveDotMarker = new google.maps.Marker({
-            position: { lat: gpsCoords.lat, lng: gpsCoords.lng },
-            map: map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: "#0b7a2d", // Beautiful Grezto Brand Green
-              fillOpacity: 1,
-              strokeColor: "#FFFFFF", // High-contrast crisp border
-              strokeWeight: 3,
-            },
-            title: "My Live Location",
-            zIndex: 999,
-          });
-          liveDotMarkerRef.current = liveDotMarker;
-        }
-
-        // Camera Idle Listener translating drag positions back to coords
-        map.addListener("idle", () => {
-          const center = map.getCenter();
-          if (center) {
-            handleCameraChange({
-              detail: { center: { lat: center.lat(), lng: center.lng() } },
-            });
-          }
-        });
-
-      } catch (err) {
-        console.error("Google Maps JS API Init Failed:", err);
-      }
-    };
-
-    initMap();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [googleMapsKey]);
-
-  // Center map when coords change manually via search/text input
-  useEffect(() => {
-    if (nativeMapRef.current && lastInteraction === "text") {
-      const map = nativeMapRef.current;
-      if (typeof map.setCenter === "function") {
-        map.setCenter({ lat: coords.lat, lng: coords.lng });
+    if ((isCreatingNewAddress || editingAddressId) && nominatimAddress) {
+      if (!landmarkInput) {
+        setLandmarkInput(nominatimAddress);
       }
     }
-  }, [coords.lat, coords.lng, lastInteraction]);
+  }, [nominatimAddress, isCreatingNewAddress, editingAddressId]);
 
-  // Sync green live location dot marker when gpsCoords change
-  useEffect(() => {
-    if (liveDotMarkerRef.current && gpsCoords) {
-      liveDotMarkerRef.current.setPosition({ lat: gpsCoords.lat, lng: gpsCoords.lng });
+  const handleEditAddress = (addr: SavedAddress) => {
+    setEditingAddressId(addr.id);
+    setNameInput(addr.name);
+    setStateInput(addr.state);
+    setPincodeInput(addr.pincode);
+    setCityInput(addr.city);
+    setHouseNoInput(addr.houseNo);
+    setAreaInput(addr.area);
+    setLandmarkInput(addr.landmark);
+    setCoords({ lat: addr.lat, lng: addr.lng });
+    setIsCreatingNewAddress(false);
+  };
+
+  const handleCreateNewAddress = () => {
+    setNameInput(user.name || "");
+    setStateInput("Assam");
+    setPincodeInput("");
+    setCityInput("");
+    setHouseNoInput("");
+    setAreaInput("");
+    setLandmarkInput("");
+    setIsCreatingNewAddress(true);
+    setEditingAddressId(null);
+    fetchAutomaticGPSDetails(); // Trigger GPS sync for the new address coords
+  };
+
+  const handleSyncCurrentLocation = async () => {
+    await fetchAutomaticGPSDetails();
+    if (activeAddress) {
+      const updated = savedAddresses.map(addr => 
+        addr.id === selectedAddressId 
+          ? { ...addr, lat: coords.lat, lng: coords.lng } 
+          : addr
+      );
+      setSavedAddresses(updated);
+      localStorage.setItem("grezto_saved_addresses", JSON.stringify(updated));
+      toast.success("Synced coordinates to active address!");
     }
-  }, [gpsCoords]);
+  };
+
+  const handleFormBack = () => {
+    if (savedAddresses.length > 0) {
+      setEditingAddressId(null);
+      setIsCreatingNewAddress(false);
+    } else {
+      onBack();
+    }
+  };
+
+  const handleSaveAndPlaceOrder = async () => {
+    if (!nameInput.trim()) {
+      toast.error("Please enter Your Name first.");
+      return;
+    }
+    if (!cityInput.trim()) {
+      toast.error("Please enter City / Village first.");
+      return;
+    }
+    if (!areaInput.trim()) {
+      toast.error("Please enter Nearby Area first.");
+      return;
+    }
+    if (!pincodeInput.trim()) {
+      toast.error("Please enter Pincode first.");
+      return;
+    }
+    if (!houseNoInput.trim()) {
+      toast.error("Please enter House No / Name first.");
+      return;
+    }
+    if (!landmarkInput.trim()) {
+      toast.error("Please enter Famous School / Shops landmark first.");
+      return;
+    }
+
+    const newAddress: SavedAddress = {
+      id: editingAddressId || "addr_" + Date.now(),
+      name: nameInput.trim(),
+      state: stateInput.trim(),
+      pincode: pincodeInput.trim(),
+      city: cityInput.trim(),
+      houseNo: houseNoInput.trim(),
+      area: areaInput.trim(),
+      landmark: landmarkInput.trim(),
+      lat: coords.lat,
+      lng: coords.lng,
+    };
+
+    let updatedList: SavedAddress[] = [];
+    if (editingAddressId) {
+      updatedList = savedAddresses.map(addr => addr.id === editingAddressId ? newAddress : addr);
+      toast.success("Address updated and selected!");
+    } else {
+      updatedList = [newAddress, ...savedAddresses];
+      toast.success("Address saved and selected!");
+    }
+
+    setSavedAddresses(updatedList);
+    localStorage.setItem("grezto_saved_addresses", JSON.stringify(updatedList));
+    setSelectedAddressId(newAddress.id);
+    
+    // Clear editing/creating states
+    setEditingAddressId(null);
+    setIsCreatingNewAddress(false);
+
+    // Call place order with small delay to allow synced states
+    setTimeout(() => {
+      handlePlaceOrder();
+    }, 100);
+  };
 
   const handlePlaceOrder = async () => {
     if (loading) return;
@@ -318,7 +444,9 @@ export default function Checkout({
       return;
     }
 
-    const finalAddress = `${areaVal.trim()}, ${cityVal.trim()} (GPS Address: ${nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`})`;
+    const finalAddress = activeAddress && !isCreatingNewAddress && !editingAddressId
+      ? `House No ${activeAddress.houseNo.trim()}, ${activeAddress.area.trim()}, Near: ${activeAddress.landmark.trim()}, ${activeAddress.city.trim()} - ${activeAddress.pincode.trim()} (GPS: ${activeAddress.lat.toFixed(6)}, ${activeAddress.lng.toFixed(6)})`
+      : `${areaVal.trim()}, ${cityVal.trim()} (GPS Address: ${nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`})`;
 
     // Save details to localStorage for future orders and mark details submitted
     if (typeof window !== "undefined") {
@@ -721,7 +849,7 @@ export default function Checkout({
   return (
     <div className="w-full h-screen bg-[#f8faf8] flex flex-col justify-between font-sans overflow-hidden select-none relative">
       {/* 1. NATIVE INTEGRATED WHITE HEADER BLOCK */}
-      <div className="w-full bg-white border-b border-stone-200/90 px-3.5 py-2.5 shrink-0 z-50 select-none">
+      <div className={`w-full bg-white border-b border-stone-200/90 px-3.5 ${Capacitor.isNativePlatform() ? 'pt-[max(env(safe-area-inset-top),52px)] pb-3.5' : 'pt-11 pb-2.5'} shrink-0 z-50 select-none`}>
         <div className="max-w-sm mx-auto flex items-center justify-between">
           {/* Back button */}
           <button
@@ -781,147 +909,261 @@ export default function Checkout({
 
       {/* 2. COMPACT SCROLL VIEW BODY */}
       <div className="flex-1 min-h-0 flex flex-col overflow-y-auto pb-1 scroll-smooth">
-        {/* 2. REPOSITIONED IMMERSIVE VISUAL MAP BOX CONTROLLER - Attaching to both side edges with full width look */}
-        <div className="w-full bg-white relative flex flex-col flex-1 min-h-0 transition-all duration-300">
-          {/* Map container - responsive height that fills available space */}
-          <div
-            ref={mapContainerRef}
-            className="relative w-full flex-1 min-h-[185px] h-[185px] bg-transparent overflow-hidden select-none transition-all duration-300 z-10"
-          >
-            {/* Native Capacitor Map is injected here */}
-            {!googleMapsKey && (
-              <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center gap-2 text-stone-500">
-                <span className="w-6 h-6 border-2 border-[#0b7a2d] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[9px] font-black uppercase tracking-wider text-stone-600">
-                  Syncing Secure Map API Key...
+        
+        {/* CONDITIONAL SUB-HEADER FOR ADDRESS FORM GRID */}
+        {(isCreatingNewAddress || editingAddressId) && (
+          <div className="w-full bg-white px-4 py-3 border-b border-stone-100 flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={handleFormBack}
+              className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center cursor-pointer hover:bg-stone-100 border border-stone-200 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-stone-700 stroke-[3]" />
+            </button>
+            <span className="text-[12px] font-black uppercase tracking-wider text-stone-850">
+              {editingAddressId ? "EDIT ADDRESS DETAILS" : "ADDRESS DETAILS"}
+            </span>
+          </div>
+        )}
+
+        {/* SCREEN FLOW 1: 2x4 ADDRESS DETAILS INPUT FORM */}
+        {(isCreatingNewAddress || editingAddressId) ? (
+          <div className="p-3.5 bg-white shrink-0">
+            <div className="grid grid-cols-2 gap-3">
+              
+              {/* 1. STATE */}
+              <div className="border-[1.5px] border-stone-200 rounded-2xl px-4 py-2.5 flex flex-col bg-stone-50 select-none">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  STATE
+                </label>
+                <input
+                  type="text"
+                  value={stateInput}
+                  readOnly
+                  disabled
+                  className="w-full text-[11px] font-black text-stone-850 bg-transparent outline-none p-0 border-none cursor-not-allowed focus:ring-0"
+                />
+              </div>
+
+              {/* 2. EXACT GPS LOCATION */}
+              <div
+                onClick={fetchAutomaticGPSDetails}
+                className="border-[1.5px] border-blue-200 rounded-2xl px-4 py-2 flex flex-col bg-blue-50/10 hover:bg-blue-50/20 transition-all cursor-pointer select-none relative group"
+              >
+                <div className="flex items-center gap-1.5 justify-between">
+                  <span className="text-[8.5px] font-black uppercase text-blue-600 tracking-widest">
+                    📍 EXACT GPS
+                  </span>
+                  <button
+                    type="button"
+                    className="text-[7.5px] font-black text-blue-500 hover:underline uppercase"
+                  >
+                    {gpsLoading ? 'SYNCING...' : 'SYNC'}
+                  </button>
+                </div>
+                <span className="text-[11px] font-mono font-black text-blue-700 mt-1.5 leading-none truncate">
+                  {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
                 </span>
               </div>
-            )}
 
-            {/* Locked screen center red needle map pin */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-              <div className="relative flex flex-col items-center">
-                {/* Ping pulse indicator centered on the actual pin tip location */}
-                <span className="absolute w-10 h-10 bg-red-650/15 rounded-full animate-ping border border-red-500/20 -translate-y-1" />
-
-                {/* High-contrast, recognizable 📍 Emoji Pin */}
-                <span className="text-[40px] leading-none select-none relative z-10 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.22)] -mt-11 translate-x-1">
-                  📍
-                </span>
-
-                {/* Ambient drop shadow under the pin's point */}
-                <div className="w-3 h-1.5 bg-stone-900/35 rounded-full blur-[1px] translate-y-0.5" />
+              {/* 3. PINCODE */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  PINCODE
+                </label>
+                <input
+                  type="number"
+                  pattern="[0-9]*"
+                  placeholder="782411"
+                  value={pincodeInput}
+                  onChange={(e) => setPincodeInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
               </div>
+
+              {/* 4. CITY / VILLAGE */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  CITY / VILLAGE
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Baramari"
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
+              </div>
+
+              {/* 5. HOUSE NO / NAME */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  HOUSE NO / NAME
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. House No 15"
+                  value={houseNoInput}
+                  onChange={(e) => setHouseNoInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
+              </div>
+
+              {/* 6. NEARBY AREA */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  NEARBY AREA
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Baramari I.P"
+                  value={areaInput}
+                  onChange={(e) => setAreaInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
+              </div>
+
+              {/* 7. FAMOUS SCHOOL / SHOPS */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all col-span-2">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  FAMOUS SCHOOL / SHOPS (LANDMARK)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Near L.P School"
+                  value={landmarkInput}
+                  onChange={(e) => setLandmarkInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
+              </div>
+
+              {/* 8. YOUR NAME */}
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all col-span-2">
+                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
+                  YOUR NAME
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter recipient full name"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
+                />
+              </div>
+
             </div>
 
-            {/* Native "My Location" Floating Action Button */}
-            <div className="absolute bottom-4 right-4 z-40">
+            {/* Save details local info and proceed button inside form */}
+            <div className="mt-4 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={fetchAutomaticGPSDetails}
-                disabled={gpsLoading}
-                className={`w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-lg border border-stone-200 transition-all active:scale-95 ${gpsLoading ? 'opacity-75' : ''}`}
+                onClick={handleSaveAndPlaceOrder}
+                className="w-full py-3.5 bg-[#0b7a2d] hover:bg-[#096024] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl shadow-sm transition-all active:scale-[0.99] cursor-pointer"
               >
-                {gpsLoading ? (
-                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                ) : (
-                  <LocateFixed className="w-5 h-5 text-blue-600" />
-                )}
+                SAVE ADDRESS & PROCEED
               </button>
             </div>
           </div>
+        ) : (
+          /* SCREEN FLOW 2: LIST OF SAVED ADDRESSES FOR SUBSEQUENT USERS */
+          <div className="pt-3 px-3.5 pb-2 shrink-0 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">
+                SELECT DELIVERY ADDRESS
+              </span>
+              <span className="text-[10px] bg-emerald-50 text-[#0b7a2d] px-2.5 py-0.5 rounded-full font-extrabold border border-emerald-100">
+                {savedAddresses.length} Saved
+              </span>
+            </div>
 
-          {/* 3. Helper Layer - Restored signature yellow color, but styled as an ultra-slim, sleek, and elegant slice bar */}
-          <div className="bg-[#fcb316] border-y border-stone-950/10 py-1 px-3.5 flex items-center justify-between text-[9px] font-black uppercase tracking-wider shrink-0 select-none">
-            {/* Left side helper guide - extremely clear & slim black label */}
-            <span className="text-[9px] text-[#0d140e] font-black flex items-center gap-1 font-sans uppercase tracking-[0.03em]">
-              <span>👇 drag map to center doorstep</span>
-            </span>
-            {/* Right-aligned solid location selector tag - COMPACT & Vivid Green (kept exactly identical per user intent) */}
-            <div className="flex items-center gap-1 bg-[#0b7a2d] text-white px-2.5 py-0.75 rounded-lg text-[9.5px] font-black uppercase shadow-xs tracking-wider transition-all cursor-pointer active:scale-95">
-              <MapPin className="w-3 h-3 text-red-500 fill-red-500 animate-bounce" />
-              <span>SELECT PLACE</span>
+            {/* Saved Address list (Render all saved addresses so they can select or edit) */}
+            <div className="flex flex-col gap-3">
+              {savedAddresses.map((addr) => {
+                const isSelected = addr.id === selectedAddressId;
+                return (
+                  <div
+                    key={addr.id}
+                    onClick={() => setSelectedAddressId(addr.id)}
+                    className={`bg-white rounded-[20px] border-2 p-4 flex items-start justify-between min-w-0 w-full relative transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#0b7a2d] border-l-[8px] border-l-[#0b7a2d] shadow-sm'
+                        : 'border-stone-200/80 hover:border-stone-300'
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0 items-start text-left">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-[#e2f3e7] text-[#0b7a2d] text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full leading-none">
+                          HOME
+                        </span>
+                        <span className="text-[13px] font-black text-stone-900 leading-none">
+                          {addr.name}
+                        </span>
+                      </div>
+                      
+                      <div className="text-[11px] tracking-tight leading-normal mt-1.5 flex flex-col gap-0.5">
+                        <span className="font-extrabold text-stone-800">
+                          House No {addr.houseNo}, {addr.area}
+                        </span>
+                        <span className="text-stone-500 text-[10px] font-semibold">
+                          {addr.landmark ? `${addr.landmark}, ` : ""}{addr.city} - {addr.pincode}
+                        </span>
+                      </div>
+
+                      <div className="mt-2.5 px-2.5 py-1 bg-blue-50/60 rounded-lg border border-blue-100/50 flex items-center gap-1 self-start select-none">
+                        <span className="text-[#1d4ed8] text-[9.5px] font-black tracking-wide uppercase font-mono">
+                          GPS: {addr.lat.toFixed(5)}, {addr.lng.toFixed(5)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditAddress(addr);
+                      }}
+                      className="flex items-center gap-1 bg-white border border-stone-200 hover:border-stone-300 shadow-3xs rounded-full text-stone-700 text-[9px] font-black px-3 py-1.5 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Pencil className="w-3 h-3 text-stone-600" />
+                      <span>EDIT</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick helper control buttons */}
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              <button
+                type="button"
+                onClick={handleCreateNewAddress}
+                className="w-full bg-white border-2 border-dashed border-emerald-200 hover:border-emerald-300 text-[#0b7a2d] py-3.5 px-3 rounded-2xl flex items-center justify-center space-x-1.5 text-[10.5px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-3xs"
+              >
+                <Plus className="w-4 h-4 stroke-[3] text-[#0b7a2d]" />
+                <span>NEW ADDRESS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSyncCurrentLocation}
+                disabled={gpsLoading}
+                className="w-full bg-white border border-blue-200 hover:border-blue-300 text-blue-600 py-3.5 px-3 rounded-2xl flex items-center justify-center space-x-1.5 text-[10.5px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-3xs disabled:opacity-60"
+              >
+                <LocateFixed className={`w-4 h-4 text-blue-600 ${gpsLoading ? 'animate-spin' : ''}`} />
+                <span>{gpsLoading ? 'SYNCING...' : 'SYNC GPS'}</span>
+              </button>
             </div>
           </div>
+        )}
 
-          {/* My Address Details - Auto triggers map coordinates movement upon edits */}
-          <div className="pt-2 px-2.5 pb-2.5 bg-white shrink-0">
-            {isDetailsSubmitted ? (
-              <AddressConfirmationSheet
-                nameVal={nameVal}
-                areaVal={areaVal}
-                cityVal={cityVal}
-                lat={coords.lat}
-                lng={coords.lng}
-                onEdit={() => setIsDetailsSubmitted(false)}
-              />
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="border-[1.5px] border-stone-400 rounded-[10px] px-2.5 py-1 flex flex-col justify-center bg-white focus-within:bg-emerald-50/10 focus-within:border-emerald-500 transition-colors">
-                    <label className="text-[7.5px] font-black uppercase text-stone-600 font-sans tracking-widest mb-0.5 leading-none">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={nameVal}
-                      onChange={(e) => {
-                        setLastInteraction("text");
-                        setNameVal(e.target.value);
-                      }}
-                      className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                    />
-                  </div>
-
-                  <div className="border-[1.5px] border-stone-400 rounded-[10px] px-2.5 py-1 flex flex-col justify-center bg-white focus-within:bg-emerald-50/10 focus-within:border-emerald-500 transition-colors">
-                    <label className="text-[7.5px] font-black uppercase text-stone-600 font-sans tracking-widest mb-0.5 leading-none">
-                      City / Village
-                    </label>
-                    <input
-                      type="text"
-                      value={cityVal}
-                      onChange={(e) => {
-                        setLastInteraction("text");
-                        setCityVal(e.target.value);
-                      }}
-                      className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="border-[1.5px] border-stone-400 rounded-[10px] px-2.5 py-1 flex flex-col justify-center bg-white focus-within:bg-emerald-50/10 focus-within:border-emerald-500 transition-colors">
-                    <label className="text-[7.5px] font-black uppercase text-stone-600 font-sans tracking-widest mb-0.5 leading-none">
-                      Nearby Area
-                    </label>
-                    <input
-                      type="text"
-                      value={areaVal}
-                      onChange={(e) => {
-                        setLastInteraction("text");
-                        setAreaVal(e.target.value);
-                      }}
-                      className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                    />
-                  </div>
-
-                  <div className="border-[1.5px] border-blue-200 rounded-[10px] px-2.5 py-1 flex flex-col justify-center bg-blue-50/30 select-none cursor-not-allowed">
-                    <label className="text-[7.5px] font-black uppercase text-[#1d4ed8]/80 font-sans tracking-widest mb-0.5 leading-none">
-                      GPS Location
-                    </label>
-                    <input
-                      type="text"
-                      value={nominatimLoading ? "Locating exact address..." : (nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)}
-                      readOnly
-                      disabled
-                      className="w-full text-[11px] font-black text-[#1d4ed8] bg-transparent outline-none p-0 border-none cursor-not-allowed focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap"
-                    />
-                  </div>
-                </div>
-
-              </div>
-            )}
+        {/* Cohesive Tagline Banner */}
+        <div className="flex flex-col items-center justify-center my-6 py-4 opacity-75">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/5 flex items-center justify-center mb-2">
+            <Leaf className="w-6 h-6 text-[#0b7a2d]" />
           </div>
+          <span className="text-[10px] font-black text-stone-400 tracking-widest uppercase">
+            100% FRESH • DIRECT FROM FARM
+          </span>
         </div>
 
         {/* 6. Itemized Cost Calculations Box */}
@@ -984,11 +1226,11 @@ export default function Checkout({
           {/* Rightside: Click To Place Order CTA */}
           <div className="flex-1 min-w-0">
             <motion.button
-              whileTap={!isOutOfRange && !loading && !gpsLoading && nameVal.trim() && cityVal.trim() && areaVal.trim() ? { scale: 0.98 } : undefined}
+              whileTap={!isOutOfRange && !loading && !gpsLoading ? { scale: 0.98 } : undefined}
               disabled={loading || gpsLoading || isOutOfRange}
-              onClick={handlePlaceOrder}
+              onClick={(isCreatingNewAddress || editingAddressId) ? handleSaveAndPlaceOrder : handlePlaceOrder}
               className={`w-full py-4 px-3.5 rounded-xl text-white font-black text-[10.5px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all ${
-                isOutOfRange || loading || gpsLoading || !nameVal.trim() || !cityVal.trim() || !areaVal.trim()
+                isOutOfRange || loading || gpsLoading
                   ? "bg-stone-400 cursor-not-allowed opacity-80"
                   : "bg-[#0e9f6e] hover:bg-[#0b8058] shadow-emerald-700/10 hover:shadow-emerald-700/20 cursor-pointer"
               }`}
@@ -1001,7 +1243,9 @@ export default function Checkout({
               ) : (
                 <>
                   <ShoppingBag className="w-4 h-4 text-white shrink-0" />
-                  <span className="truncate">Place Order</span>
+                  <span className="truncate">
+                    {(isCreatingNewAddress || editingAddressId) ? "Save & Place Order" : "Place Order"}
+                  </span>
                   <ArrowRight className="w-4 h-4 text-white stroke-[3] shrink-0" />
                 </>
               )}

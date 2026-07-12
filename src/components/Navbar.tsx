@@ -121,7 +121,7 @@ export default function Navbar({
         </div>
       )}
       <div className="flex items-center justify-between relative z-50">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1">
           {onBack && (
             <button 
               onClick={onBack}
@@ -157,19 +157,37 @@ export default function Navbar({
           </button>
 
           {activeTab === 'home' ? (
-            <div className="flex flex-col relative z-50">
-              <span className="text-[7.5px] text-emerald-200/70 font-black uppercase tracking-wider flex items-center gap-0.5">
-                📍 {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam") ? "Grezto Hub" : `${user.activeCity || "Grezto"} Hub`}
-              </span>
-              <span 
+            <div className="relative z-50 flex items-center py-1">
+              <div 
                 onClick={() => setShowLocationMenu(!showLocationMenu)}
-                className="text-xs font-black text-[#fffdf5] flex items-center cursor-pointer select-none group"
+                className="flex items-center space-x-1 cursor-pointer select-none group"
               >
-                <span className="truncate max-w-[120px] inline-block">
-                  {(!user.address || user.address.includes("Mitreno Tech") || user.address === "Kawarhagi, Assam") ? "Add your location" : user.address}
+                <span className="text-emerald-300 group-hover:scale-110 transition-transform text-xs">📍</span>
+                <span className="text-xs font-extrabold text-white truncate max-w-[130px] tracking-tight">
+                  {(() => {
+                    if (!user.address || user.address.trim() === "") return "Add location";
+                    const parts = user.address.split(',').map(p => p.trim()).filter(Boolean);
+                    if (parts.length > 0) {
+                      const cleanParts = parts.filter(p => {
+                        const low = p.toLowerCase();
+                        return !low.includes("india") && !/^\d{5,6}$/.test(p) && low !== "assam";
+                      });
+
+                      // Check if first part is a GPS pin identifier
+                      const firstPart = cleanParts[0] || parts[0];
+                      if (firstPart.startsWith("GPS Pin") || firstPart.startsWith("Location Pin") || firstPart.startsWith("Location Point")) {
+                        const remaining = cleanParts.slice(1, 3);
+                        if (remaining.length > 0) return remaining.join(', ');
+                      }
+
+                      const finalParts = cleanParts.length > 0 ? cleanParts.slice(0, 2) : parts.slice(0, 2);
+                      return finalParts.join(', ');
+                    }
+                    return user.address;
+                  })()}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 ml-1 text-emerald-300 transition-transform duration-300 group-hover:text-amber-300" />
-              </span>
+                <ChevronDown className="w-3.5 h-3.5 text-emerald-300 transition-transform duration-300 group-hover:text-amber-300" />
+              </div>
 
               {/* Delivering Options Menu Dropdown */}
               {showLocationMenu && (
@@ -202,7 +220,7 @@ export default function Navbar({
                           const location = await getUnifiedHighSpeedLocation();
                           const result = await reverseGeocodeCoords(location.latitude, location.longitude);
                           
-                          const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
+                          const compiledAddress = `${result.street || "Location Point"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"}${result.pincode ? ` (Pin - ${result.pincode})` : ""}`;
                           
                           updateProfile({
                             address: compiledAddress,
@@ -211,10 +229,15 @@ export default function Navbar({
                             activeCity: result.city || "Kawarhagi"
                           });
                           
-                          toast.success(`🎯 GPS locked & address updated! (${location.method})`, { id: toastId });
+                          const isCoarse = location.method.includes("IP-Geolocation") || location.method.includes("Offline-Regional-Fallback") || location.method.includes("Network-Coarse");
+                          if (isCoarse) {
+                            toast.error("Low accuracy location detected. Please type your exact address manually for absolute precision!", { id: toastId, duration: 5000 });
+                          } else {
+                            toast.success(`🎯 GPS locked & address updated!`, { id: toastId });
+                          }
                         } catch (err: any) {
                           console.warn("Capacitor Geolocation failed:", err);
-                          toast.error("GPS access failed. Please enable hardware location permissions.", { id: toastId });
+                          toast.error(err?.message || "GPS access failed. Please enable hardware location permissions.", { id: toastId });
                         }
                       }}
                       className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-gray-50 text-left transition-colors cursor-pointer group border-b border-gray-50/50 pb-1.5"
@@ -275,7 +298,7 @@ export default function Navbar({
           )}
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 pr-4">
           <button 
             onClick={() => setLanguage(language === 'en' ? 'as' : 'en')}
             className={`p-2 rounded-xl transition-colors flex items-center space-x-1 border ${
@@ -409,7 +432,7 @@ export default function Navbar({
                   toast.success(`🎯 Live GPS lock synchronized! (${location.method})`, { id: toastId });
                 } catch (err: any) {
                   console.warn("Capacitor Geolocation failed:", err);
-                  toast.error("Geolocation failed. Please type address manually.", { id: toastId });
+                  toast.error(err?.message || "Geolocation failed. Please type address manually.", { id: toastId });
                 }
               }}
               className="w-full flex items-center justify-center space-x-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3.5 px-4 mb-4 rounded-2xl text-[10.5px] font-black uppercase tracking-widest border border-dashed border-emerald-300 shadow-xs transition-colors cursor-pointer"

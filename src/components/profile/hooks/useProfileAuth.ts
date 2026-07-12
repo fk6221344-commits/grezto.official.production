@@ -381,6 +381,11 @@ export function useProfileAuth() {
 
         console.log("[SERVER OTP VERIFICATION SUCCESS] Server verified/synced OTP:", resData);
 
+        if (resData.fallbackToken) {
+          localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
+          console.log("[Fallback Auth] Cryptographic fallback token stored securely.");
+        }
+
         if (resData.customToken && !isVerified) {
           try {
             if (Capacitor.isNativePlatform()) {

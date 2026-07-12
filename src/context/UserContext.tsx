@@ -123,16 +123,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setFirebaseAuthReady(true);
         clearTimeout(timer);
       } else {
-        // Automatically trigger anonymous fallback session if there is no active logged-in credential
-        signInAnonymously(auth)
-          .then(() => {
-            // This will shortly trigger the onAuthStateChanged subscription with a valid firebaseUser
-          })
-          .catch((err) => {
-            console.warn("[Firebase Auth] Auto anonymous token failed during initialization:", err);
-            setFirebaseAuthReady(true);
-            clearTimeout(timer);
-          });
+        // Safe protection: check if we are expecting a phone-logged-in session before falling back to guest mode
+        const saved = localStorage.getItem('grezto_user');
+        let hasPhone = false;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.phone && parsed.phone.trim() !== "") {
+              hasPhone = true;
+            }
+          } catch (e) {}
+        }
+
+        if (!hasPhone) {
+          // Automatically trigger anonymous fallback session if there is no active logged-in credential
+          signInAnonymously(auth)
+            .then(() => {
+              // This will shortly trigger the onAuthStateChanged subscription with a valid firebaseUser
+            })
+            .catch((err) => {
+              console.warn("[Firebase Auth] Auto anonymous token failed during initialization:", err);
+              setFirebaseAuthReady(true);
+              clearTimeout(timer);
+            });
+        } else {
+          // Let the app know Firebase is loaded and bypass anonymous degradation to preserve phone credentials
+          setFirebaseAuthReady(true);
+          clearTimeout(timer);
+        }
       }
     });
 

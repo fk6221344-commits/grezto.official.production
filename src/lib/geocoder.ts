@@ -1,5 +1,6 @@
 import { findNearestLandmark } from '../data/villageCoordinates';
 import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 
 export interface GeocodeResult {
   state: string;
@@ -10,158 +11,151 @@ export interface GeocodeResult {
 }
 
 export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number; longitude: number; method: string }> {
+  const isNative = Capacitor.isNativePlatform();
+
+  if (!isNative) {
+    console.log("[LocationService] Running on Web Browser. Requesting precise HTML5 Geolocation...");
+    
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+        
+        console.log("[LocationService] Web GPS accurate match!", pos.coords.latitude, pos.coords.longitude, "accuracy:", pos.coords.accuracy);
+        return {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          method: `Web-GPS-${pos.coords.accuracy.toFixed(0)}m`
+        };
+      } catch (webErr) {
+        console.warn("[LocationService] Web Geolocation failed or was denied:", webErr);
+      }
+    }
+    
+    throw new Error("Browser/Web location is blocked or inaccurate. Live high-precision GPS auto-lock works 100% on our Native Android App. Please type your address manually here or download the App!");
+  }
+
   try {
-    // 1. Check & Request Permissions with Capacitor Geolocation safely
     let permResult = await Geolocation.checkPermissions().catch(() => null);
     if (permResult) {
       let status = permResult.location;
-      // We strictly require precise 'granted' permission. If they only gave approximate or none, ask again.
       if (status !== 'granted') {
         const reqResult = await Geolocation.requestPermissions().catch(() => null);
         if (reqResult) {
           status = reqResult.location;
         }
       }
+      if (status !== 'granted') {
+        throw new Error("Android Location (GPS) permission was denied. Please enable it in Settings.");
+      }
     }
 
-    // 2. High-performance precise location detection using GPS hardware & networks
-    // Tier 1: Try High Accuracy GPS Location with Sensor Warm-Up & Precision Locked Filtering (up to 3 samples)
     try {
-      let bestPosition: any = null;
-      let samplesCount = 0;
-      const maxSamples = 3;
-      const desiredAccuracy = 25; // 25 meters or better is our gold standard for delivery address matching!
-
-      for (let i = 0; i < maxSamples; i++) {
-        samplesCount++;
-        try {
-          console.log(`[LocationService] Sampling GPS hardware lock (Sample ${samplesCount}/${maxSamples})...`);
-          const pos = await Geolocation.getCurrentPosition({
-            enableHighAccuracy: true,
-            timeout: 6000, // 6 seconds for this specific sample
-            maximumAge: 0  // Force bypass cached coordinates to fetch real-time fresh lock
-          });
-
-          console.log(`[LocationService] Sample ${samplesCount} acquired. Accuracy:`, pos.coords.accuracy, "meters");
-
-          // Keep track of the absolute most accurate reading (lowest accuracy value is best)
-          if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
-            bestPosition = pos;
-          }
-
-          // If we achieved our gold standard accuracy (< 25m), lock it and break immediately!
-          if (pos.coords.accuracy <= desiredAccuracy) {
-            console.log(`[LocationService] Gold standard accuracy (${pos.coords.accuracy}m <= ${desiredAccuracy}m) achieved on sample ${samplesCount}!`);
-            break;
-          }
-
-          // If the accuracy is poor (>120m) on the first sample, we check and request permissions again
-          // in case they accidentally chose "Approximate" coarse location.
-          if (i === 0 && pos.coords.accuracy > 120) {
-            console.warn("[LocationService] Detected poor accuracy (>120m) on initial sample. Prompting for Precise Upgrade...");
-            const upgradeResult = await Geolocation.requestPermissions().catch(() => null);
-            if (upgradeResult && upgradeResult.location === 'granted') {
-              // Quick small delay to let settings apply
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-          }
-
-          // If we have not met the target accuracy yet, wait 500ms to allow the hardware GPS sensor to "warm up" and find more satellites
-          if (i < maxSamples - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-
-        } catch (sampleErr) {
-          console.warn(`[LocationService] GPS sample ${samplesCount} failed:`, sampleErr);
-          // If the sensor is completely off or disabled, we don't block the loop if it's the first sample and failed
-        }
-      }
-
-      // If we got at least one valid GPS coordinate sample, use the absolute best one
-      if (bestPosition) {
-        console.log("[LocationService] GPS Filtering complete. Chosen best accuracy:", bestPosition.coords.accuracy, "meters");
+      console.log("[LocationService] [Native] Checking cached location...");
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 1500,
+        maximumAge: 45000
+      });
+      if (pos && pos.coords && pos.coords.accuracy <= 25) {
+        console.log("[LocationService] [Native] Cached GPS Match! Accuracy:", pos.coords.accuracy);
         return {
-          latitude: bestPosition.coords.latitude,
-          longitude: bestPosition.coords.longitude,
-          method: `GPS-PrecisionLocked-${bestPosition.coords.accuracy.toFixed(0)}m`
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          method: `GPS-CachedPrecise-${pos.coords.accuracy.toFixed(0)}m`
         };
       }
-    } catch (tier1Err) {
-      console.warn("[LocationService] Tier 1 GPS Precision Filter failed, attempting Coarse network fallback...", tier1Err);
+    } catch (tier0Err) {
+      console.log("[LocationService] Cached GPS check failed:", tier0Err);
     }
 
-    // Tier 2: Try Coarse Network Location (enableHighAccuracy: false)
+    try {
+      console.log("[LocationService] [Native] Starting Active GPS Settle...");
+      const preciseCoords = await new Promise<{ latitude: number; longitude: number; accuracy: number }>((resolve, reject) => {
+        let bestPos: { latitude: number; longitude: number; accuracy: number } | null = null;
+        let watchId: string | null = null;
+        
+        const timeoutTimer = setTimeout(() => {
+          if (watchId) {
+            Geolocation.clearWatch({ id: watchId }).catch(() => {});
+          }
+          if (bestPos) {
+            resolve(bestPos);
+          } else {
+            reject(new Error("Active GPS timed out."));
+          }
+        }, 12000);
+
+        Geolocation.watchPosition({
+          enableHighAccuracy: true,
+          timeout: 13000,
+          maximumAge: 0
+        }, (position, err) => {
+          if (err) {
+            console.warn("[LocationService] Watch position error:", err);
+            return;
+          }
+          if (position && position.coords) {
+            const acc = position.coords.accuracy;
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            if (!bestPos || acc < bestPos.accuracy) {
+              bestPos = { latitude: lat, longitude: lng, accuracy: acc };
+            }
+            
+            if (acc <= 15) {
+              clearTimeout(timeoutTimer);
+              if (watchId) {
+                Geolocation.clearWatch({ id: watchId }).catch(() => {});
+              }
+              resolve({ latitude: lat, longitude: lng, accuracy: acc });
+            }
+          }
+        }).then(id => {
+          watchId = id;
+        }).catch(e => {
+          console.warn("[LocationService] Failed to watch position:", e);
+        });
+      });
+
+      return {
+        latitude: preciseCoords.latitude,
+        longitude: preciseCoords.longitude,
+        method: `GPS-WatchSettle-${preciseCoords.accuracy.toFixed(0)}m`
+      };
+
+    } catch (watchErr) {
+      console.warn("[LocationService] GPS Settle failed, trying standard getCurrentPosition...", watchErr);
+    }
+
     try {
       const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 2500,
-        maximumAge: 5000
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       });
-      console.log("[LocationService] Tier 2 (Network Coarse) Fallback Success:", pos.coords.latitude, pos.coords.longitude);
+      console.log("[LocationService] [Native] Standard GPS success. Accuracy:", pos.coords.accuracy);
       return {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
-        method: 'Network-Coarse-Fallback'
+        method: `GPS-CurrentPos-${pos.coords.accuracy.toFixed(0)}m`
       };
-    } catch (tier2Err) {
-      console.warn("[LocationService] Tier 2 (Network Coarse) failed...", tier2Err);
+    } catch (tier1Err) {
+      console.warn("[LocationService] [Native] Standard high accuracy failed:", tier1Err);
     }
 
-  } catch (err) {
-    console.warn("[LocationService] Capacitor Geolocation general error:", err);
+  } catch (err: any) {
+    console.warn("[LocationService] Native Geolocation error:", err);
+    throw new Error(err?.message || "GPS failed. Please ensure Device Location (GPS) is ON.");
   }
 
-  // Tier 3: IP-based Geolocation fallback (under 1500ms, 100% success rate indoors/basements with weak GPS lock!)
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
-    const ipRes = await fetch('https://ipapi.co/json/', { signal: controller.signal }).catch(() => null);
-    clearTimeout(timeoutId);
-    
-    if (ipRes && ipRes.ok) {
-      const ipData = await ipRes.json();
-      if (ipData && typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
-        console.log("[LocationService] Tier 3 (IP-Geolocation) Success:", ipData.latitude, ipData.longitude);
-        return {
-          latitude: ipData.latitude,
-          longitude: ipData.longitude,
-          method: 'IP-Geolocation'
-        };
-      }
-    }
-  } catch (ipErr) {
-    console.warn("[LocationService] Tier 3 (IP-Geolocation) primary failed, trying backup IP provider...", ipErr);
-  }
-
-  // Backup Tier 3: Alternative IP provider (freeipapi.com)
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
-    const ipRes = await fetch('https://freeipapi.com/api/json', { signal: controller.signal }).catch(() => null);
-    clearTimeout(timeoutId);
-
-    if (ipRes && ipRes.ok) {
-      const ipData = await ipRes.json();
-      if (ipData && typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
-        console.log("[LocationService] Tier 3 Backup (freeipapi) Success:", ipData.latitude, ipData.longitude);
-        return {
-          latitude: ipData.latitude,
-          longitude: ipData.longitude,
-          method: 'IP-Geolocation-Backup'
-        };
-      }
-    }
-  } catch (backupIpErr) {
-    console.warn("[LocationService] Tier 3 Backup failed:", backupIpErr);
-  }
-
-  // Tier 4: Safe regional master fallback (Kawarhagi HQ)
-  console.log("[LocationService] Tier 4 (Master Regional Fallback) Activated.");
-  return {
-    latitude: 26.243455,
-    longitude: 92.1306235,
-    method: 'Offline-Regional-Fallback'
-  };
+  throw new Error("GPS signal is weak or offline. Please make sure you are not indoors and Location (GPS) is ON, or type your address manually.");
 }
 
 export async function fetchNominatimAddress(latitude: number, longitude: number): Promise<string> {
@@ -187,15 +181,27 @@ export async function fetchNominatimAddress(latitude: number, longitude: number)
 }
 
 export async function reverseGeocodeCoords(lat: number, lng: number): Promise<GeocodeResult> {
-  // Determine distance to master Morigaon center (Kawarhagi)
-  const morigaonLat = 26.243455;
-  const morigaonLng = 92.1306235;
-  const dLat = lat - morigaonLat;
-  const dLng = lng - morigaonLng;
-  const distanceDegrees = Math.sqrt(dLat * dLat + dLng * dLng);
+  // Find nearest master hub among our active hubs
+  const defaultMasterHubs = [
+    { name: 'Kawarhagi', lat: 26.243455, lng: 92.1306235, pincode: '782411', state: 'Assam' },
+    { name: 'Guwahati', lat: 26.1158, lng: 91.7086, pincode: '781001', state: 'Assam' },
+    { name: 'Morigaon', lat: 26.2458, lng: 92.2618, pincode: '782105', state: 'Assam' }
+  ];
 
-  // If we are within 0.25 degrees (~25km) of Morigaon center, use local landmarks fallback safely
-  const isCloseToHub = distanceDegrees < 0.25;
+  let nearestHub = defaultMasterHubs[0];
+  let minHubDist = Infinity;
+  for (const hub of defaultMasterHubs) {
+    const dy = lat - hub.lat;
+    const dx = lng - hub.lng;
+    const d = Math.sqrt(dy * dy + dx * dx);
+    if (d < minHubDist) {
+      minHubDist = d;
+      nearestHub = hub;
+    }
+  }
+
+  // If we are within ~40km (0.4 degrees) of any active hub, we consider them within that hub's region
+  const isCloseToHub = minHubDist < 0.4;
 
   try {
     // 1. Prioritize Nominatim (OSM) as direct free geocoding to ensure hamesha ₹0 Google Maps billing
@@ -214,19 +220,28 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
         const data = await response.json();
         if (data && data.address) {
           const ad = data.address;
-          const state = ad.state || ad.region || (isCloseToHub ? 'Assam' : '');
-          const pincode = ad.postcode || (isCloseToHub ? '782411' : '');
-          const city = ad.city || ad.town || ad.village || ad.suburb || ad.locality || (isCloseToHub ? 'Kawarhagi' : '');
-          const street = ad.road || ad.suburb || ad.neighborhood || ad.neighbourhood || ad.pedestrian || ad.house_number || ad.amenity || '';
+          const state = ad.state || ad.region || (isCloseToHub ? nearestHub.state : 'India');
+          const pincode = ad.postcode || (isCloseToHub ? nearestHub.pincode : '');
+          
+          // Resolve natural city/town/village/suburb from OSM details, falling back to hub only if totally empty
+          const resolvedCity = ad.city || ad.town || ad.village || ad.suburb || ad.locality || ad.neighbourhood || ad.neighborhood || ad.municipality || ad.county || (isCloseToHub ? nearestHub.name : 'Selected Location');
+          
+          const localArea = ad.village || ad.suburb || ad.town || ad.neighbourhood || ad.neighborhood || ad.locality || '';
+          const road = ad.road || ad.pedestrian || ad.house_number || ad.amenity || '';
+          
+          let streetVal = '';
+          if (road && localArea && road !== localArea) {
+            streetVal = `${road}, ${localArea}`;
+          } else {
+            streetVal = road || localArea || 'Location Point';
+          }
 
-          const formattedParts = data.display_name ? data.display_name.split(',') : [];
-          const streetVal = street || (formattedParts.length > 0 ? formattedParts[0].trim() : 'Location Point');
-          const finalAddr = data.display_name || `${streetVal}, ${city}, ${state} (Pin - ${pincode})`;
+          const finalAddr = data.display_name || `${streetVal}, ${resolvedCity}, ${state}${pincode ? ` (Pin - ${pincode})` : ''}`;
 
           return {
             state: state || 'Other State',
             pincode: pincode || '',
-            city: city || 'City/Village',
+            city: resolvedCity || 'City/Village',
             street: streetVal,
             address: finalAddr
           };
@@ -285,11 +300,21 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
           }
 
           // Dynamic fallback based on location proximity
-          if (!state) state = isCloseToHub ? 'Assam' : 'India';
-          if (!city) city = isCloseToHub ? 'Kawarhagi' : 'Selected Location';
-          if (!pincode) pincode = isCloseToHub ? '782411' : '';
+          if (!state) state = isCloseToHub ? nearestHub.state : 'India';
+          
+          let resolvedCity = city || 'Selected Location';
+          if (isCloseToHub) {
+            city = nearestHub.name;
+            if (resolvedCity && resolvedCity !== nearestHub.name) {
+              street = street ? `${street}, ${resolvedCity}` : resolvedCity;
+            }
+          } else {
+            city = resolvedCity;
+          }
+          
+          if (!pincode) pincode = isCloseToHub ? nearestHub.pincode : '';
 
-          const address = `${street || 'Street Point'}, ${city}, ${state} ${pincode ? `(Pin - ${pincode})` : ''}`.trim();
+          const address = `${street || 'Street Point'}, ${city}, ${state}${pincode ? ` (Pin - ${pincode})` : ''}`.trim();
           return { state, pincode, city, street: street || 'Street Point', address };
         }
       } catch (gErr) {
@@ -301,25 +326,26 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
   }
 
   // 3. Absolute Proximity Fallback: if offline or both APIs failed
-  if (isCloseToHub) {
+  const isSuperCloseToHub = minHubDist < 0.015; // Within ~1.5km of hub landmarks
+  if (isSuperCloseToHub && nearestHub.name === 'Kawarhagi') {
     const nearest = findNearestLandmark(lat, lng);
     return {
       state: nearest.state,
       pincode: nearest.pincode,
-      city: nearest.name,
-      street: nearest.street,
-      address: `${nearest.street}, ${nearest.name}, ${nearest.state} (Pin - ${nearest.pincode})`
+      city: 'Kawarhagi',
+      street: nearest.name,
+      address: `${nearest.name}, Kawarhagi, Assam (Pin - ${nearest.pincode})`
     };
   }
 
-  // Outside Assam / Local Region: Represent raw Coordinates gracefully
-  const rawStreet = `Location Pin (Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)})`;
+  // Outside any super-close range: Represent raw Coordinates gracefully with the regional city fallback
+  const rawStreet = `GPS Pin (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
   return {
-    state: '',
-    pincode: '',
-    city: 'Location Point',
+    state: nearestHub.state || 'Assam',
+    pincode: nearestHub.pincode || '',
+    city: nearestHub.name || 'Location Point',
     street: rawStreet,
-    address: `${rawStreet}, India`
+    address: `${rawStreet}, ${nearestHub.name}, Assam`
   };
 }
 

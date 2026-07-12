@@ -248,6 +248,10 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
           })
         });
         const resData = await response.json();
+        if (resData.fallbackToken) {
+          localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
+          console.log("[Fallback Auth] Cryptographic fallback token stored securely (Admin shop verification).");
+        }
         if (!response.ok || !resData.success) {
           if (!isVerified) throw new Error(resData.error || "Invalid OTP");
         }

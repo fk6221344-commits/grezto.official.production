@@ -74,13 +74,13 @@ export function sendNativePushNotification(title: string, body: string, onClick?
             title: title,
             body: body,
             smallIcon: 'ic_stat_name', // Standard Android notification launcher icon
-            sound: 'spaceship_alarm.mp3', // Map custom high-priority notification sound
+            sound: 'spaceship_alarm', // Map custom high-priority notification sound (WITHOUT extension for native Android raw resource mapping)
             attachments: [],
             extra: {
               clickAction: true
             },
             schedule: { at: new Date(Date.now() + 10) },
-            channelId: 'grezto_order_channel' // Link to High Importance channel
+            channelId: 'grezto_order_channel_v4' // Link to High Importance channel v4
           }
         ]
       }).then(() => {

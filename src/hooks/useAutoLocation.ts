@@ -15,9 +15,9 @@ export function useAutoLocation({
     if (!firebaseAuthReady) return;
 
     async function autoFetchLocation() {
-      // If user has manually entered/saved a genuine non-fallback address, do not overwrite it automatically
-      if (user.address && !user.address.includes("Mitreno Tech") && user.address !== "Kawarhagi, Assam") {
-        console.log("[Auto GPS] Real user address already present, skipping auto-fetch on startup.");
+      // If user has any saved address, NEVER automatically overwrite it on startup
+      if (user.address && user.address.trim() !== "" && user.address !== "Kawarhagi, Assam") {
+        console.log("[Auto GPS] Saved user address already present, skipping auto-fetch on startup.");
         return;
       }
 
@@ -25,12 +25,18 @@ export function useAutoLocation({
         console.log("[Auto GPS] Fetching multi-tier high speed location on startup...");
         const { getUnifiedHighSpeedLocation, reverseGeocodeCoords } = await import('../lib/geocoder');
         
-        // This will try Network Coarse -> GPS High Accuracy -> IP Geolocation -> Regional Fallback
         const location = await getUnifiedHighSpeedLocation();
         console.log("[Auto GPS] Coordinates retrieved successfully via:", location.method, location.latitude, location.longitude);
         
+        // Strictly avoid auto-overwriting with inaccurate IP geolocation (or coarse regional fallbacks) which can be 10-15km away
+        const isIpOrFallback = location.method.includes("IP-Geolocation") || location.method.includes("Offline-Regional-Fallback") || location.method.includes("Network-Coarse");
+        if (isIpOrFallback) {
+          console.log("[Auto GPS] Detected coarse network/IP location. Skipping startup auto-overwrite to prevent 10-15km inaccurate offsets.");
+          return;
+        }
+
         const result = await reverseGeocodeCoords(location.latitude, location.longitude);
-        const compiledAddress = `${result.street || "Unknown Street"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"} (Pin - ${result.pincode || "782121"})`;
+        const compiledAddress = `${result.street || "Location Point"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"}${result.pincode ? ` (Pin - ${result.pincode})` : ""}`;
         
         updateProfile({
           address: compiledAddress,
@@ -39,7 +45,7 @@ export function useAutoLocation({
           activeCity: result.city || "Kawarhagi"
         });
         
-        console.log("[Auto GPS] Location auto-locked & profile address set successfully:", compiledAddress);
+        console.log("[Auto GPS] Highly precise GPS location auto-locked successfully:", compiledAddress);
       } catch (err) {
         console.warn("[Auto GPS] Startup auto-location fetch failed:", err);
       }

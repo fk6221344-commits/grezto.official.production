@@ -67,8 +67,34 @@ export default function RiderCoPilotAssist({ order, shopDetails, onClose, onComp
   // Coordinates values
   const riderStartLat = 26.243455; // Kawarhagi center
   const riderStartLng = 92.1306235;
-  const deliveryLat = order.lat || 26.1852;
-  const deliveryLng = order.lng || 91.7538;
+  
+  // Safe extraction of customer coordinates from JSONB address or fallback string parsing
+  const getDeliveryCoords = () => {
+    let lat = order.lat;
+    let lng = order.lng;
+    if (order.address && typeof order.address === 'object') {
+      if (order.address.lat) lat = order.address.lat;
+      if (order.address.lng) lng = order.address.lng;
+    }
+    if (!lat || !lng) {
+      const addrStr = typeof order.address === 'object' ? order.address?.address : order.address;
+      if (addrStr && typeof addrStr === 'string') {
+        const gpsMatch = addrStr.match(/\(GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) || 
+                         addrStr.match(/\(GPS Address:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i) ||
+                         addrStr.match(/GPS:\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)/i);
+        if (gpsMatch && gpsMatch[1] && gpsMatch[2]) {
+          lat = parseFloat(gpsMatch[1]);
+          lng = parseFloat(gpsMatch[2]);
+        }
+      }
+    }
+    return {
+      lat: lat || 26.1852,
+      lng: lng || 91.7538
+    };
+  };
+
+  const { lat: deliveryLat, lng: deliveryLng } = getDeliveryCoords();
 
   // Compute live relative distances
   useEffect(() => {
@@ -339,7 +365,9 @@ export default function RiderCoPilotAssist({ order, shopDetails, onClose, onComp
 
               <button
                 onClick={() => {
-                   const url = `https://www.google.com/maps/dir/?api=1&destination=${order.lat || 26.1852},${order.lng || 91.7538}&travelmode=driving`;
+                   const { lat: destinationLat, lng: destinationLng } = getDeliveryCoords();
+                   console.log(`🛵 [CO-PILOT NAV] Opening maps for coordinates: ${destinationLat}, ${destinationLng}`);
+                   const url = `https://www.google.com/maps/dir/?api=1&destination=${destinationLat},${destinationLng}&travelmode=driving`;
                    // Using window.open with _system is the Capacitor native standard for opening in external apps (e.g. Google Maps) rather than inside the webview WebView
                    window.open(url, '_system');
                 }}

@@ -86,6 +86,41 @@ export default function NewGpsMap({
 
     const initMap = async () => {
       try {
+        if (Capacitor.isNativePlatform()) {
+          // 1. Native APK Build -> Initialize Google Native Maps SDK
+          map = await GoogleMap.create({
+            id: "new-gps-native-map",
+            element: mapContainerRef.current!,
+            apiKey: googleMapsKey,
+            config: {
+              center: { lat: coords.lat, lng: coords.lng },
+              zoom: 16,
+            },
+          });
+
+          nativeMapRef.current = map;
+
+          // Place beautiful green GPS location dot
+          liveDotMarker = await map.addMarker({
+            coordinate: { lat: coords.lat, lng: coords.lng },
+            title: "My Exact GPS Location",
+            tintColor: { r: 11, g: 122, b: 45, a: 255 } // Grezto Brand Green
+          });
+          liveDotMarkerRef.current = liveDotMarker;
+
+          // Listener for camera movement end
+          await map.setOnCameraIdleListener((event) => {
+            if (event && typeof event.latitude === "number" && typeof event.longitude === "number") {
+              handleCameraChange({
+                detail: { center: { lat: event.latitude, lng: event.longitude } }
+              });
+            }
+          });
+
+          return;
+        }
+
+        // 2. Web Preview or Fallback Mode -> Load Standard Google Maps JS API
         const loadScript = () => {
           return new Promise<any>((resolve, reject) => {
             if ((window as any).google && (window as any).google.maps) {
@@ -168,19 +203,35 @@ export default function NewGpsMap({
 
     return () => {
       isMounted = false;
+      if (liveDotMarker) {
+        if (typeof liveDotMarker.setMap === "function") {
+          liveDotMarker.setMap(null);
+        }
+      }
+      if (map && typeof map.destroy === "function") {
+        map.destroy();
+      }
     };
   }, [googleMapsKey]);
 
   // Center map when coords change manually via search/text input or GPS button
   useEffect(() => {
     const map = nativeMapRef.current;
-    if (map && typeof map.setCenter === "function" && coords) {
-      const currentCenter = map.getCenter();
-      if (currentCenter) {
-        const currentLat = currentCenter.lat();
-        const currentLng = currentCenter.lng();
-        if (Math.abs(currentLat - coords.lat) > 0.0001 || Math.abs(currentLng - coords.lng) > 0.0001) {
-          map.setCenter({ lat: coords.lat, lng: coords.lng });
+    if (map && coords) {
+      if (Capacitor.isNativePlatform()) {
+        if (typeof map.setCamera === "function") {
+          map.setCamera({ coordinate: { lat: coords.lat, lng: coords.lng } });
+        }
+      } else {
+        if (typeof map.setCenter === "function") {
+          const currentCenter = map.getCenter();
+          if (currentCenter) {
+            const currentLat = currentCenter.lat();
+            const currentLng = currentCenter.lng();
+            if (Math.abs(currentLat - coords.lat) > 0.0001 || Math.abs(currentLng - coords.lng) > 0.0001) {
+              map.setCenter({ lat: coords.lat, lng: coords.lng });
+            }
+          }
         }
       }
     }
@@ -199,12 +250,34 @@ export default function NewGpsMap({
       setCoords({ lat, lng });
 
       const map = nativeMapRef.current;
-      if (map && typeof map.setCenter === "function") {
-        map.setCenter({ lat, lng });
-      }
-
-      if (liveDotMarkerRef.current) {
-        liveDotMarkerRef.current.setPosition({ lat, lng });
+      if (map) {
+        if (Capacitor.isNativePlatform()) {
+          if (typeof map.setCamera === "function") {
+            await map.setCamera({ coordinate: { lat, lng } });
+          }
+          if (liveDotMarkerRef.current) {
+            try {
+              if (typeof liveDotMarkerRef.current === "string") {
+                await map.removeMarker(liveDotMarkerRef.current);
+              }
+              const newMarkerId = await map.addMarker({
+                coordinate: { lat, lng },
+                title: "My Exact GPS Location",
+                tintColor: { r: 11, g: 122, b: 45, a: 255 }
+              });
+              liveDotMarkerRef.current = newMarkerId;
+            } catch (err) {
+              console.error("Error updating native live marker:", err);
+            }
+          }
+        } else {
+          if (typeof map.setCenter === "function") {
+            map.setCenter({ lat, lng });
+          }
+          if (liveDotMarkerRef.current && typeof liveDotMarkerRef.current.setPosition === "function") {
+            liveDotMarkerRef.current.setPosition({ lat, lng });
+          }
+        }
       }
 
       toast.success(`Exact location locked! (${location.method})`);
@@ -277,7 +350,7 @@ export default function NewGpsMap({
   return (
     <div className="fixed inset-0 z-[2000] bg-slate-50 flex flex-col overflow-y-auto font-sans text-stone-900 w-full max-w-none lg:max-w-[440px] lg:left-1/2 lg:-translate-x-1/2 lg:border-x border-stone-200 lg:shadow-2xl pb-12 animate-in slide-in-from-bottom duration-300">
       {/* 1. Header Navigation Label Bar */}
-      <div className="bg-white border-b border-stone-100 py-4 px-5 flex items-center justify-between sticky top-0 z-50">
+      <div className={`bg-white border-b border-stone-100 px-5 flex items-center justify-between sticky top-0 z-50 ${Capacitor.isNativePlatform() ? 'pt-[max(env(safe-area-inset-top),52px)] pb-4.5' : 'pt-11 pb-4'}`}>
         <div className="flex flex-col text-left">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-650 animate-pulse shrink-0" />
