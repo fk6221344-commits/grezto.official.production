@@ -11,6 +11,7 @@ import ProfileRewardsModal from './profile/ProfileRewardsModal';
 import ProfileReferral from './profile/ProfileReferral';
 import ProfileMenuList from './profile/ProfileMenuList';
 import ProfileConsoleButtons from './profile/ProfileConsoleButtons';
+import ServerConfigModal from './profile/ServerConfigModal';
 
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -102,6 +103,7 @@ export default function Profile({
   const [showAIChat, setShowAIChat] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showServerConfigModal, setShowServerConfigModal] = useState(false);
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -110,6 +112,10 @@ export default function Profile({
 
   // Back Key Interceptor
   useRegisterBackHandler(() => {
+    if (showServerConfigModal) {
+      setShowServerConfigModal(false);
+      return true;
+    }
     if (showAIChat) {
       setShowAIChat(false);
       return true;
@@ -152,6 +158,7 @@ export default function Profile({
     }
     return false;
   }, 30, [
+    showServerConfigModal,
     showAIChat,
     cropImageSrc,
     showRewardsModal,
@@ -358,6 +365,7 @@ export default function Profile({
             setShowAIChat={setShowAIChat}
             setShowSignOutConfirm={setShowSignOutConfirm}
             setShowAboutModal={setShowAboutModal}
+            onServerConfigClick={() => setShowServerConfigModal(true)}
           />
 
           <ProfileConsoleButtons
@@ -473,6 +481,16 @@ export default function Profile({
         isOpen={showAIChat} 
         onClose={() => setShowAIChat(false)} 
       />
+
+      {/* Developer Server Config Modal */}
+      <AnimatePresence>
+        {showServerConfigModal && (
+          <ServerConfigModal 
+            isOpen={showServerConfigModal} 
+            onClose={() => setShowServerConfigModal(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

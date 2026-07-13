@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Plus, Headphones, LogOut, Info, ChevronRight } from 'lucide-react';
+import { Plus, Headphones, LogOut, Info, Settings, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface ProfileMenuListProps {
@@ -11,6 +11,7 @@ interface ProfileMenuListProps {
   setShowAIChat: (val: boolean) => void;
   setShowSignOutConfirm: (val: boolean) => void;
   setShowAboutModal: (val: boolean) => void;
+  onServerConfigClick: () => void;
 }
 
 export default function ProfileMenuList({
@@ -21,6 +22,7 @@ export default function ProfileMenuList({
   setShowAIChat,
   setShowSignOutConfirm,
   setShowAboutModal,
+  onServerConfigClick,
 }: ProfileMenuListProps) {
   return (
     <div className="px-1 py-1 space-y-3">
@@ -53,6 +55,11 @@ export default function ProfileMenuList({
           icon={<Info className="text-pink-500" />} 
           label="About Grezto" 
           onClick={() => setShowAboutModal(true)}
+        />
+        <MenuListItem 
+          icon={<Settings className="text-amber-500" />} 
+          label="Server Sync Settings" 
+          onClick={onServerConfigClick}
         />
       </div>
     </div>

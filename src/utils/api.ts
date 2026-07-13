@@ -74,12 +74,20 @@ if (typeof window !== 'undefined') {
         let url = typeof input === 'string' ? input : (input instanceof URL ? input.href : (input as any).url || '');
         
         // Auto-redirect relative /api/ paths to the absolute API server URL (critical for Native Android APK)
-        const isRelativeApi = url.startsWith('/api/');
+        const isLocalhostApi = url.startsWith('http://localhost/api/') || url.startsWith('capacitor://localhost/api/');
+        const isRelativeApi = url.startsWith('/api/') || isLocalhostApi;
         let modifiedInput = input;
         
         if (isRelativeApi) {
-          const absoluteUrl = getAbsoluteApiUrl(url);
-          console.log(`[Fetch Interceptor] Auto-rewriting relative API path ${url} to absolute: ${absoluteUrl}`);
+          let cleanPath = url;
+          if (url.startsWith('http://localhost/api/')) {
+            cleanPath = url.substring('http://localhost'.length);
+          } else if (url.startsWith('capacitor://localhost/api/')) {
+            cleanPath = url.substring('capacitor://localhost'.length);
+          }
+          
+          const absoluteUrl = getAbsoluteApiUrl(cleanPath);
+          console.log(`[Fetch Interceptor] Auto-rewriting API path ${url} to absolute: ${absoluteUrl}`);
           url = absoluteUrl;
           if (input instanceof Request) {
             modifiedInput = new Request(absoluteUrl, input);
