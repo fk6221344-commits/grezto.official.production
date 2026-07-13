@@ -134,7 +134,7 @@ export default function HomeHeader({
                         const location = await getUnifiedHighSpeedLocation();
                         const result = await reverseGeocodeCoords(location.latitude, location.longitude);
                         
-                        const compiledAddress = `${result.street || "Location Point"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"}${result.pincode ? ` (Pin - ${result.pincode})` : ""}`;
+                        const compiledAddress = result.address || `${result.street || "Location Point"}, ${result.city || "Kawarhagi"}, ${result.state || "Assam"}${result.pincode ? ` (Pin - ${result.pincode})` : ""}`;
                         
                         updateProfile({
                           address: compiledAddress,

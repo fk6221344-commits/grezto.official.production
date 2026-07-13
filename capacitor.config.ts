@@ -21,7 +21,8 @@ const config: CapacitorConfig = {
   },
   plugins: {
     StatusBar: {
-      overlaysWebView: true
+      overlaysWebView: true,
+      style: 'DARK'
     },
     SplashScreen: {
       launchShowDuration: 3000,

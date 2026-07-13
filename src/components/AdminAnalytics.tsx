@@ -298,7 +298,7 @@ export default function AdminAnalytics({ onClose }: AdminAnalyticsProps) {
         className="w-full h-full flex flex-col bg-stone-50 overflow-hidden relative"
       >
         {/* Header */}
-        <div className="flex flex-col justify-center p-6 border-b border-stone-200 shrink-0 bg-white z-10 sticky top-0 shadow-sm">
+        <div className="flex flex-col justify-center px-6 pt-[max(env(safe-area-inset-top),2.5rem)] pb-6 border-b border-stone-200 shrink-0 bg-white z-10 sticky top-0 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-sm font-black text-stone-900 uppercase tracking-widest flex items-center gap-2">

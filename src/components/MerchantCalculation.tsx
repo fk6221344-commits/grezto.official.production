@@ -116,7 +116,7 @@ export default function MerchantCalculation({ shop: initialShop, onClose }: { sh
         transition={{ type: "spring", stiffness: 350, damping: 32 }}
         className="w-full h-full flex flex-col bg-stone-50 overflow-hidden relative"
       >
-        <div className="flex justify-between items-center p-6 border-b border-stone-200 shrink-0 bg-white z-10 sticky top-0 shadow-sm">
+        <div className="flex justify-between items-center px-6 pt-[max(env(safe-area-inset-top),2.5rem)] pb-6 border-b border-stone-200 shrink-0 bg-white z-10 sticky top-0 shadow-sm">
           <div>
             <h2 className="text-sm font-black text-stone-900 uppercase tracking-widest flex items-center gap-2">
               <Calculator className="w-5 h-5 text-indigo-500" /> Business Calculation

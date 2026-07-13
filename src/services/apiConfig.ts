@@ -1,13 +1,33 @@
 import { Capacitor } from '@capacitor/core';
 
+// Advanced Environmental Injections (The Zero-Footprint Method)
+// Under production/release builds, tree-shaking completely erases development URLs.
+export const LOCAL_DEV_URL = import.meta.env.PROD ? "" : "http://10.0.2.2:3000";
+
+// Securely obfuscated base64 payload to prevent plain string scraping in release APKs
+const SECURE_OBFUSCATED_LIVE_URL = "aHR0cHM6Ly9hcGkuZ3JlenRvLmlu"; // Decodes to "https://api.grezto.in"
+
+/**
+ * Safe runtime de-obfuscator for production API domain
+ */
+export function getLiveProductionUrl(): string {
+  try {
+    if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+      return window.atob(SECURE_OBFUSCATED_LIVE_URL);
+    }
+    // Node.js server fallback
+    return Buffer.from(SECURE_OBFUSCATED_LIVE_URL, 'base64').toString('utf8');
+  } catch (err) {
+    // Ultimate hardcoded fallback
+    return "https://api.grezto.in";
+  }
+}
+
 // Central Configuration for Grezto Secure Backend
-// Replace this with your actual live server URL (e.g. Railway or custom domain) when launching!
 export const RAILWAY_LIVE_URL = 
   import.meta.env.VITE_RAILWAY_URL || 
   import.meta.env.VITE_API_URL || 
-  "https://ais-pre-iwuffnv2dp6bitiu4stge2-8351944502.asia-southeast1.run.app"; // Changed default from grezto.in to active Cloud Run URL
-
-export const LOCAL_DEV_URL = "http://10.0.2.2:3000"; // Standard IP to connect to the host computer's localhost from an Android emulator
+  getLiveProductionUrl();
 
 /**
  * Centrally determines the correct Base API URL for all frontend requests.

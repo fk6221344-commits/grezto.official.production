@@ -170,7 +170,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-yellow-500/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[130px] pointer-events-none" />
 
-      <header className="px-3 pt-10 pb-6 flex items-center justify-between border-b border-stone-200/55 bg-white/70 backdrop-blur-md relative z-10 text-stone-900">
+      <header className="px-3 pt-[max(env(safe-area-inset-top),2.5rem)] pb-6 flex items-center justify-between border-b border-stone-200/55 bg-white/70 backdrop-blur-md relative z-10 text-stone-900">
         <div className="flex items-center space-x-3">
           <button onClick={onClose} className="p-2 -ml-2 hover:bg-stone-150/40 rounded-xl transition-colors text-stone-600 border-0 bg-transparent cursor-pointer">
             <ArrowLeft className="w-6 h-6 text-stone-800" />
@@ -223,31 +223,31 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         <div className="space-y-3 mt-4">
           <div className="grid grid-cols-4 gap-2">
             {/* Live Orders Card */}
-            <div className="w-full bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between h-[4.5rem] relative overflow-hidden font-sans">
+            <div className="w-full bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between min-h-[4.5rem] py-2 relative overflow-hidden font-sans">
               <div className="absolute top-1 right-1 w-1 h-1 bg-emerald-400 rounded-full animate-ping" />
               <div>
                 <p className="text-emerald-100 text-[6px] uppercase font-black tracking-widest mb-0.5 select-none w-full truncate">Live Orders</p>
-                <h3 className="text-lg font-black tracking-tight select-none leading-none text-white">{filteredAdminActiveOrdersActive.length}</h3>
+                <h3 className="text-lg font-black tracking-tight select-none leading-none text-white metric-box-text">{filteredAdminActiveOrdersActive.length}</h3>
               </div>
-              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 bg-black/25 rounded w-fit border border-white/5"><div className="w-1 h-1 rounded-full bg-emerald-400 animate-ping shrink-0" /><span className="text-[5.5px] font-black tracking-widest text-[#a7f3d0] uppercase leading-none">Active</span></div>
+              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 bg-black/25 rounded w-fit border border-white/5 mt-1"><div className="w-1 h-1 rounded-full bg-emerald-400 animate-ping shrink-0" /><span className="text-[5.5px] font-black tracking-widest text-[#a7f3d0] uppercase leading-none">Active</span></div>
             </div>
 
             {/* Total Items Card */}
-            <div className="w-full bg-gradient-to-br from-[#015f3e] to-[#043324] rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between h-[4.5rem] relative overflow-hidden font-sans">
+            <div className="w-full bg-gradient-to-br from-[#015f3e] to-[#043324] rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between min-h-[4.5rem] py-2 relative overflow-hidden font-sans">
               <div>
                 <p className="text-emerald-100 text-[6px] uppercase font-black tracking-widest mb-0.5 select-none w-full truncate">Total Items</p>
-                <h3 className="text-lg font-black text-white tracking-tight leading-none">{products.length}</h3>
+                <h3 className="text-lg font-black text-white tracking-tight leading-none metric-box-text">{products.length}</h3>
               </div>
-              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 bg-black/25 rounded w-fit border border-white/5"><span className="text-[5.5px] font-black tracking-widest text-[#a7f3d0] uppercase leading-none">Stock</span></div>
+              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 bg-black/25 rounded w-fit border border-white/5 mt-1"><span className="text-[5.5px] font-black tracking-widest text-[#a7f3d0] uppercase leading-none">Stock</span></div>
             </div>
 
             {/* Delivered Card */}
-            <div className="w-full bg-gradient-to-br from-[#aa4403] via-[#853c02] to-[#4a1c02] rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between h-[4.5rem] relative overflow-hidden font-sans">
+            <div className="w-full bg-gradient-to-br from-[#aa4403] via-[#853c02] to-[#4a1c02] rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between min-h-[4.5rem] py-2 relative overflow-hidden font-sans">
               <div>
                 <p className="text-amber-100 text-[6px] uppercase font-black tracking-widest mb-0.5 select-none w-full truncate">Delivered</p>
-                <h3 className="text-lg font-black text-white tracking-tight leading-none">{filteredAdminActiveOrdersHistory.length}</h3>
+                <h3 className="text-lg font-black text-white tracking-tight leading-none metric-box-text">{filteredAdminActiveOrdersHistory.length}</h3>
               </div>
-              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 border border-amber-400 bg-amber-500/10 rounded w-fit"><span className="text-[5.5px] font-black tracking-widest text-amber-200 uppercase leading-none">Success</span></div>
+              <div className="flex items-center space-x-0.5 px-1.5 py-0.5 border border-amber-400 bg-amber-500/10 rounded w-fit mt-1"><span className="text-[5.5px] font-black tracking-widest text-amber-200 uppercase leading-none">Success</span></div>
             </div>
 
             {/* Duty Card */}
@@ -268,7 +268,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   toast.error("Failed to toggle system duty");
                 }
               }
-            }} className={`w-full ${isSystemOnline ? 'bg-[#05402a]' : 'bg-slate-700'} rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between h-[4.5rem] relative overflow-hidden cursor-pointer active:scale-95 transition-transform z-20 font-sans`}>
+            }} className={`w-full ${isSystemOnline ? 'bg-[#05402a]' : 'bg-slate-700'} rounded-2xl p-2.5 text-white shadow-lg flex flex-col justify-between min-h-[4.5rem] py-2 relative overflow-hidden cursor-pointer active:scale-95 transition-transform z-20 font-sans`}>
               <div className="flex justify-between items-start">
                 <p className="text-slate-400 text-[6.5px] uppercase font-black tracking-widest mb-0.5 select-none w-full truncate">Duty</p>
                 <div className="relative inline-flex items-center">
@@ -278,9 +278,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <div>
-                <h3 className="text-[13px] font-black text-white tracking-tight leading-none truncate">{isSystemOnline ? 'Online' : 'Offline'}</h3>
+                <h3 className="text-[13px] font-black text-white tracking-tight leading-none truncate metric-box-text">{isSystemOnline ? 'Online' : 'Offline'}</h3>
               </div>
-              <div className="flex items-center space-x-0.5 py-0.5 w-fit">
+              <div className="flex items-center space-x-0.5 py-0.5 w-fit mt-0.5">
                 <span className="text-[5px] font-bold tracking-wider text-slate-300 uppercase leading-none">Tap to toggle</span>
               </div>
             </div>

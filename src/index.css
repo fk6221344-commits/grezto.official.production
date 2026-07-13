@@ -197,4 +197,16 @@ button:active:not(:disabled), a:active {
   will-change: opacity, transform;
 }
 
+/* Global Safe Area Utility for fixed/sticky headers */
+.fixed-top-header {
+  padding-top: max(12px, env(safe-area-inset-top)) !important;
+}
+
+.metric-box-text {
+  font-size: clamp(0.75rem, 2.5vw, 1.1rem) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 

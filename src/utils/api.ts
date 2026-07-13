@@ -1,9 +1,10 @@
 import { Capacitor } from '@capacitor/core';
 import { auth } from '../services/firebase';
-import { getAbsoluteApiUrl } from '../services/apiConfig';
+import { getAbsoluteApiUrl, getLiveProductionUrl } from '../services/apiConfig';
 
 // Legacy export kept for backward compatibility if referenced elsewhere
-export const DEFAULT_BACKEND_URL = import.meta.env.VITE_API_URL || "https://ais-pre-iwuffnv2dp6bitiu4stge2-8351944502.asia-southeast1.run.app";
+// In production builds, this resolves to the obfuscated production domain instead of the sandbox URL.
+export const DEFAULT_BACKEND_URL = import.meta.env.VITE_API_URL || getLiveProductionUrl();
 
 export function getApiUrl(path: string): string {
   return getAbsoluteApiUrl(path);

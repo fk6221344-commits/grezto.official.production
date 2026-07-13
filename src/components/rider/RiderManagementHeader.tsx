@@ -19,7 +19,7 @@ export default function RiderManagementHeader({
   totalUncollectedMoney
 }: RiderManagementHeaderProps) {
   return (
-    <div className="bg-gradient-to-br from-[#3b0712] via-[#4c0519] to-[#700d23] text-white pt-10 pb-6 px-2.5 shrink-0 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b border-rose-950/30">
+    <div className="bg-gradient-to-br from-[#3b0712] via-[#4c0519] to-[#700d23] text-white pt-[max(env(safe-area-inset-top),2.5rem)] pb-6 px-2.5 shrink-0 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b border-rose-950/30">
       {/* Subtle background glow effect */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
       <div className="absolute -left-12 -bottom-12 w-40 h-40 bg-rose-950/40 rounded-full blur-xl pointer-events-none"></div>

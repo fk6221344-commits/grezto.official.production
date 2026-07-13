@@ -15,7 +15,7 @@ export const MerchantPanelHeader: React.FC<MerchantPanelHeaderProps> = ({
   showMerchantInfoMenu, setShowMerchantInfoMenu, setShowMerchantHistoryModal
 }) => {
   return (
-    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 pt-[max(env(safe-area-inset-top),16px)] pb-4 flex items-center justify-between z-40 shadow-xs">
+    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 pt-[max(env(safe-area-inset-top),32px)] pb-4 flex items-center justify-between z-40 shadow-xs">
         <div className="flex items-center space-x-3.5 min-w-0">
           <button 
             onClick={onClose}

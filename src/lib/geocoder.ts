@@ -223,20 +223,30 @@ export async function reverseGeocodeCoords(lat: number, lng: number): Promise<Ge
           const state = ad.state || ad.region || (isCloseToHub ? nearestHub.state : 'India');
           const pincode = ad.postcode || (isCloseToHub ? nearestHub.pincode : '');
           
-          // Resolve natural city/town/village/suburb from OSM details, falling back to hub only if totally empty
-          const resolvedCity = ad.city || ad.town || ad.village || ad.suburb || ad.locality || ad.neighbourhood || ad.neighborhood || ad.municipality || ad.county || (isCloseToHub ? nearestHub.name : 'Selected Location');
+          // Strictly extract the variables specified by the user
+          const dukaan = ad.shop || ad.amenity || '';
+          const road = ad.road || '';
+          const village = ad.village || ad.suburb || ad.neighbourhood || ad.city_district || ad.town || ad.city || '';
           
-          const localArea = ad.village || ad.suburb || ad.town || ad.neighbourhood || ad.neighborhood || ad.locality || '';
-          const road = ad.road || ad.pedestrian || ad.house_number || ad.amenity || '';
-          
-          let streetVal = '';
-          if (road && localArea && road !== localArea) {
-            streetVal = `${road}, ${localArea}`;
-          } else {
-            streetVal = road || localArea || 'Location Point';
-          }
+          // Let's create streetVal cleanly: Dukaan, Road
+          const streetParts: string[] = [];
+          if (dukaan) streetParts.push(dukaan);
+          if (road) streetParts.push(road);
+          const streetVal = streetParts.join(', ') || 'Street Point';
 
-          const finalAddr = data.display_name || `${streetVal}, ${resolvedCity}, ${state}${pincode ? ` (Pin - ${pincode})` : ''}`;
+          // Village acts as city for regional resolution
+          const resolvedCity = village || 'Kawarhagi';
+
+          // Build the single clean text string: ([Dukaan], [Road], [Village] - [Pin Code])
+          const addressParts: string[] = [];
+          if (dukaan) addressParts.push(dukaan);
+          if (road) addressParts.push(road);
+          if (village) addressParts.push(village);
+
+          const baseAddress = addressParts.join(', ');
+          const finalAddr = pincode 
+            ? `${baseAddress}${baseAddress ? ' - ' : ''}${pincode}` 
+            : (baseAddress || 'Location Point');
 
           return {
             state: state || 'Other State',
@@ -407,4 +417,3 @@ export async function forwardGeocodeAddress(
 
   return null;
 }
-

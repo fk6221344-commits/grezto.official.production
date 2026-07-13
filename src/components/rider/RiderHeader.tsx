@@ -136,7 +136,7 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
           <button
             onClick={handleToggleDuty}
             disabled={updatingDuty}
-            className={`p-2 rounded-2xl border text-left flex flex-col justify-between transition-all duration-200 active:scale-[0.96] cursor-pointer relative overflow-hidden h-[74px] ${
+            className={`p-2 rounded-2xl border text-left flex flex-col justify-between transition-all duration-200 active:scale-[0.96] cursor-pointer relative overflow-hidden min-h-[74px] py-2 ${
               riderProfile?.status === 'Online'
                 ? 'bg-[#0f5132] text-white border-[#0a3622] shadow-md shadow-[#0f5132]/20'
                 : 'bg-white text-slate-600 border-slate-300'
@@ -159,8 +159,8 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
                 />
               </div>
             </div>
-            <div className="mt-auto">
-              <p className={`text-[12px] font-black leading-none transition-colors duration-200 ${
+            <div className="mt-2">
+              <p className={`text-[12px] font-black leading-none transition-colors duration-200 metric-box-text ${
                 riderProfile?.status === 'Online' ? 'text-white' : 'text-slate-700'
               }`}>
                 {updatingDuty ? '...' : riderProfile?.status === 'Online' ? 'Online' : 'Offline'}
@@ -174,14 +174,14 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
           </button>
 
           {/* Stat 2: Delivery Charge Card (Vivid Royal Blue, Extremely High Sunlight Contrast) */}
-          <div className="bg-[#0d6efd] border border-[#0a58ca] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#0d6efd]/20 relative overflow-hidden h-[74px]">
+          <div className="bg-[#0d6efd] border border-[#0a58ca] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#0d6efd]/20 relative overflow-hidden min-h-[74px] py-2">
             <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-white/10 rounded-full blur-md" />
             <div className="flex items-center justify-between relative z-10">
               <span className="text-[6px] font-black uppercase tracking-widest text-[#cfe2ff] leading-none">Del. Charge</span>
               <span className="text-[11px] animate-bounce" style={{ animationDuration: '2s' }}>🛵</span>
             </div>
-            <div className="mt-auto relative z-10">
-              <p className="text-[14px] font-black text-white leading-none font-mono tracking-tight drop-shadow-md">
+            <div className="mt-2 relative z-10">
+              <p className="text-[14px] font-black text-white leading-none font-mono tracking-tight drop-shadow-md metric-box-text">
                 ₹{remainingDeliveryCharges}
               </p>
               <p className="text-[5px] font-black text-[#0a58ca] bg-[#cfe2ff] px-1.5 py-0.5 rounded uppercase tracking-wider mt-1.5 leading-none w-fit shadow-sm">
@@ -191,13 +191,13 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
           </div>
 
           {/* Stat 3: Held Cash (COD - Rich Warm Dark Golden & High Contrast Style) */}
-          <div className="bg-[#663300] border border-[#4d2600] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#663300]/20 h-[74px]">
+          <div className="bg-[#663300] border border-[#4d2600] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#663300]/20 min-h-[74px] py-2">
             <div className="flex items-center justify-between">
               <span className="text-[7px] font-black uppercase tracking-widest text-[#ffcc00] leading-none">Total Cash</span>
               <span className="text-[11px]">💼</span>
             </div>
-            <div className="mt-auto">
-              <p className="text-[14px] font-black text-white leading-none font-mono drop-shadow-sm select-all">
+            <div className="mt-2">
+              <p className="text-[14px] font-black text-white leading-none font-mono drop-shadow-sm select-all metric-box-text">
                 ₹{currentCodBalance.toFixed(0)}
               </p>
               <p className="text-[5px] font-black text-[#ffcc00] uppercase tracking-widest mt-1.5 leading-none">
@@ -207,14 +207,14 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
           </div>
 
           {/* Stat 4: Earning Card (Purple/Indigo style) */}
-          <div className="bg-[#6610f2] border border-[#520dc2] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#6610f2]/20 relative overflow-hidden h-[74px]">
+          <div className="bg-[#6610f2] border border-[#520dc2] p-2 rounded-2xl text-left flex flex-col justify-between shadow-md shadow-[#6610f2]/20 relative overflow-hidden min-h-[74px] py-2">
             <div className="absolute -left-2 -bottom-2 w-12 h-12 bg-white/10 rounded-full blur-md" />
             <div className="flex items-center justify-between relative z-10">
               <span className="text-[7px] font-black uppercase tracking-widest text-[#e0cffc] leading-none">Earning</span>
               <span className="text-[11px]">💰</span>
             </div>
-            <div className="mt-auto relative z-10">
-              <p className="text-[14px] font-black text-white leading-none font-mono drop-shadow-sm select-all">
+            <div className="mt-2 relative z-10">
+              <p className="text-[14px] font-black text-white leading-none font-mono drop-shadow-sm select-all metric-box-text">
                 ₹{calculatedEarnings}
               </p>
               <p className="text-[5px] font-black text-[#520dc2] bg-[#e0cffc] px-1.5 py-0.5 rounded uppercase tracking-wider mt-1.5 leading-none w-fit shadow-sm">
