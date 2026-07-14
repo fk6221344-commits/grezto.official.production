@@ -949,7 +949,7 @@ export default function Checkout({
 
               {/* 2. EXACT GPS LOCATION */}
               <div
-                onClick={fetchAutomaticGPSDetails}
+                onClick={() => fetchAutomaticGPSDetails(true)}
                 className="border-[1.5px] border-blue-200 rounded-2xl px-4 py-2 flex flex-col bg-blue-50/10 hover:bg-blue-50/20 transition-all cursor-pointer select-none relative group"
               >
                 <div className="flex items-center gap-1.5 justify-between">

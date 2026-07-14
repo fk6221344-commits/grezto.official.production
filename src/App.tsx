@@ -45,6 +45,7 @@ import { triggerLightHapticVibration } from './services/nativeService';
 import { setupPushNotifications } from './services/NotificationService';
 import { unlockNotificationAudio, startAlertAlarmLoop, stopAlertAlarmLoop } from './services/notifications';
 import { createOrderHandlers } from './services/orderHandlers';
+import { preFetchGPSBackground } from './lib/geocoder';
 
 // Custom Hooks for ultra performance
 import { useHardwareBack } from './hooks/useHardwareBack';
@@ -218,6 +219,17 @@ function MainAppLayout() {
     }
     return false;
   }, 20, [showSearchOverlay]);
+
+  // Pre-fetch GPS aggressively for 0-second checkout load
+  useEffect(() => {
+    preFetchGPSBackground();
+  }, []);
+
+  useEffect(() => {
+    if (activeTabRaw === 'cart') {
+      preFetchGPSBackground();
+    }
+  }, [activeTabRaw]);
 
   // Sync state transitions to persistent Storage
   useEffect(() => {

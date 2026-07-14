@@ -10,6 +10,34 @@ export interface GeocodeResult {
   address: string;
 }
 
+let preFetchedLocation: { latitude: number; longitude: number; method: string; timestamp: number } | null = null;
+
+export async function preFetchGPSBackground() {
+  if (typeof window !== 'undefined') {
+    try {
+      console.log("[LocationService] Starting background GPS pre-fetch...");
+      // Avoid requesting permissions aggressively on background load if not granted yet
+      const permResult = await Geolocation.checkPermissions().catch(() => null);
+      if (permResult && permResult.location === 'granted') {
+        const loc = await getUnifiedHighSpeedLocation();
+        preFetchedLocation = { ...loc, timestamp: Date.now() };
+        console.log("[LocationService] Background pre-fetch successful!");
+      } else {
+        console.log("[LocationService] Skipped background pre-fetch (permissions not granted yet).");
+      }
+    } catch (e) {
+      console.warn("[LocationService] Background pre-fetch failed silently.", e);
+    }
+  }
+}
+
+export function getCachedPreFetchedLocation() {
+  if (preFetchedLocation && (Date.now() - preFetchedLocation.timestamp < 600000)) { // 10 minutes validity
+    return preFetchedLocation;
+  }
+  return null;
+}
+
 export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number; longitude: number; method: string }> {
   const isNative = Capacitor.isNativePlatform();
 

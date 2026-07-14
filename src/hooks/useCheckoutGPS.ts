@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 import { calculateDistance } from '../lib/distance';
-import { reverseGeocodeCoords, forwardGeocodeAddress, getUnifiedHighSpeedLocation } from '../lib/geocoder';
+import { reverseGeocodeCoords, forwardGeocodeAddress, getUnifiedHighSpeedLocation, getCachedPreFetchedLocation } from '../lib/geocoder';
 
 export const MORIGAON_CENTER = { lat: 26.243461, lng: 92.130617 };
 
@@ -162,7 +162,7 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
     // Reverse geocoding removed to ensure $0 billing as per hybrid zero-billing strategy
   };
 
-  const fetchAutomaticGPSDetails = async () => {
+  const fetchAutomaticGPSDetails = async (forceFresh = false) => {
     setGpsLoading(true);
     setLastInteraction('text');
     try {
@@ -179,7 +179,12 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
 
       console.log("[Checkout GPS] Fetching multi-tier high speed location...");
       try {
-        const location = await getUnifiedHighSpeedLocation();
+        let location = forceFresh ? null : getCachedPreFetchedLocation();
+        if (location) {
+          console.log("[Checkout GPS] 0-second Optimistic Load! Using background pre-fetched location.");
+        } else {
+          location = await getUnifiedHighSpeedLocation();
+        }
         applyLocationDetails(location.latitude, location.longitude); // No await, instantly move map
         toast.success(`Location locked instantly! (${location.method})`, { duration: 1500 });
       } catch (nativeErr: any) {
