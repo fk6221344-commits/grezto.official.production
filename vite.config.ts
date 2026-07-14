@@ -11,7 +11,7 @@ export default defineConfig(() => {
     ],
     define: {
       'process.env.GOOGLE_MAPS_PLATFORM_KEY': JSON.stringify(process.env.GOOGLE_MAPS_PLATFORM_KEY || 'AIzaSyD2CGC4yMsvPPv9qy-sel7ayT-c4Eu680Q'),
-      'process.env.FIREBASE_API_KEY': JSON.stringify(process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyA5EdUPslFYTmd4zgsf_xhUUJ_pm40JWDo')
+      'process.env.FIREBASE_API_KEY': JSON.stringify(process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyDwTgFsyyKKcTnC5k9y8DUoH40J3yydT3A')
     },
     resolve: {
       alias: {
