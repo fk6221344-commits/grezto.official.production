@@ -111,6 +111,76 @@ export function startFCMOrderListener() {
         }
       }
     )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'orders' },
+      async (payload) => {
+        try {
+          const newOrder = payload.new;
+          const oldOrder = payload.old;
+          
+          // Check if rider assignment happened
+          if (!newOrder || !newOrder.assignedRiderId) return;
+          if (oldOrder && oldOrder.assignedRiderId === newOrder.assignedRiderId) return;
+
+          console.log(`[FCM Listener] Order ${newOrder.id} assigned to rider: ${newOrder.assignedRiderId}`);
+
+          // 1. Get Rider's phone number
+          const { data: rider, error: riderErr } = await supabase
+            .from('team')
+            .select('phone')
+            .eq('id', newOrder.assignedRiderId)
+            .single();
+
+          if (riderErr || !rider || !rider.phone) {
+            console.log('[FCM Listener] Could not find phone for assigned rider:', newOrder.assignedRiderId);
+            return;
+          }
+
+          // 2. Query FCM Token for this rider's phone
+          const { data: tokensData, error: tokensErr } = await supabase
+            .from('fcm_tokens')
+            .select('token')
+            .eq('phone', rider.phone);
+
+          if (tokensErr || !tokensData || tokensData.length === 0) {
+            console.log('[FCM Listener] No FCM tokens found for rider phone:', rider.phone);
+            return;
+          }
+
+          // 3. Send Push Notification to Rider
+          const tokens = tokensData.map((t: any) => t.token);
+          
+          const message = {
+            notification: {
+              title: '🛵 New Delivery Assigned! 🛵',
+              body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`,
+            },
+            android: {
+              priority: 'high' as const,
+              notification: {
+                channelId: 'grezto_order_channel_v4',
+                sound: 'spaceship_alarm',
+                clickAction: 'FCM_PLUGIN_ACTIVITY',
+                visibility: 'public' as const,
+                defaultVibrateTimings: false,
+                vibrateTimingsMillis: [0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+              }
+            },
+            data: {
+              orderId: String(newOrder.id),
+              type: 'rider_assigned'
+            },
+            tokens: tokens
+          };
+
+          const response = await admin.messaging().sendEachForMulticast(message);
+          console.log(`[FCM Listener] Rider Assignment Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+        } catch (err) {
+          console.error('[FCM Listener] Error processing rider assignment push:', err);
+        }
+      }
+    )
     .subscribe((status) => {
       console.log(`[FCM Listener] Subscription status: ${status}`);
     });
