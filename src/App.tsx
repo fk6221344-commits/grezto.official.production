@@ -275,6 +275,9 @@ function MainAppLayout() {
       // Initialize Push Notification Service Worker for Order Status alerts
       if (user.phone) {
         setupPushNotifications(user.phone);
+        import('./services/nativeService').then(({ initializeFCMNotifications }) => {
+          initializeFCMNotifications(user.phone);
+        });
       }
     }
   }, [user.isLoggedIn, user.phone]);

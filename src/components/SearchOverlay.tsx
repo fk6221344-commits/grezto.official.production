@@ -265,7 +265,7 @@ export default function SearchOverlay({ onClose, onSelect, initialQuery = '' }: 
       className="fixed inset-0 z-[200] bg-white flex flex-col"
     >
       {/* Search Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-100 bg-white shadow-sm z-10">
+      <div className="flex items-center px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 border-b border-gray-100 bg-white shadow-sm z-10">
         <button 
           onClick={onClose}
           className="p-2 -ml-2 mr-1 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"

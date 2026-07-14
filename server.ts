@@ -21,6 +21,8 @@ import { sanitizeProductPayload, sanitizeShopUpdatePayload } from "./server/sani
 import { warmShopProductsCache, warmCategoryProductsCache, warmCityShopsCache } from "./server/cacheWarming";
 import { createRateLimiter } from "./server/rateLimiter";
 
+import { startFCMOrderListener } from "./server/fcmPush";
+
 async function ensureDefaultDirectShop() {
   if (!supabase) return;
   try {
@@ -29,7 +31,7 @@ async function ensureDefaultDirectShop() {
       .select('id')
       .eq('id', 'direct')
       .maybeSingle();
-    
+
     if (error) {
       console.warn("[INIT] Checking direct shop error:", error.message);
     }
@@ -69,6 +71,9 @@ async function startServer() {
   // Ensure default direct shop exists so foreign key references on products do not fail
   ensureDefaultDirectShop();
 
+  // Start the background Supabase Realtime FCM Push listener
+  startFCMOrderListener();
+
   const app = express();
   app.set('trust proxy', 1);
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -97,12 +102,12 @@ async function startServer() {
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (like mobile apps, curl, or server-to-server)
       if (!origin) return callback(null, true);
-      
+
       // Allow dynamic local development, Capacitor, or Cloud Run / Vercel previews
       if (
-        origin.startsWith("http://localhost") || 
+        origin.startsWith("http://localhost") ||
         origin.startsWith("https://localhost") || // Support https://localhost for Android Capacitor webview!
-        origin.startsWith("http://127.0.0.1") || 
+        origin.startsWith("http://127.0.0.1") ||
         origin.startsWith("capacitor://") ||
         origin.includes(".run.app") || // AI Studio dev & preview links
         origin.includes("vercel.app") || // Vercel production deployment
@@ -132,11 +137,11 @@ async function startServer() {
     if (!req.path.startsWith('/api/') || req.path === '/api/health' || req.path === '/api/maps/config' || req.path === '/api/config') {
       return next();
     }
-    
+
     // Check if the server has configured a custom client signature
     const serverExpectedSignature = process.env.APP_CLIENT_SIGNATURE || "grezto_secure_app_signature_2026_unicorn";
     const clientSignature = req.headers['x-grezto-client-signature'] || req.headers['X-Grezto-Client-Signature'];
-    
+
     if (process.env.NODE_ENV === "production" && serverExpectedSignature && clientSignature !== serverExpectedSignature) {
       console.warn(`[SECURITY VERIFICATION BLOCKED] Path: ${req.path}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
       return res.status(403).json({
@@ -144,7 +149,7 @@ async function startServer() {
         error: "Access Denied: This API endpoint is protected and only accessible by the authorized Grezto Native Android application. 🛑"
       });
     }
-    
+
     next();
   });
 
@@ -214,9 +219,9 @@ async function startServer() {
 
     if (scan(req.body) || scan(req.query) || scan(req.params)) {
       console.warn(`[SECURITY SYSTEM] Suspicious injection-like pattern blocked from IP ${req.ip}`);
-      return res.status(400).json({ 
-        success: false, 
-        error: "Security Check Failed: Malicious input pattern detected!" 
+      return res.status(400).json({
+        success: false,
+        error: "Security Check Failed: Malicious input pattern detected!"
       });
     }
 
@@ -238,7 +243,7 @@ async function startServer() {
   };
 
   // Setup multer for memory storage
-  const upload = multer({ 
+  const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
   });
@@ -256,7 +261,7 @@ async function startServer() {
 
       const { folder, cleanName } = req.body;
       const bucketName = process.env.R2_BUCKET_NAME || 'grezto-assets';
-      
+
       const fileName = cleanName || req.file.originalname;
       const fileKey = `${folder || 'uploads'}/${Date.now()}-${fileName.replace(/\s+/g, '_')}`;
 
@@ -270,7 +275,7 @@ async function startServer() {
 
       await s3Client.send(command);
 
-      const publicUrl = process.env.VITE_R2_PUBLIC_URL 
+      const publicUrl = process.env.VITE_R2_PUBLIC_URL
         ? `${process.env.VITE_R2_PUBLIC_URL.replace(/\/$/, '')}/${fileKey}`
         : `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${bucketName}/${fileKey}`;
 
@@ -285,7 +290,7 @@ async function startServer() {
   app.get("/api/get-upload-url", async (req, res) => {
     try {
       const { fileName, contentType, folder } = req.query;
-      
+
       if (!fileName || !contentType) {
         return res.status(400).json({ error: "fileName and contentType are required" });
       }
@@ -302,7 +307,7 @@ async function startServer() {
 
       const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
 
-      const publicUrl = process.env.VITE_R2_PUBLIC_URL 
+      const publicUrl = process.env.VITE_R2_PUBLIC_URL
         ? `${process.env.VITE_R2_PUBLIC_URL.replace(/\/$/, '')}/${cleanName}`
         : `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${bucketName}/${cleanName}`;
 
@@ -432,7 +437,7 @@ async function startServer() {
             return res.status(403).json({ success: false, error: "Hacker Alert: Apne account ke alawa kisi dusre number se order nahi daal sakte! 🛑" });
           }
         }
-        
+
         const { data, error } = await supabase.rpc("place_order", payload);
         if (error) throw error;
         dbResult = data;
@@ -493,6 +498,7 @@ async function startServer() {
 
   // GET /api/distance (Google Distance Proxy with fallback)
   app.get("/api/distance", async (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     try {
       const { originLat, originLng, destLat, destLng } = req.query;
       if (!originLat || !originLng || !destLat || !destLng) {
@@ -508,18 +514,18 @@ async function startServer() {
         const R = 6371; // Earth's radius in km
         const dLatRad = (dLat - oLat) * Math.PI / 180;
         const dLonRad = (dLng - oLng) * Math.PI / 180;
-        const a = 
-          Math.sin(dLatRad/2) * Math.sin(dLatRad/2) +
-          Math.cos(oLat * Math.PI / 180) * Math.cos(dLat * Math.PI / 180) * 
-          Math.sin(dLonRad/2) * Math.sin(dLonRad/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const a =
+          Math.sin(dLatRad / 2) * Math.sin(dLatRad / 2) +
+          Math.cos(oLat * Math.PI / 180) * Math.cos(dLat * Math.PI / 180) *
+          Math.sin(dLonRad / 2) * Math.sin(dLonRad / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
       };
 
       const key = process.env.GOOGLE_MAPS_PLATFORM_KEY || process.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || "";
       if (!key) {
-        return res.json({ 
-          distance: calculateGeodesicDistance(), 
+        return res.json({
+          distance: calculateGeodesicDistance(),
           source: "fallback_geodesic",
           message: "GOOGLE_MAPS_PLATFORM_KEY is missing. Using geodesic distance."
         });
@@ -534,15 +540,15 @@ async function startServer() {
         const distanceValueInMeters = element.distance.value;
         const distanceInKm = distanceValueInMeters / 1000;
         const durationText = element.duration ? element.duration.text : "";
-        return res.json({ 
-          distance: distanceInKm, 
+        return res.json({
+          distance: distanceInKm,
           durationText,
-          source: "google_distance_matrix" 
+          source: "google_distance_matrix"
         });
       }
 
-      return res.json({ 
-        distance: calculateGeodesicDistance(), 
+      return res.json({
+        distance: calculateGeodesicDistance(),
         source: "fallback_geodesic",
         message: `Distance Matrix returned status ${data.status || 'not OK'}. Fallback used.`
       });
@@ -555,6 +561,7 @@ async function startServer() {
   // GET /api/home-data (Dual-Layer Segmented Cache via Redis/Supabase - Fail-safe & Extremely Optimized)
 
   app.get("/api/home-data", async (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     try {
       if (!supabase) {
         return res.status(500).json({ error: "Database client is not initialized on server." });
@@ -572,7 +579,7 @@ async function startServer() {
 
       let categories = cachedCategories ? JSON.parse(cachedCategories) : null;
       let banners = cachedBanners ? JSON.parse(cachedBanners) : null;
-      
+
       let rawShopsData = cachedShops ? JSON.parse(cachedShops) : null;
       let shops = null;
       let prewarmProducts: any[] = [];
@@ -677,6 +684,7 @@ async function startServer() {
 
   // GET /api/products (Lazy-Load Segmented Category/Shop Products from Redis/Supabase - Fail-safe & Extremely Optimized)
   app.get("/api/products", async (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     try {
       const category = req.query.category as string;
       const shopId = req.query.shopId as string;
@@ -759,8 +767,10 @@ async function startServer() {
         return res.status(403).json({ success: false, error: "Access Denied: You are not authorized to modify this product's stock status." });
       }
 
-      console.log(`[WRITE API] Toggling stock status for product ${productId} to ${inStock}`);
-      const { error } = await supabase.from('products').update({ inStock }).eq('id', productId);
+      console.log(`[WRITE API] Toggling stock for ${productId} to ${inStock}`);
+      // UPDATE BOTH inStock AND stock to keep them synced for the frontend
+      const stockValue = inStock ? 10 : 0;
+      const { error } = await supabase.from('products').update({ inStock, stock: stockValue }).eq('id', productId);
       if (error) throw error;
 
       // [PILLAR 2: WRITE-THROUGH & INVALIDATION FLOW]
@@ -769,7 +779,7 @@ async function startServer() {
       if (shopId) {
         await safeDel(`grezto:shop:${shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${shopId}`);
-        
+
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
         setImmediate(() => {
@@ -781,7 +791,7 @@ async function startServer() {
         await safeDel(`grezto:category:${category}:products`);
         await safeDel("grezto:category:All:products");
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for category: ${category}`);
-        
+
         setImmediate(() => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for category: ${category}`);
           warmCategoryProductsCache(category);
@@ -848,7 +858,7 @@ async function startServer() {
       if (productData.shopId) {
         await safeDel(`grezto:shop:${productData.shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${productData.shopId}`);
-        
+
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
         setImmediate(() => {
@@ -860,12 +870,16 @@ async function startServer() {
         await safeDel(`grezto:category:${productData.category}:products`);
         await safeDel("grezto:category:All:products");
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for category: ${productData.category}`);
-        
+
         setImmediate(() => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for category: ${productData.category}`);
           warmCategoryProductsCache(productData.category);
           warmCategoryProductsCache("All");
         });
+      } else {
+        // ALWAYS clear All category cache as a fail-safe
+        await safeDel("grezto:category:All:products");
+        setImmediate(() => warmCategoryProductsCache("All"));
       }
 
       return res.json({ success: true, message: "Product upserted, selective cache invalidated, and background pre-warming triggered.", data: productData });
@@ -877,6 +891,7 @@ async function startServer() {
 
   // POST /api/products/delete (Merchant/Admin deletes a product)
   app.post("/api/products/delete", validateFirebaseToken, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     try {
       const { productId, shopId, category } = req.body;
       if (!productId) {
@@ -904,7 +919,7 @@ async function startServer() {
       if (shopId) {
         await safeDel(`grezto:shop:${shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${shopId}`);
-        
+
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
         setImmediate(() => {
@@ -916,12 +931,16 @@ async function startServer() {
         await safeDel(`grezto:category:${category}:products`);
         await safeDel("grezto:category:All:products");
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for category: ${category}`);
-        
+
         setImmediate(() => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for category: ${category}`);
           warmCategoryProductsCache(category);
           warmCategoryProductsCache("All");
         });
+      } else {
+        // ALWAYS clear All category cache as a fail-safe
+        await safeDel("grezto:category:All:products");
+        setImmediate(() => warmCategoryProductsCache("All"));
       }
 
       return res.json({ success: true, message: "Product deleted, selective cache invalidated, and background pre-warming triggered." });
@@ -1115,7 +1134,7 @@ async function startServer() {
         console.log(`[OTP] Verifying Firebase OTP code for session ${verificationId}...`);
         const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPhoneNumber?key=${apiKey}`;
-        
+
         try {
           const checkResponse = await fetch(url, {
             method: "POST",
@@ -1125,7 +1144,7 @@ async function startServer() {
               code: inputOtp
             })
           });
-          
+
           const resultData: any = await checkResponse.json();
           if (!checkResponse.ok || resultData.error) {
             const rawErrorMsg = resultData.error?.message || "Invalid or expired OTP code.";
@@ -1137,7 +1156,7 @@ async function startServer() {
             }
             return res.status(400).json({ error: userFriendlyMsg, rawError: rawErrorMsg });
           }
-          
+
           let resPhoneVal = resultData.phoneNumber || "";
           const cleanedResPhone = resPhoneVal.replace(/\D/g, "");
           if (resPhoneVal && !cleanedResPhone.endsWith(formattedPhone)) {
@@ -1184,7 +1203,7 @@ async function startServer() {
           return res.status(500).json({ error: "Unable to reach verification servers. Please try again." });
         }
       }
-      
+
       return res.status(400).json({ error: "Missing configuration or verification ID" });
     } catch (err: any) {
       console.error("Verify OTP Error:", err);
@@ -1197,7 +1216,7 @@ async function startServer() {
     try {
       const { message, history } = req.body;
       const ai = getGeminiClient();
-      
+
       const chat = ai.chats.create({
         model: "gemini-3.5-flash",
         config: {
@@ -1218,7 +1237,7 @@ async function startServer() {
   app.post("/api/orders/notify", async (req, res) => {
     const { orderId, amount, customerName, userId, status } = req.body;
     console.log(`NEW ORDER UPDATE: ${orderId} - Status: ${status || 'New'} - ₹${amount} - ${customerName}`);
-    
+
     try {
       if (admin.apps.length > 0 && userId) {
         if (firebaseConfig?.projectId && firebaseConfig?.apiKey) {
@@ -1231,7 +1250,7 @@ async function startServer() {
             if (docData.fields?.token?.stringValue) {
               token = docData.fields.token.stringValue;
             }
-            
+
             if (token) {
               await admin.messaging().send({
                 token: token,
@@ -1252,7 +1271,7 @@ async function startServer() {
     } catch (e: any) {
       console.warn("Failed to send push notification:", e.message);
     }
-    
+
     res.json({ success: true });
   });
 
@@ -1309,8 +1328,8 @@ if (process.env.NODE_ENV === "production") {
       }
     } else {
       // 2. Intelligent Auto-Calculation
-      const physicalCores = typeof os.availableParallelism === "function" 
-        ? os.availableParallelism() 
+      const physicalCores = typeof os.availableParallelism === "function"
+        ? os.availableParallelism()
         : (os.cpus().length || 1);
 
       // Node.js processes are memory-intensive (~150MB-200MB overhead per worker).
@@ -1323,16 +1342,16 @@ if (process.env.NODE_ENV === "production") {
 
       // Determine optimal worker count
       numCPUs = Math.min(physicalCores, memoryMaxLimit, DEFAULT_CAP_CEILING);
-      
+
       // Ensure we have at least 2 workers for zero-downtime failover redundancy if resources permit
       if (numCPUs < 2 && physicalCores >= 2 && totalMemoryMB >= 512) {
         numCPUs = 2;
       }
-      
+
       console.log(`[CLUSTER ENGINE] Auto-tuning active: PhysicalCores=${physicalCores}, HostMemory=${Math.round(totalMemoryMB)}MB.`);
       console.log(`[CLUSTER ENGINE] Automatically configured worker pool size to: ${numCPUs} (Ceiling cap: ${DEFAULT_CAP_CEILING}).`);
     }
-      
+
     console.log(`[CLUSTER ENGINE] Primary Process ${process.pid} is running.`);
     console.log(`[CLUSTER ENGINE] Initializing secure cluster deployment...`);
 
@@ -1348,12 +1367,12 @@ if (process.env.NODE_ENV === "production") {
 
     cluster.on("exit", (worker, code, signal) => {
       console.warn(`[CLUSTER ENGINE] Worker process ${worker.process.pid} terminated (code: ${code}, signal: ${signal}).`);
-      
+
       const now = Date.now();
       // Keep track of only the restarts in the last 30-second window
       const recentRestarts = restartTimestamps.filter(t => now - t < WINDOW_MS);
       recentRestarts.push(now);
-      
+
       restartTimestamps.length = 0;
       restartTimestamps.push(...recentRestarts);
 

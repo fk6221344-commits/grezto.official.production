@@ -216,7 +216,7 @@ export async function getDeviceLocation(): Promise<{
 /**
  * 3. FIREBASE CLOUD MESSAGING (FCM) & PUSH NOTIFICATIONS
  */
-export async function initializeFCMNotifications() {
+export async function initializeFCMNotifications(phone: string) {
   if (!isNativePlatform()) {
     console.log("[FCM Native] Push Notifications skipped on non-native platform.");
     return;
@@ -288,8 +288,20 @@ export async function initializeFCMNotifications() {
     }
 
     // Add push notification listeners
-    await PushNotifications.addListener('registration', (token) => {
+    await PushNotifications.addListener('registration', async (token) => {
       console.log('[FCM Token Native] Native device successfully registered. Token:', token.value);
+      if (phone) {
+        try {
+          await supabase.from('fcm_tokens').upsert({
+            phone: phone,
+            token: token.value,
+            updated_at: new Date().toISOString()
+          });
+          console.log('[FCM Token Native] Successfully saved FCM token to Supabase for phone:', phone);
+        } catch (dbErr) {
+          console.error('[FCM Token Native] Failed to save token to database:', dbErr);
+        }
+      }
     });
 
     await PushNotifications.addListener('registrationError', (error) => {

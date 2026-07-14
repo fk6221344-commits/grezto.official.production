@@ -149,70 +149,18 @@ export function useProfileAuth() {
 
     try {
       const firebasePromise = (async () => {
-        if (Capacitor.isNativePlatform()) {
-          console.log("[Native Phone Auth] Setting up code-sent and error listeners...");
-          return new Promise(async (resolve, reject) => {
-            let codeSentListener: any = null;
-            let verificationFailedListener: any = null;
-
-            const cleanup = async () => {
-              try {
-                if (codeSentListener) await codeSentListener.remove();
-                if (verificationFailedListener) await verificationFailedListener.remove();
-              } catch (cleanErr) {
-                console.warn("[Native Phone Auth] Listener cleanup error:", cleanErr);
-              }
-            };
-
-            try {
-              codeSentListener = await FirebaseAuthentication.addListener('phoneCodeSent', async (event: any) => {
-                console.log("[Native Phone Auth] phoneCodeSent trigger:", event);
-                await cleanup();
-                resolve({ isNative: true, verificationId: event.verificationId });
-              });
-
-              verificationFailedListener = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
-                console.error("[Native Phone Auth] phoneVerificationFailed trigger:", event);
-                await cleanup();
-                reject(new Error(event.message || "Android Phone Authentication failed. Please check your network connection or Firebase settings."));
-              });
-
-              console.log("[Native Phone Auth] signInWithPhoneNumber calling with +91" + loginPhone);
-              await FirebaseAuthentication.signInWithPhoneNumber({
-                phoneNumber: `+91${loginPhone}`,
-              });
-            } catch (err) {
-              await cleanup();
-              reject(err);
-            }
+        let verifier = (window as any).recaptchaVerifier;
+        if (!verifier) {
+          verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'normal',
+            callback: () => {}
           });
-        } else {
-          let verifier = (window as any).recaptchaVerifier;
-          if (!verifier) {
-            if (!document.getElementById('recaptcha-container')) {
-              const newContainer = document.createElement('div');
-              newContainer.id = 'recaptcha-container';
-              newContainer.style.position = 'fixed';
-              newContainer.style.bottom = '10px';
-              newContainer.style.right = '10px';
-              newContainer.style.width = '1px';
-              newContainer.style.height = '1px';
-              newContainer.style.opacity = '0.01';
-              newContainer.style.pointerEvents = 'none';
-              newContainer.style.zIndex = '99999';
-              document.body.appendChild(newContainer);
-            }
-            verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-              size: 'invisible',
-              callback: () => {}
-            });
-            await verifier.render();
-            (window as any).recaptchaVerifier = verifier;
-          }
-          
-          const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
-          return confirmation;
+          await verifier.render();
+          (window as any).recaptchaVerifier = verifier;
         }
+        
+        const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
+        return confirmation;
       })();
 
       const result = await promiseTimeout(firebasePromise, 30000);
@@ -317,23 +265,7 @@ export function useProfileAuth() {
       let idToken = "";
 
       if (confirmationResult) {
-        try {
-          if (Capacitor.isNativePlatform()) {
-            console.log("[Client OTP Verification] Confirming native OTP via Capacitor...");
-            const result = await FirebaseAuthentication.confirmVerificationCode({
-              verificationId: confirmationResult.verificationId,
-              verificationCode: otpCode,
-            });
-            clientUid = result.user?.uid || "";
-            try {
-              const tokenRes = await FirebaseAuthentication.getIdToken();
-              idToken = tokenRes.token;
-            } catch (tokenErr) {
-              console.warn("Failed to retrieve native client idToken:", tokenErr);
-            }
-            isVerified = true;
-            console.log("[Native Client OTP Verification SUCCESS] Authenticated with UID:", clientUid);
-          } else {
+          try {
             console.log("[Client OTP Verification] Confirming OTP directly using Client SDK...");
             const userCredential = await confirmationResult.confirm(otpCode);
             clientUid = userCredential.user.uid;
@@ -344,8 +276,7 @@ export function useProfileAuth() {
             }
             isVerified = true;
             console.log("[Client OTP Verification SUCCESS] Authenticated client-side with UID:", clientUid);
-          }
-        } catch (clientVerifyErr: any) {
+          } catch (clientVerifyErr: any) {
           console.error("Client OTP confirm failed:", clientVerifyErr);
           toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");
           setAuthLoading(false);

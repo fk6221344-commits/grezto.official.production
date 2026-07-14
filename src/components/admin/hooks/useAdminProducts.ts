@@ -250,6 +250,7 @@ export function useAdminProducts(
         city:
           newProduct.city ||
           (adminSelectedCityFilter !== "All" ? adminSelectedCityFilter : ""),
+        createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 

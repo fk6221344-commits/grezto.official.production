@@ -138,60 +138,29 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     }
     setShopOtpLoading(true);
     try {
-      if (Capacitor.isNativePlatform()) {
-        const nativeWaitPromise = new Promise(async (resolve, reject) => {
-          let codeSentListener: any = null;
-          let verificationFailedListener: any = null;
-          const cleanup = async () => {
-            try {
-              if (codeSentListener) await codeSentListener.remove();
-              if (verificationFailedListener) await verificationFailedListener.remove();
-            } catch (cleanErr) {}
-          };
-          try {
-            codeSentListener = await FirebaseAuthentication.addListener('phoneCodeSent', async (event: any) => {
-              await cleanup();
-              resolve(event.verificationId);
-            });
-            verificationFailedListener = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
-              await cleanup();
-              reject(new Error(event.message || "Failed to send shop OTP in native android."));
-            });
-            await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: `+91${newShop.ownerPhone}` });
-          } catch (err) {
-            await cleanup();
-            reject(err);
-          }
-        });
-        const verificationId = await nativeWaitPromise as any;
-        setShopConfirmationResult({ isNative: true, verificationId });
-        setShopOtpSent(true);
-        toast.success(`Secure native OTP sent to +91 ${newShop.ownerPhone} via SMS! 📲`);
-      } else {
-        let verifier = (window as any).recaptchaVerifierShop;
-        if (!verifier) {
-          if (!document.getElementById("recaptcha-container-shop")) {
-            const newContainer = document.createElement("div");
-            newContainer.id = "recaptcha-container-shop";
-            newContainer.style.position = "fixed";
-            newContainer.style.bottom = "10px";
-            newContainer.style.right = "10px";
-            newContainer.style.width = "1px";
-            newContainer.style.height = "1px";
-            newContainer.style.opacity = "0.01";
-            newContainer.style.pointerEvents = "none";
-            document.body.appendChild(newContainer);
-          }
-          verifier = new RecaptchaVerifier(auth, "recaptcha-container-shop", { size: "invisible", callback: () => {} });
-          await verifier.render();
-          (window as any).recaptchaVerifierShop = verifier;
+      let verifier = (window as any).recaptchaVerifierShop;
+      if (!verifier) {
+        if (!document.getElementById("recaptcha-container-shop")) {
+          const newContainer = document.createElement("div");
+          newContainer.id = "recaptcha-container-shop";
+          newContainer.style.position = "fixed";
+          newContainer.style.bottom = "10px";
+          newContainer.style.right = "10px";
+          newContainer.style.width = "1px";
+          newContainer.style.height = "1px";
+          newContainer.style.opacity = "0.01";
+          newContainer.style.pointerEvents = "none";
+          document.body.appendChild(newContainer);
         }
-        const confirmation = await signInWithPhoneNumber(auth, `+91${newShop.ownerPhone}`, verifier);
-        setShopConfirmationResult(confirmation);
-        setShopOtpError(null);
-        setShopOtpSent(true);
-        toast.success(`Secure OTP sent to +91 ${newShop.ownerPhone} via SMS! 📲`);
+        verifier = new RecaptchaVerifier(auth, "recaptcha-container-shop", { size: "invisible", callback: () => {} });
+        await verifier.render();
+        (window as any).recaptchaVerifierShop = verifier;
       }
+      const confirmation = await signInWithPhoneNumber(auth, `+91${newShop.ownerPhone}`, verifier);
+      setShopConfirmationResult(confirmation);
+      setShopOtpError(null);
+      setShopOtpSent(true);
+      toast.success(`Secure OTP sent to +91 ${newShop.ownerPhone} via SMS! 📲`);
     } catch (err: any) {
       console.warn("Real shop Firebase OTP dispatch failed. Generating dynamic audit details:", err);
       toast.error("Standard verification failed. Please try again later.");
@@ -216,20 +185,10 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
         let isVerified = false, clientUid = "", idToken = "";
         if (shopConfirmationResult) {
           try {
-            if (Capacitor.isNativePlatform()) {
-              const result = await FirebaseAuthentication.confirmVerificationCode({
-                verificationId: shopConfirmationResult.verificationId,
-                verificationCode: shopOtpInput,
-              });
-              clientUid = result.user?.uid || "";
-              try { idToken = (await FirebaseAuthentication.getIdToken()).token; } catch (e) {}
-              isVerified = true;
-            } else {
-              const userCredential = await shopConfirmationResult.confirm(shopOtpInput);
-              clientUid = userCredential.user.uid;
-              try { idToken = await userCredential.user.getIdToken(); } catch (e) {}
-              isVerified = true;
-            }
+            const userCredential = await shopConfirmationResult.confirm(shopOtpInput);
+            clientUid = userCredential.user.uid;
+            try { idToken = await userCredential.user.getIdToken(); } catch (e) {}
+            isVerified = true;
           } catch (err) {
             toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");
             setShopOtpLoading(false);

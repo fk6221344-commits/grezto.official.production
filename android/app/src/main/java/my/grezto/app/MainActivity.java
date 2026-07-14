@@ -1,4 +1,4 @@
-package com.my.grezto;
+package my.grezto.app;
 
 import android.os.Bundle;
 import android.content.res.Resources;
@@ -23,7 +23,7 @@ public class MainActivity extends BridgeActivity {
 
         try {
             FirebaseApp.initializeApp(this);
-            // Log a test non-fatal exception to automatically wake-up/initialize the Crashlytics dashboard with com.my.grezto!
+            // Log a test non-fatal exception to automatically wake-up/initialize the Crashlytics dashboard with my.grezto.app!
             FirebaseCrashlytics.getInstance().log("Grezto App Started - Auto-initializing Crashlytics");
             FirebaseCrashlytics.getInstance().setCustomKey("grezto_auto_test_run", true);
             FirebaseCrashlytics.getInstance().recordException(new RuntimeException("Grezto Crashlytics Auto-Test Connection Exception"));

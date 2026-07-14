@@ -846,6 +846,8 @@ export default function Checkout({
      toast.success("Delivery details saved!");
   };
 
+  const isFormValid = !!(nameInput.trim() && cityInput.trim() && areaInput.trim() && pincodeInput.trim() && houseNoInput.trim() && landmarkInput.trim());
+
   return (
     <div className="w-full h-screen bg-[#f8faf8] flex flex-col justify-between font-sans overflow-hidden select-none relative">
       {/* 1. NATIVE INTEGRATED WHITE HEADER BLOCK */}
@@ -974,7 +976,6 @@ export default function Checkout({
                 <input
                   type="number"
                   pattern="[0-9]*"
-                  placeholder="782411"
                   value={pincodeInput}
                   onChange={(e) => setPincodeInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -988,7 +989,6 @@ export default function Checkout({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Baramari"
                   value={cityInput}
                   onChange={(e) => setCityInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -1002,7 +1002,6 @@ export default function Checkout({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. House No 15"
                   value={houseNoInput}
                   onChange={(e) => setHouseNoInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -1016,7 +1015,6 @@ export default function Checkout({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Baramari I.P"
                   value={areaInput}
                   onChange={(e) => setAreaInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -1024,13 +1022,12 @@ export default function Checkout({
               </div>
 
               {/* 7. FAMOUS SCHOOL / SHOPS */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all col-span-2">
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
                 <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
                   FAMOUS SCHOOL / SHOPS (LANDMARK)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Near L.P School"
                   value={landmarkInput}
                   onChange={(e) => setLandmarkInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -1038,13 +1035,12 @@ export default function Checkout({
               </div>
 
               {/* 8. YOUR NAME */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all col-span-2">
+              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
                 <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
                   YOUR NAME
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter recipient full name"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
@@ -1053,16 +1049,6 @@ export default function Checkout({
 
             </div>
 
-            {/* Save details local info and proceed button inside form */}
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={handleSaveAndPlaceOrder}
-                className="w-full py-3.5 bg-[#0b7a2d] hover:bg-[#096024] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl shadow-sm transition-all active:scale-[0.99] cursor-pointer"
-              >
-                SAVE ADDRESS & PROCEED
-              </button>
-            </div>
           </div>
         ) : (
           /* SCREEN FLOW 2: LIST OF SAVED ADDRESSES FOR SUBSEQUENT USERS */
@@ -1226,11 +1212,11 @@ export default function Checkout({
           {/* Rightside: Click To Place Order CTA */}
           <div className="flex-1 min-w-0">
             <motion.button
-              whileTap={!isOutOfRange && !loading && !gpsLoading ? { scale: 0.98 } : undefined}
-              disabled={loading || gpsLoading || isOutOfRange}
+              whileTap={!isOutOfRange && !loading && !gpsLoading && !((isCreatingNewAddress || editingAddressId) && !isFormValid) ? { scale: 0.98 } : undefined}
+              disabled={loading || gpsLoading || isOutOfRange || ((isCreatingNewAddress || editingAddressId) && !isFormValid)}
               onClick={(isCreatingNewAddress || editingAddressId) ? handleSaveAndPlaceOrder : handlePlaceOrder}
               className={`w-full py-4 px-3.5 rounded-xl text-white font-black text-[10.5px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all ${
-                isOutOfRange || loading || gpsLoading
+                isOutOfRange || loading || gpsLoading || ((isCreatingNewAddress || editingAddressId) && !isFormValid)
                   ? "bg-stone-400 cursor-not-allowed opacity-80"
                   : "bg-[#0e9f6e] hover:bg-[#0b8058] shadow-emerald-700/10 hover:shadow-emerald-700/20 cursor-pointer"
               }`}

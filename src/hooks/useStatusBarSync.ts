@@ -44,22 +44,22 @@ export function useStatusBarSync({
           // Splash screen is white/off-white background
           style = Style.Light; // Suit light background (dark text/icons)
         } else if (showAdmin || showAnalyticsModal) {
-          // Admin Panel - Dark Slate Blue Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
+          // Admin Panel - White Theme Header
+          style = Style.Light; // Suit light background (dark text/icons)
         } else if (showMerchant || showMerchantCalculationModal) {
-          // Merchant Panel - Dark Gray Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
+          // Merchant Panel - White Theme Header
+          style = Style.Light; // Suit light background (dark text/icons)
         } else if (showRider || showRiderManagement) {
-          // Rider Console - Slate Theme
-          style = Style.Dark; // Suit dark background (light text/icons)
+          // Rider Console - White Theme Header
+          style = Style.Light; // Suit light background (dark text/icons)
         } else if (showCheckout || showOrderSuccess || trackingOrder) {
           // Light pages: Checkout / Success / Tracking
           style = Style.Light; // Suit light background (dark text/icons)
-        } else if (activeTab === 'home') {
-          // Home Screen: Deep Emerald Green Theme to match the beautiful top banner!
+        } else if (activeTab === 'home' || activeTab === 'cart' || activeTab === 'orders') {
+          // Home, Cart, Orders: Dark Gradient Headers
           style = Style.Dark; // Suit dark background (light text/icons)
         } else {
-          // Other tabs (Cart, Orders, Profile) - Crisp Premium Light Theme
+          // Other tabs (Profile) - Crisp Premium Light Theme
           style = Style.Light; // Suit light background (dark text/icons)
         }
 

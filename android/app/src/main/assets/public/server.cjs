@@ -204,6 +204,9 @@ var init_clients = __esm({
     import_dotenv2.default.config();
     supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
     supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
+    if (supabaseKey === "YOUR_SUPABASE_SERVICE_ROLE_KEY") {
+      supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || "";
+    }
     isValidSupabaseUrl = supabaseUrl.startsWith("http://") || supabaseUrl.startsWith("https://");
     supabase = isValidSupabaseUrl && supabaseKey ? (0, import_supabase_js.createClient)(supabaseUrl, supabaseKey, {
       auth: {
@@ -393,7 +396,7 @@ async function validateFirebaseToken(req, res, next) {
     }
     if (!decodedToken) {
       try {
-        const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
+        const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || firebaseConfig && firebaseConfig.apiKey || "";
         if (!apiKey) {
           throw new Error("FIREBASE_API_KEY is not defined on the server.");
         }
@@ -806,7 +809,7 @@ async function startServer() {
     // standard Vercel deploy example
     "https://grezto.in",
     "https://www.grezto.in",
-    "https://api.grezto.in"
+    "https://api.grezto.com"
   ];
   const corsOptions = {
     origin: (origin, callback) => {
@@ -1032,7 +1035,7 @@ async function startServer() {
       }
       if (!decodedToken) {
         try {
-          const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
+          const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || firebaseConfig && firebaseConfig.apiKey || "";
           if (!apiKey) {
             throw new Error("FIREBASE_API_KEY server-side is missing.");
           }
@@ -1545,13 +1548,15 @@ async function startServer() {
         let verifiedUid = clientUid;
         try {
           let userRecord;
-          if (idToken && import_firebase_admin.default.apps.length > 0) {
-            try {
-              const decodedToken = await import_firebase_admin.default.auth().verifyIdToken(idToken);
-              verifiedUid = decodedToken.uid;
-            } catch (tokenVerifyErr) {
-              console.warn("[OTP] Token verify bypassed:", tokenVerifyErr.message);
-            }
+          if (!idToken || import_firebase_admin.default.apps.length === 0) {
+            return res.status(401).json({ error: "Unauthorized. Security Alert: ID token is required for client-verified sessions." });
+          }
+          try {
+            const decodedToken = await import_firebase_admin.default.auth().verifyIdToken(idToken);
+            verifiedUid = decodedToken.uid;
+          } catch (tokenVerifyErr) {
+            console.error("[OTP SECURITY] CRITICAL: Invalid ID token provided for client-verified bypass!", tokenVerifyErr.message);
+            return res.status(401).json({ error: "Unauthorized. Security Alert: Invalid Firebase ID token provided." });
           }
           if (import_firebase_admin.default.apps.length > 0) {
             if (verifiedUid) {

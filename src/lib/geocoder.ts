@@ -56,98 +56,37 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
     }
 
     try {
-      console.log("[LocationService] [Native] Checking cached location...");
+      console.log("[LocationService] [Native] Requesting exact high accuracy GPS...");
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 1500,
-        maximumAge: 45000
-      });
-      if (pos && pos.coords && pos.coords.accuracy <= 25) {
-        console.log("[LocationService] [Native] Cached GPS Match! Accuracy:", pos.coords.accuracy);
-        return {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          method: `GPS-CachedPrecise-${pos.coords.accuracy.toFixed(0)}m`
-        };
-      }
-    } catch (tier0Err) {
-      console.log("[LocationService] Cached GPS check failed:", tier0Err);
-    }
-
-    try {
-      console.log("[LocationService] [Native] Starting Active GPS Settle...");
-      const preciseCoords = await new Promise<{ latitude: number; longitude: number; accuracy: number }>((resolve, reject) => {
-        let bestPos: { latitude: number; longitude: number; accuracy: number } | null = null;
-        let watchId: string | null = null;
-        
-        const timeoutTimer = setTimeout(() => {
-          if (watchId) {
-            Geolocation.clearWatch({ id: watchId }).catch(() => {});
-          }
-          if (bestPos) {
-            resolve(bestPos);
-          } else {
-            reject(new Error("Active GPS timed out."));
-          }
-        }, 12000);
-
-        Geolocation.watchPosition({
-          enableHighAccuracy: true,
-          timeout: 13000,
-          maximumAge: 0
-        }, (position, err) => {
-          if (err) {
-            console.warn("[LocationService] Watch position error:", err);
-            return;
-          }
-          if (position && position.coords) {
-            const acc = position.coords.accuracy;
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            if (!bestPos || acc < bestPos.accuracy) {
-              bestPos = { latitude: lat, longitude: lng, accuracy: acc };
-            }
-            
-            if (acc <= 15) {
-              clearTimeout(timeoutTimer);
-              if (watchId) {
-                Geolocation.clearWatch({ id: watchId }).catch(() => {});
-              }
-              resolve({ latitude: lat, longitude: lng, accuracy: acc });
-            }
-          }
-        }).then(id => {
-          watchId = id;
-        }).catch(e => {
-          console.warn("[LocationService] Failed to watch position:", e);
-        });
-      });
-
-      return {
-        latitude: preciseCoords.latitude,
-        longitude: preciseCoords.longitude,
-        method: `GPS-WatchSettle-${preciseCoords.accuracy.toFixed(0)}m`
-      };
-
-    } catch (watchErr) {
-      console.warn("[LocationService] GPS Settle failed, trying standard getCurrentPosition...", watchErr);
-    }
-
-    try {
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 7000,
         maximumAge: 0
       });
-      console.log("[LocationService] [Native] Standard GPS success. Accuracy:", pos.coords.accuracy);
+      
+      console.log("[LocationService] [Native] Exact GPS Success! Accuracy:", pos.coords.accuracy);
       return {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
-        method: `GPS-CurrentPos-${pos.coords.accuracy.toFixed(0)}m`
+        method: `GPS-Exact-${pos.coords.accuracy.toFixed(0)}m`
       };
     } catch (tier1Err) {
-      console.warn("[LocationService] [Native] Standard high accuracy failed:", tier1Err);
+      console.warn("[LocationService] [Native] Exact GPS fetch failed, trying recent cached...", tier1Err);
+    }
+    
+    try {
+      console.log("[LocationService] [Native] Checking recent cached location as fallback...");
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 4000,
+        maximumAge: 60000 // Allow up to 60 seconds old cached location
+      });
+      return {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        method: `GPS-Cached-${pos.coords.accuracy.toFixed(0)}m`
+      };
+    } catch (tier2Err) {
+      console.warn("[LocationService] [Native] Cached GPS check failed:", tier2Err);
     }
 
   } catch (err: any) {

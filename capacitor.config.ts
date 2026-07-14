@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.my.grezto',
+  appId: 'my.grezto.app',
   appName: 'Grezto',
   webDir: 'dist',
   backgroundColor: '#fffcf9',

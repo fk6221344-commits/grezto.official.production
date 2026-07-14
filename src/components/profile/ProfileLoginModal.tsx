@@ -228,6 +228,9 @@ export default function ProfileLoginModal({
                 </div>
               )}
 
+              {/* reCAPTCHA Container for visible web-based fallback */}
+              <div id="recaptcha-container" className="mt-2 w-full flex justify-center"></div>
+
               {/* Password/OTP Field */}
               <div className="space-y-1 pt-1">
                  <label className="text-[8.5px] font-black text-stone-400 uppercase tracking-widest ml-1">Verification OTP</label>

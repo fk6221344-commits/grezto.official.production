@@ -26,25 +26,39 @@ export const supabase = (isValidSupabaseUrl && supabaseKey) ? createClient(supab
   }
 }) : null;
 
-// Securely initialize Firebase Admin SDK using the active project ID dynamically
+// Securely initialize Firebase Admin SDK using the active project ID dynamically or a Service Account
 if (!admin.apps.length) {
   try {
-    let projectId = process.env.FIREBASE_PROJECT_ID;
-    if (!projectId) {
-      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-      if (fs.existsSync(configPath)) {
-        const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-        projectId = config.projectId;
-      }
-    }
-    
-    if (projectId) {
+    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+
+    if (serviceAccountBase64) {
+      // Decode the base64 service account JSON
+      const serviceAccountJson = Buffer.from(serviceAccountBase64, 'base64').toString('utf8');
+      const serviceAccount = JSON.parse(serviceAccountJson);
+
       admin.initializeApp({
-        projectId: projectId
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id
       });
-      console.log(`[SERVER] Firebase Admin SDK successfully initialized on server for project: ${projectId}`);
+      console.log(`[SERVER] Firebase Admin SDK successfully initialized with Service Account for project: ${serviceAccount.project_id}`);
     } else {
-      console.warn("[SERVER] No Firebase Project ID found. Skipping Admin SDK initialization.");
+      let projectId = process.env.FIREBASE_PROJECT_ID;
+      if (!projectId) {
+        const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+          projectId = config.projectId;
+        }
+      }
+
+      if (projectId) {
+        admin.initializeApp({
+          projectId: projectId
+        });
+        console.log(`[SERVER] Firebase Admin SDK successfully initialized (Without Service Account) for project: ${projectId}`);
+      } else {
+        console.warn("[SERVER] No Firebase Project ID or Service Account found. Skipping Admin SDK initialization.");
+      }
     }
   } catch (adminInitErr) {
     console.error("[SERVER] Failed to initialize Firebase Admin SDK:", adminInitErr);

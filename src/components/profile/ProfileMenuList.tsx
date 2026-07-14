@@ -56,11 +56,6 @@ export default function ProfileMenuList({
           label="About Grezto" 
           onClick={() => setShowAboutModal(true)}
         />
-        <MenuListItem 
-          icon={<Settings className="text-amber-500" />} 
-          label="Server Sync Settings" 
-          onClick={onServerConfigClick}
-        />
       </div>
     </div>
   );
