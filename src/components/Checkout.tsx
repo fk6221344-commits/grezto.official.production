@@ -877,7 +877,7 @@ export default function Checkout({
           <motion.button
             whileTap={{ scale: 0.92 }}
             type="button"
-            onClick={fetchAutomaticGPSDetails}
+            onClick={() => fetchAutomaticGPSDetails(true)}
             disabled={gpsLoading}
             className="flex items-center bg-[#ea2027]/90 hover:bg-[#ea2027] border-none px-3.5 py-1 text-white font-extrabold text-[9px] uppercase tracking-wider gap-1 rounded-full transition-all cursor-pointer shadow-xs disabled:opacity-55"
           >

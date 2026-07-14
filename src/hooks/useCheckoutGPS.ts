@@ -179,7 +179,7 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
 
       console.log("[Checkout GPS] Fetching multi-tier high speed location...");
       try {
-        let location = forceFresh ? null : getCachedPreFetchedLocation();
+        let location: any = forceFresh ? null : getCachedPreFetchedLocation();
         if (location) {
           console.log("[Checkout GPS] 0-second Optimistic Load! Using background pre-fetched location.");
         } else {
