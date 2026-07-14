@@ -149,6 +149,21 @@ export function useProfileAuth() {
 
     try {
       const firebasePromise = (async () => {
+        // Bulletproof container check to prevent DOM errors
+        if (!document.getElementById('recaptcha-container')) {
+          const newContainer = document.createElement('div');
+          newContainer.id = 'recaptcha-container';
+          newContainer.style.position = 'fixed';
+          newContainer.style.bottom = '10px';
+          newContainer.style.right = '10px';
+          newContainer.style.width = '1px';
+          newContainer.style.height = '1px';
+          newContainer.style.opacity = '0.01';
+          newContainer.style.pointerEvents = 'none';
+          newContainer.style.zIndex = '99999';
+          document.body.appendChild(newContainer);
+        }
+
         let verifier = (window as any).recaptchaVerifier;
         if (!verifier) {
           verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -169,6 +184,20 @@ export function useProfileAuth() {
       setIsOtpSent(true);
       toast.success(`Verification code sent to +91 ${loginPhone} via SMS! 📲`, { duration: 6000 });
     } catch (err: any) {
+      // 1000% Bulletproof Error Recovery: Clear stale reCAPTCHA to ensure the next click works perfectly
+      try {
+        if ((window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
+        }
+        const container = document.getElementById('recaptcha-container');
+        if (container) {
+          container.innerHTML = ''; 
+        }
+      } catch (clearErr) {
+        console.warn("reCAPTCHA cleanup failed:", clearErr);
+      }
+
       console.warn("Real Firebase OTP dispatch failed. Generating audit logs:", err);
       const errCode = err?.code || "";
       const errMsg = err?.message || String(err);
