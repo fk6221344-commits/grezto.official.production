@@ -78,7 +78,7 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: false, // Allows Android to instantly return WiFi/Cell tower location
         timeout: 2500, // Very fast timeout since network is usually instant
-        maximumAge: 10000 // STRICT: Only accept a location from the last 10 seconds to guarantee it's their current spot, not a 5-minute old cache
+        maximumAge: 6000 // STRICT: Only accept a location from the last 6 seconds
       });
       console.log("[LocationService] [Native] Network/WiFi Success! Accuracy:", pos.coords.accuracy);
       return {
