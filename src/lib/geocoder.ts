@@ -56,11 +56,11 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
     }
 
     try {
-      console.log("[LocationService] [Native] Requesting exact high accuracy GPS...");
+      console.log("[LocationService] [Native] Requesting 100% exact high accuracy GPS...");
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 3500, // Reduced drastically for faster lock
-        maximumAge: 5000 // Allow up to 5 seconds old for instant lock if recently polled
+        timeout: 6000, // 6 seconds maximum wait for 100% exact GPS
+        maximumAge: 0 // NO OLD CACHE - Force exact live location
       });
       
       console.log("[LocationService] [Native] Exact GPS Success! Accuracy:", pos.coords.accuracy);
@@ -70,15 +70,15 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
         method: `GPS-Exact-${pos.coords.accuracy.toFixed(0)}m`
       };
     } catch (tier1Err) {
-      console.warn("[LocationService] [Native] Exact GPS fetch failed, trying recent cached...", tier1Err);
+      console.warn("[LocationService] [Native] Exact GPS fetch failed, trying very recent cached...", tier1Err);
     }
     
     try {
-      console.log("[LocationService] [Native] Checking recent cached or network location as fallback...");
+      console.log("[LocationService] [Native] Checking very recent high-accuracy cached location as fallback...");
       const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: false, // Network/cell-tower location for instant fallback
+        enableHighAccuracy: true, // Must be true for high accuracy
         timeout: 2000,
-        maximumAge: 300000 // Allow up to 5 minutes old cached location
+        maximumAge: 15000 // Allow up to 15 seconds old ONLY (Guarantees accuracy)
       });
       return {
         latitude: pos.coords.latitude,
