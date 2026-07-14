@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 export const LOCAL_DEV_URL = import.meta.env.PROD ? "" : "http://10.0.2.2:3000";
 
 // Securely obfuscated base64 payload to prevent plain string scraping in release APKs
-const SECURE_OBFUSCATED_LIVE_URL = "aHR0cHM6Ly9hcGkuZ3JlenRvLmlu"; // Decodes to "https://api.grezto.in"
+const SECURE_OBFUSCATED_LIVE_URL = "aHR0cHM6Ly9hcGkuZ3JlenRvLmNvbQ=="; // Decodes to "https://api.grezto.com"
 
 /**
  * Safe runtime de-obfuscator for production API domain
@@ -19,7 +19,7 @@ export function getLiveProductionUrl(): string {
     return Buffer.from(SECURE_OBFUSCATED_LIVE_URL, 'base64').toString('utf8');
   } catch (err) {
     // Ultimate hardcoded fallback
-    return "https://api.grezto.in";
+    return "https://api.grezto.com";
   }
 }
 

@@ -1,6 +1,6 @@
 import express from "express";
 import crypto from "crypto";
-import { supabase, admin } from "./clients";
+import { supabase, admin, firebaseConfig } from "./clients";
 import { safeGet, safeSet } from "./redisClient";
 
 // Local high-availability in-memory cache for fast token verification fallback
@@ -196,7 +196,7 @@ export async function validateFirebaseToken(req: any, res: express.Response, nex
     // 4. Fallback Verification: Google Identity Toolkit REST API (Ensures high-availability if Admin SDK has initialization issues)
     if (!decodedToken) {
       try {
-        const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
+        const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || (firebaseConfig && firebaseConfig.apiKey) || "";
         if (!apiKey) {
           throw new Error("FIREBASE_API_KEY is not defined on the server.");
         }

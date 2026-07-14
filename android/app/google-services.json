@@ -8,27 +8,35 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:976118890930:android:bc2655abd74833566564ab",
+        "mobilesdk_app_id": "1:976118890930:android:a0a8d87d5ae27e786564ab",
         "android_client_info": {
           "package_name": "com.my.grezto"
         }
       },
       "oauth_client": [
         {
-          "client_id": "976118890930-lqlqe7ftlo98jlfn6hfilj9nkchhkr9h.apps.googleusercontent.com",
+          "client_id": "976118890930-5vj6cfjr8g0inf52dvd4s5lhgr6v4nhu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.my.grezto",
+            "certificate_hash": "b3744dd392f553e8bde64678e7a15ecadce1321a"
+          }
+        },
+        {
+          "client_id": "976118890930-e3sq9il83mckpa6l3m7mvqva1ahvtrsv.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyA5EdUPslFYTmd4zgsf_xhUUJ_pm40JWDo"
+          "current_key": "AIzaSyCcSs6zPH_jOjvWLJ_RwA61Z5px3oi9juU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "976118890930-lqlqe7ftlo98jlfn6hfilj9nkchhkr9h.apps.googleusercontent.com",
+              "client_id": "976118890930-e3sq9il83mckpa6l3m7mvqva1ahvtrsv.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

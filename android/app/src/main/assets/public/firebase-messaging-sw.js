@@ -1,68 +1,58 @@
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-self.addEventListener('push', (event) => {
-  let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data = { notification: { title: 'New Grezto Order!', body: event.data.text() }};
-    }
-  }
+// Initialize the Firebase app in the service worker by fetching from config endpoint if possible
+// Alternatively, since this is a public file, we'll try to listen to the push event directly 
+// or require the app to pass config to it using URL params, but standard approach requires config here.
+// For security and simplicity, we can receive config from the client:
+let messaging;
 
-  const title = data?.notification?.title || data?.data?.title || "Mission Alert 🚨";
-  const body = data?.notification?.body || data?.data?.body || "Check the Rider App for a new assigned order.";
-  const icon = '/favicon.ico'; // Optional icon path
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
+    firebase.initializeApp(event.data.config);
+    messaging = firebase.messaging();
+    
+    messaging.onBackgroundMessage((payload) => {
+      console.log('[firebase-messaging-sw.js] Received background message ', payload);
+      
+      const notificationTitle = payload.notification?.title || 'System Alert';
+      const notificationOptions = {
+        body: payload.notification?.body || 'New order status update',
+        icon: '/vite.svg',
+        data: payload.data
+      };
 
-  // Web Push Sound Trick
-  // If a payload specifies sound, but many browsers ignore it.
-  // We can try to play a sound via Audio object in SW, but that requires user interaction.
-  // The best way is to send the message to the clients and let them play audio,
-  // AND show a persistent notification that requires interaction.
+      self.registration.showNotification(notificationTitle, notificationOptions);
 
-  self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then((clients) => {
-    clients.forEach((client) => {
-      client.postMessage({
-        type: 'ALARM_TRIGGERS',
-        payload: data
+      // Trigger frontend to play alarm if possible
+      self.clients.matchAll().then(clients => {
+          clients.forEach(client => client.postMessage({ type: 'ALARM_TRIGGERS' }));
       });
     });
-  });
-
-  const options = {
-    body,
-    icon,
-    vibrate: [1500, 200, 1500, 200, 2000, 300, 2000, 300, 2000, 300, 3000, 500, 3000],
-    requireInteraction: true,
-    data: data
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+  }
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  
+  // Custom click action
+  self.clients.matchAll().then(clients => {
+      clients.forEach(client => client.postMessage({ type: 'STOP_ALARM' }));
+  });
+
+  // Focus the window
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then(windowClients => {
-      // Send message to stop the alarm when notification is clicked
-      windowClients.forEach(client => {
-         client.postMessage({ type: 'STOP_ALARM' });
-      });
-      // Check if there is already a window/tab open with the target URL
-      for (var i = 0; i < windowClients.length; i++) {
-        var client = windowClients[i];
-        // If so, just focus it.
-        if (client.url && 'focus' in client) {
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
         }
+        return client.focus();
       }
-      // If not, then open the target URL in a new window/tab.
-      if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
-      }
+      return clients.openWindow('/');
     })
   );
 });

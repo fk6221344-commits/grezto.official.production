@@ -90,7 +90,7 @@ async function startServer() {
     "https://grezto.vercel.app", // standard Vercel deploy example
     "https://grezto.in",
     "https://www.grezto.in",
-    "https://api.grezto.in"
+    "https://api.grezto.com"
   ];
 
   const corsOptions = {
@@ -383,7 +383,7 @@ async function startServer() {
       // 2. Fallback to Identity Toolkit REST verification if Admin SDK failed or skipped
       if (!decodedToken) {
         try {
-          const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
+          const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || (firebaseConfig && firebaseConfig.apiKey) || "";
           if (!apiKey) {
             throw new Error("FIREBASE_API_KEY server-side is missing.");
           }
@@ -1040,13 +1040,15 @@ async function startServer() {
         let verifiedUid = clientUid;
         try {
           let userRecord;
-          if (idToken && admin.apps.length > 0) {
-            try {
-              const decodedToken = await admin.auth().verifyIdToken(idToken);
-              verifiedUid = decodedToken.uid;
-            } catch (tokenVerifyErr: any) {
-              console.warn("[OTP] Token verify bypassed:", tokenVerifyErr.message);
-            }
+          if (!idToken || admin.apps.length === 0) {
+            return res.status(401).json({ error: "Unauthorized. Security Alert: ID token is required for client-verified sessions." });
+          }
+          try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            verifiedUid = decodedToken.uid;
+          } catch (tokenVerifyErr: any) {
+            console.error("[OTP SECURITY] CRITICAL: Invalid ID token provided for client-verified bypass!", tokenVerifyErr.message);
+            return res.status(401).json({ error: "Unauthorized. Security Alert: Invalid Firebase ID token provided." });
           }
 
           if (admin.apps.length > 0) {

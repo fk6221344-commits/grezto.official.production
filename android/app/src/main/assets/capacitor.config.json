@@ -4,15 +4,42 @@
 	"webDir": "dist",
 	"backgroundColor": "#fffcf9",
 	"server": {
-		"androidScheme": "https"
+		"androidScheme": "https",
+		"allowNavigation": [
+			"localhost",
+			"127.0.0.1",
+			"*.run.app",
+			"*.railway.app",
+			"grezto.vercel.app"
+		]
 	},
 	"plugins": {
+		"StatusBar": {
+			"overlaysWebView": true,
+			"style": "DARK"
+		},
+		"SplashScreen": {
+			"launchShowDuration": 3000,
+			"launchAutoHide": false,
+			"launchFadeOutDuration": 150,
+			"backgroundColor": "#fffdfa",
+			"androidScaleType": "CENTER_CROP",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersive": true
+		},
 		"PushNotifications": {
 			"presentationOptions": [
 				"badge",
 				"sound",
 				"alert"
 			]
+		},
+		"FirebaseAuthentication": {
+			"providers": [
+				"phone"
+			],
+			"skipNativeAuth": false
 		}
 	}
 }

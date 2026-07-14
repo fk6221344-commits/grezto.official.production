@@ -11,7 +11,10 @@ dotenv.config();
 // Create Supabase client for Server
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 // Prioritize Service Role Key for secure server-side operations, fall back to Anon Key
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+if (supabaseKey === 'YOUR_SUPABASE_SERVICE_ROLE_KEY') {
+  supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+}
 const isValidSupabaseUrl = supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://');
 
 export const supabase = (isValidSupabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey, {
