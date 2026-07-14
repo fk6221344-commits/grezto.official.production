@@ -256,15 +256,15 @@ export function useProfileAuth() {
         if (isQuotaOrRateLimit) {
           setAuthError({
             show: true,
-            title: "Verification Limit",
-            message: "Verification limit reached for today. Please try again after 24 hours.",
+            title: "Too Many Attempts",
+            message: "You have requested OTPs too many times.\nPlease take a short break and try again later.",
             isOwner: false
           });
         } else {
           setAuthError({
             show: true,
-            title: "Server High Traffic",
-            message: "Our server is temporarily experiencing high traffic. Please try again in a few moments.",
+            title: "Connection Error",
+            message: "We are unable to verify your number right now.\nPlease check your network and try again.",
             isOwner: false
           });
         }
