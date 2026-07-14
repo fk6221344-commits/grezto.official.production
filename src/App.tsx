@@ -30,7 +30,7 @@ import RiderConsole from './components/RiderConsole';
 import RiderManagement from './components/RiderManagement';
 import BottomNav from './components/BottomNav';
 import OrderDetailModal from './components/OrderDetailModal';
-import IncomingOrderAlert from './components/IncomingOrderAlert';
+import AdminOrderOverlay from './components/admin/AdminOrderOverlay';
 import Tracking from './components/Tracking';
 import GlobalNotificationsModal from './components/GlobalNotificationsModal';
 import ReferralInstaller from './components/ReferralInstaller';
@@ -708,16 +708,14 @@ function MainAppLayout() {
                 </AnimatePresence>
 
                 {/* New incoming order push banner modal */}
-                <IncomingOrderAlert
-                  incomingOrderAlert={incomingOrderAlert}
-                  setIncomingOrderAlert={setIncomingOrderAlert}
-                  dismissedOrderIdsRef={dismissedOrderIdsRef}
-                  stopAlertAlarmLoop={stopAlertAlarmLoop}
-                  startAlertAlarmLoop={startAlertAlarmLoop}
-                  alarmMuted={alarmMuted}
-                  setAlarmMuted={setAlarmMuted}
-                  onAccept={handleAcceptAndRedirect}
-                />
+                {incomingOrderAlert && !showRider && (
+                  <AdminOrderOverlay
+                    incomingOrderAlert={incomingOrderAlert}
+                    onAccept={() => {
+                      handleAcceptAndRedirect(incomingOrderAlert);
+                    }}
+                  />
+                )}
 
                 {/* Specific Detailed order dialog */}
                 <AnimatePresence>
