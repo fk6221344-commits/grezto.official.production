@@ -828,7 +828,7 @@ function startFCMOrderListener() {
           },
           tokens
         };
-        const response = await import_firebase_admin.default.messaging().sendMulticast(message);
+        const response = await import_firebase_admin.default.messaging().sendEachForMulticast(message);
         console.log(`[FCM Listener] Push sent to ${tokens.length} devices. Success: ${response.successCount}, Failures: ${response.failureCount}`);
         if (response.failureCount > 0) {
           response.responses.forEach((resp, idx) => {
