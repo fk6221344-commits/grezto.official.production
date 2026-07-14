@@ -39,6 +39,17 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDoMvALVsbsIC8WJuh0FpdvwfhCWoiZzmo" />
+            
+        <!-- FCM Default Notification Settings (Critical for background custom sound) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="grezto_order_channel_v5" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_sound"
+            android:value="spaceship_alarm" />
     </application>
 
     <!-- Permissions -->

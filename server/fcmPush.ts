@@ -81,7 +81,7 @@ export function startFCMOrderListener() {
             android: {
               priority: 'high' as const,
               notification: {
-                channelId: 'grezto_order_channel_v4',
+                channelId: 'grezto_order_channel_v5',
                 sound: 'spaceship_alarm', // plays android/app/src/main/res/raw/spaceship_alarm.mp3
                 clickAction: 'FCM_PLUGIN_ACTIVITY',
                 visibility: 'public' as const,
@@ -159,7 +159,7 @@ export function startFCMOrderListener() {
             android: {
               priority: 'high' as const,
               notification: {
-                channelId: 'grezto_order_channel_v4',
+                channelId: 'grezto_order_channel_v5',
                 sound: 'spaceship_alarm',
                 clickAction: 'FCM_PLUGIN_ACTIVITY',
                 visibility: 'public' as const,

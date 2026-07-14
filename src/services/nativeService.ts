@@ -239,8 +239,8 @@ export async function initializeFCMNotifications(phone: string) {
       // CREATE THE CUSTOM SOUND CHANNEL FOR PUSH NOTIFICATIONS
       try {
         await PushNotifications.createChannel({
-          id: 'grezto_order_channel_v4',
-          name: 'Grezto New Orders v4',
+          id: 'grezto_order_channel_v5',
+          name: 'Grezto New Orders v5',
           description: 'Loud alarm with persistent vibration for new incoming orders.',
           importance: 5, // 5 = High importance (MAX)
           visibility: 1, // 1 = Public
@@ -258,8 +258,8 @@ export async function initializeFCMNotifications(phone: string) {
       // CREATE THE CUSTOM SOUND CHANNEL FOR LOCAL NOTIFICATIONS (Saves sound for Oreo+)
       try {
         await LocalNotifications.createChannel({
-          id: 'grezto_order_channel_v4',
-          name: 'Grezto New Orders v4',
+          id: 'grezto_order_channel_v5',
+          name: 'Grezto New Orders v5',
           description: 'Loud alarm with persistent vibration for new incoming orders.',
           importance: 5, // 5 = High importance (MAX)
           visibility: 1, // 1 = Public
