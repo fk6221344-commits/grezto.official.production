@@ -85,6 +85,8 @@ export function startFCMOrderListener() {
                 sound: 'spaceship_alarm', // plays android/app/src/main/res/raw/spaceship_alarm.mp3
                 clickAction: 'FCM_PLUGIN_ACTIVITY',
                 visibility: 'public' as const,
+                defaultVibrateTimings: false,
+                vibrateTimingsMillis: [0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], // Aggressive vibration pattern
               }
             },
             data: {
