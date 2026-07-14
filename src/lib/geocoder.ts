@@ -56,11 +56,11 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
     }
 
     try {
-      console.log("[LocationService] [Native] Requesting 100% exact high accuracy GPS...");
+      console.log("[LocationService] [Native] Requesting high accuracy GPS (using GPS+WiFi+Cell)...");
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 6000, // 6 seconds maximum wait for 100% exact GPS
-        maximumAge: 0 // NO OLD CACHE - Force exact live location
+        timeout: 3500, // Quick lock for best accuracy
+        maximumAge: 5000 // Allow up to 5 seconds old
       });
       
       console.log("[LocationService] [Native] Exact GPS Success! Accuracy:", pos.coords.accuracy);
@@ -70,23 +70,24 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
         method: `GPS-Exact-${pos.coords.accuracy.toFixed(0)}m`
       };
     } catch (tier1Err) {
-      console.warn("[LocationService] [Native] Exact GPS fetch failed, trying very recent cached...", tier1Err);
+      console.warn("[LocationService] [Native] Exact GPS fetch failed, falling back to WiFi/Network...", tier1Err);
     }
     
     try {
-      console.log("[LocationService] [Native] Checking very recent high-accuracy cached location as fallback...");
+      console.log("[LocationService] [Native] Requesting Network/WiFi location as fallback...");
       const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true, // Must be true for high accuracy
-        timeout: 2000,
-        maximumAge: 15000 // Allow up to 15 seconds old ONLY (Guarantees accuracy)
+        enableHighAccuracy: false, // Allows Android to instantly return WiFi/Cell tower location
+        timeout: 2500, // Very fast timeout since network is usually instant
+        maximumAge: 10000 // STRICT: Only accept a location from the last 10 seconds to guarantee it's their current spot, not a 5-minute old cache
       });
+      console.log("[LocationService] [Native] Network/WiFi Success! Accuracy:", pos.coords.accuracy);
       return {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
-        method: `GPS-Cached-${pos.coords.accuracy.toFixed(0)}m`
+        method: `Network-WiFi-${pos.coords.accuracy.toFixed(0)}m`
       };
     } catch (tier2Err) {
-      console.warn("[LocationService] [Native] Cached GPS check failed:", tier2Err);
+      console.warn("[LocationService] [Native] Network/WiFi check failed:", tier2Err);
     }
 
   } catch (err: any) {
