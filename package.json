@@ -14,7 +14,7 @@
     "@aws-sdk/client-s3": "^3.1075.0",
     "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@capacitor-community/background-geolocation": "^1.2.26",
-    "@capacitor-firebase/authentication": "^8.2.0",
+    "@capacitor-firebase/authentication": "^8.3.0",
     "@capacitor-firebase/crashlytics": "^8.2.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.3.4",

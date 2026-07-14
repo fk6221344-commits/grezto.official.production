@@ -218,21 +218,32 @@ var init_clients = __esm({
     }) : null;
     if (!import_firebase_admin.default.apps.length) {
       try {
-        let projectId = process.env.FIREBASE_PROJECT_ID;
-        if (!projectId) {
-          const configPath = import_path.default.join(process.cwd(), "firebase-applet-config.json");
-          if (import_fs.default.existsSync(configPath)) {
-            const config = JSON.parse(import_fs.default.readFileSync(configPath, "utf-8"));
-            projectId = config.projectId;
-          }
-        }
-        if (projectId) {
+        const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+        if (serviceAccountBase64) {
+          const serviceAccountJson = Buffer.from(serviceAccountBase64, "base64").toString("utf8");
+          const serviceAccount = JSON.parse(serviceAccountJson);
           import_firebase_admin.default.initializeApp({
-            projectId
+            credential: import_firebase_admin.default.credential.cert(serviceAccount),
+            projectId: serviceAccount.project_id
           });
-          console.log(`[SERVER] Firebase Admin SDK successfully initialized on server for project: ${projectId}`);
+          console.log(`[SERVER] Firebase Admin SDK successfully initialized with Service Account for project: ${serviceAccount.project_id}`);
         } else {
-          console.warn("[SERVER] No Firebase Project ID found. Skipping Admin SDK initialization.");
+          let projectId = process.env.FIREBASE_PROJECT_ID;
+          if (!projectId) {
+            const configPath = import_path.default.join(process.cwd(), "firebase-applet-config.json");
+            if (import_fs.default.existsSync(configPath)) {
+              const config = JSON.parse(import_fs.default.readFileSync(configPath, "utf-8"));
+              projectId = config.projectId;
+            }
+          }
+          if (projectId) {
+            import_firebase_admin.default.initializeApp({
+              projectId
+            });
+            console.log(`[SERVER] Firebase Admin SDK successfully initialized (Without Service Account) for project: ${projectId}`);
+          } else {
+            console.warn("[SERVER] No Firebase Project ID or Service Account found. Skipping Admin SDK initialization.");
+          }
         }
       } catch (adminInitErr) {
         console.error("[SERVER] Failed to initialize Firebase Admin SDK:", adminInitErr);
@@ -750,6 +761,91 @@ function createRateLimiter(options) {
   };
 }
 
+// server/fcmPush.ts
+init_clients();
+function startFCMOrderListener() {
+  if (!supabase) {
+    console.warn("[FCM Listener] Supabase client is not initialized. Cannot start listener.");
+    return;
+  }
+  if (!import_firebase_admin.default.apps.length) {
+    console.warn("[FCM Listener] Firebase Admin SDK is not initialized. Cannot start listener.");
+    return;
+  }
+  console.log("[FCM Listener] Starting Supabase realtime listener for new orders...");
+  supabase.channel("fcm_orders_channel").on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "orders" },
+    async (payload) => {
+      try {
+        const order = payload.new;
+        if (!order) return;
+        console.log(`[FCM Listener] New order detected: ${order.id}`);
+        const targetPhones = /* @__PURE__ */ new Set();
+        const { data: admins, error: adminErr } = await supabase.from("team").select("phone").in("role", ["admin", "master"]);
+        if (!adminErr && admins) {
+          admins.forEach((a) => {
+            if (a.phone) targetPhones.add(a.phone);
+          });
+        }
+        if (order.shopIds && Array.isArray(order.shopIds) && order.shopIds.length > 0) {
+          const { data: shops, error: shopErr } = await supabase.from("shops").select("ownerPhone").in("id", order.shopIds);
+          if (!shopErr && shops) {
+            shops.forEach((s) => {
+              if (s.ownerPhone) targetPhones.add(s.ownerPhone);
+            });
+          }
+        }
+        const phonesArray = Array.from(targetPhones);
+        if (phonesArray.length === 0) {
+          console.log("[FCM Listener] No target phones found for order", order.id);
+          return;
+        }
+        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").in("phone", phonesArray);
+        if (tokensErr || !tokensData || tokensData.length === 0) {
+          console.log("[FCM Listener] No FCM tokens found for target phones.");
+          return;
+        }
+        const tokens = tokensData.map((t) => t.token);
+        const message = {
+          notification: {
+            title: "\u{1F6A8} New Order Received! \u{1F6A8}",
+            body: `A new order has been placed. Amount: \u20B9${order.finalAmount || 0}`
+          },
+          android: {
+            priority: "high",
+            notification: {
+              channelId: "grezto_order_channel_v4",
+              sound: "spaceship_alarm",
+              // plays android/app/src/main/res/raw/spaceship_alarm.mp3
+              clickAction: "FCM_PLUGIN_ACTIVITY",
+              visibility: "public"
+            }
+          },
+          data: {
+            orderId: String(order.id),
+            type: "new_order"
+          },
+          tokens
+        };
+        const response = await import_firebase_admin.default.messaging().sendMulticast(message);
+        console.log(`[FCM Listener] Push sent to ${tokens.length} devices. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+        if (response.failureCount > 0) {
+          response.responses.forEach((resp, idx) => {
+            if (!resp.success) {
+              console.warn(`[FCM Listener] Failed to send to token ${tokens[idx]}:`, resp.error);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("[FCM Listener] Error processing new order push:", err);
+      }
+    }
+  ).subscribe((status) => {
+    console.log(`[FCM Listener] Subscription status: ${status}`);
+  });
+}
+
 // server.ts
 async function ensureDefaultDirectShop() {
   if (!supabase) return;
@@ -790,6 +886,7 @@ async function ensureDefaultDirectShop() {
 }
 async function startServer() {
   ensureDefaultDirectShop();
+  startFCMOrderListener();
   const app = (0, import_express.default)();
   app.set("trust proxy", 1);
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
@@ -1125,6 +1222,7 @@ async function startServer() {
     res.json({ key });
   });
   app.get("/api/distance", async (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
       const { originLat, originLng, destLat, destLng } = req.query;
       if (!originLat || !originLng || !destLat || !destLng) {
@@ -1175,6 +1273,7 @@ async function startServer() {
     }
   });
   app.get("/api/home-data", async (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
       if (!supabase) {
         return res.status(500).json({ error: "Database client is not initialized on server." });
@@ -1271,6 +1370,7 @@ async function startServer() {
     }
   });
   app.get("/api/products", async (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
       const category = req.query.category;
       const shopId = req.query.shopId;
@@ -1336,8 +1436,9 @@ async function startServer() {
       if (!isAuthorized) {
         return res.status(403).json({ success: false, error: "Access Denied: You are not authorized to modify this product's stock status." });
       }
-      console.log(`[WRITE API] Toggling stock status for product ${productId} to ${inStock}`);
-      const { error } = await supabase.from("products").update({ inStock }).eq("id", productId);
+      console.log(`[WRITE API] Toggling stock for ${productId} to ${inStock}`);
+      const stockValue = inStock ? 10 : 0;
+      const { error } = await supabase.from("products").update({ inStock, stock: stockValue }).eq("id", productId);
       if (error) throw error;
       if (shopId) {
         await safeDel(`grezto:shop:${shopId}:products`);
@@ -1409,6 +1510,9 @@ async function startServer() {
           warmCategoryProductsCache(productData.category);
           warmCategoryProductsCache("All");
         });
+      } else {
+        await safeDel("grezto:category:All:products");
+        setImmediate(() => warmCategoryProductsCache("All"));
       }
       return res.json({ success: true, message: "Product upserted, selective cache invalidated, and background pre-warming triggered.", data: productData });
     } catch (e) {
@@ -1417,6 +1521,7 @@ async function startServer() {
     }
   });
   app.post("/api/products/delete", validateFirebaseToken, async (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
       const { productId, shopId, category } = req.body;
       if (!productId) {
@@ -1450,6 +1555,9 @@ async function startServer() {
           warmCategoryProductsCache(category);
           warmCategoryProductsCache("All");
         });
+      } else {
+        await safeDel("grezto:category:All:products");
+        setImmediate(() => warmCategoryProductsCache("All"));
       }
       return res.json({ success: true, message: "Product deleted, selective cache invalidated, and background pre-warming triggered." });
     } catch (e) {

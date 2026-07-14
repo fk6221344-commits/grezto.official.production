@@ -149,18 +149,56 @@ export function useProfileAuth() {
 
     try {
       const firebasePromise = (async () => {
-        let verifier = (window as any).recaptchaVerifier;
-        if (!verifier) {
-          verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'normal',
-            callback: () => {}
+        if (Capacitor.isNativePlatform()) {
+          return new Promise(async (resolve, reject) => {
+            let codeSentListener: any = null;
+            let verificationFailedListener: any = null;
+
+            const cleanup = async () => {
+              try {
+                if (codeSentListener) await codeSentListener.remove();
+                if (verificationFailedListener) await verificationFailedListener.remove();
+              } catch (cleanErr) {
+                console.warn("[Native Phone Auth] Listener cleanup error:", cleanErr);
+              }
+            };
+
+            try {
+              codeSentListener = await FirebaseAuthentication.addListener('phoneCodeSent', async (event: any) => {
+                console.log("[Native Phone Auth] phoneCodeSent trigger:", event);
+                await cleanup();
+                resolve({ isNativeAuth: true, verificationId: event.verificationId });
+              });
+
+              verificationFailedListener = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
+                console.error("[Native Phone Auth] phoneVerificationFailed trigger:", event);
+                await cleanup();
+                reject(new Error(event.message || "Android Phone Authentication failed. Please check your network connection or Firebase settings."));
+              });
+
+              console.log("[Native Phone Auth] signInWithPhoneNumber calling with +91" + loginPhone);
+              await FirebaseAuthentication.signInWithPhoneNumber({
+                phoneNumber: `+91${loginPhone}`,
+              });
+            } catch (err) {
+              await cleanup();
+              reject(err);
+            }
           });
-          await verifier.render();
-          (window as any).recaptchaVerifier = verifier;
+        } else {
+          let verifier = (window as any).recaptchaVerifier;
+          if (!verifier) {
+            verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+              size: 'normal',
+              callback: () => {}
+            });
+            await verifier.render();
+            (window as any).recaptchaVerifier = verifier;
+          }
+          
+          const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
+          return confirmation;
         }
-        
-        const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
-        return confirmation;
       })();
 
       const result = await promiseTimeout(firebasePromise, 30000);
@@ -267,15 +305,27 @@ export function useProfileAuth() {
       if (confirmationResult) {
           try {
             console.log("[Client OTP Verification] Confirming OTP directly using Client SDK...");
-            const userCredential = await confirmationResult.confirm(otpCode);
-            clientUid = userCredential.user.uid;
-            try {
-              idToken = await userCredential.user.getIdToken();
-            } catch (tokenErr) {
-              console.warn("Failed to retrieve client idToken:", tokenErr);
+            if (confirmationResult.isNativeAuth) {
+              const nativeResult = await FirebaseAuthentication.confirmVerificationCode({
+                verificationId: confirmationResult.verificationId,
+                verificationCode: otpCode
+              });
+              const tokenResult = await FirebaseAuthentication.getIdToken();
+              clientUid = nativeResult.user?.uid || "";
+              idToken = tokenResult.token;
+              isVerified = true;
+              console.log("[Native OTP Verification SUCCESS] Authenticated native client-side with UID:", clientUid);
+            } else {
+              const userCredential = await confirmationResult.confirm(otpCode);
+              clientUid = userCredential.user.uid;
+              try {
+                idToken = await userCredential.user.getIdToken();
+              } catch (tokenErr) {
+                console.warn("Failed to retrieve client idToken:", tokenErr);
+              }
+              isVerified = true;
+              console.log("[Client OTP Verification SUCCESS] Authenticated client-side with UID:", clientUid);
             }
-            isVerified = true;
-            console.log("[Client OTP Verification SUCCESS] Authenticated client-side with UID:", clientUid);
           } catch (clientVerifyErr: any) {
           console.error("Client OTP confirm failed:", clientVerifyErr);
           toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");

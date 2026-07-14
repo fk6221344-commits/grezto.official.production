@@ -154,33 +154,76 @@ export function useRiderOperations() {
 
     try {
       console.log("[Firebase Auth] Web Phone OTP initialization...");
-      let verifier = (window as any).recaptchaVerifier;
-      if (!verifier) {
-        if (!document.getElementById('recaptcha-container-rider')) {
-          const newContainer = document.createElement('div');
-          newContainer.id = 'recaptcha-container-rider';
-          newContainer.style.position = 'fixed';
-          newContainer.style.bottom = '10px';
-          newContainer.style.right = '10px';
-          newContainer.style.width = '1px';
-          newContainer.style.height = '1px';
-          newContainer.style.opacity = '0.01';
-          newContainer.style.pointerEvents = 'none';
-          newContainer.style.zIndex = '99999';
-          document.body.appendChild(newContainer);
-        }
-        verifier = new RecaptchaVerifier(auth, 'recaptcha-container-rider', {
-          size: 'invisible',
-          callback: () => {
-            console.log("[Firebase Recaptcha] Callback triggered.");
-          }
-        });
-        await verifier.render();
-        (window as any).recaptchaVerifier = verifier;
-      }
+      const firebasePromise = (async () => {
+        if (Capacitor.isNativePlatform()) {
+          return new Promise(async (resolve, reject) => {
+            let codeSentListener: any = null;
+            let verificationFailedListener: any = null;
 
-      const confirmation = await signInWithPhoneNumber(auth, `+91${formattedPhone}`, verifier);
-      setConfirmationResult(confirmation);
+            const cleanup = async () => {
+              try {
+                if (codeSentListener) await codeSentListener.remove();
+                if (verificationFailedListener) await verificationFailedListener.remove();
+              } catch (cleanErr) {
+                console.warn("[Native Phone Auth] Listener cleanup error:", cleanErr);
+              }
+            };
+
+            try {
+              codeSentListener = await FirebaseAuthentication.addListener('phoneCodeSent', async (event: any) => {
+                console.log("[Native Phone Auth] phoneCodeSent trigger:", event);
+                await cleanup();
+                resolve({ isNativeAuth: true, verificationId: event.verificationId });
+              });
+
+              verificationFailedListener = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
+                console.error("[Native Phone Auth] phoneVerificationFailed trigger:", event);
+                await cleanup();
+                reject(new Error(event.message || "Android Phone Authentication failed. Please check your network connection or Firebase settings."));
+              });
+
+              console.log("[Native Phone Auth] signInWithPhoneNumber calling with +91" + formattedPhone);
+              await FirebaseAuthentication.signInWithPhoneNumber({
+                phoneNumber: `+91${formattedPhone}`,
+              });
+            } catch (err) {
+              await cleanup();
+              reject(err);
+            }
+          });
+        } else {
+          let verifier = (window as any).recaptchaVerifier;
+          if (!verifier) {
+            if (!document.getElementById('recaptcha-container-rider')) {
+              const newContainer = document.createElement('div');
+              newContainer.id = 'recaptcha-container-rider';
+              newContainer.style.position = 'fixed';
+              newContainer.style.bottom = '10px';
+              newContainer.style.right = '10px';
+              newContainer.style.width = '1px';
+              newContainer.style.height = '1px';
+              newContainer.style.opacity = '0.01';
+              newContainer.style.pointerEvents = 'none';
+              newContainer.style.zIndex = '99999';
+              document.body.appendChild(newContainer);
+            }
+            verifier = new RecaptchaVerifier(auth, 'recaptcha-container-rider', {
+              size: 'invisible',
+              callback: () => {
+                console.log("[Firebase Recaptcha] Callback triggered.");
+              }
+            });
+            await verifier.render();
+            (window as any).recaptchaVerifier = verifier;
+          }
+
+          const confirmation = await signInWithPhoneNumber(auth, `+91${formattedPhone}`, verifier);
+          return confirmation;
+        }
+      })();
+
+      const confirmationResultData = await firebasePromise;
+      setConfirmationResult(confirmationResultData);
       setRiderOtpError(null);
       setIsOtpSent(true);
       toast.success(`Verification OTP has been sent to +91 ${formattedPhone}! 📲`);
@@ -239,6 +282,17 @@ export function useRiderOperations() {
       if (confirmationResult) {
         try {
           console.log("[Client OTP Verification] Confirming rider OTP directly using Client SDK...");
+          if (confirmationResult.isNativeAuth) {
+            const nativeResult = await FirebaseAuthentication.confirmVerificationCode({
+              verificationId: confirmationResult.verificationId,
+              verificationCode: otpInput
+            });
+            const tokenResult = await FirebaseAuthentication.getIdToken();
+            clientUid = nativeResult.user?.uid || "";
+            idToken = tokenResult.token;
+            isVerified = true;
+            console.log("[Native OTP Verification SUCCESS] Verified native client-side for rider UID:", clientUid);
+          } else {
             const userCredential = await confirmationResult.confirm(otpInput);
             clientUid = userCredential.user.uid;
             try {
@@ -248,6 +302,7 @@ export function useRiderOperations() {
             }
             isVerified = true;
             console.log("[Client OTP Verification SUCCESS] Verified client-side for rider UID:", clientUid);
+          }
           } catch (clientVerifyErr: any) {
           console.error("Client confirm failed for rider identification:", clientVerifyErr);
           toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");

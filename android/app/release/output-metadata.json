@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.my.grezto",
+  "applicationId": "my.grezto.app",
   "variantName": "release",
   "elements": [
     {

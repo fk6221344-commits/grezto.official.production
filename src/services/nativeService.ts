@@ -6,6 +6,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import toast from 'react-hot-toast';
+import { supabase } from './supabase';
 
 // Check if running in a native Android/iOS Capacitor environment
 export const isNativePlatform = () => {

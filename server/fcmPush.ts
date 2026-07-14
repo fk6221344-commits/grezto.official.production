@@ -93,8 +93,7 @@ export function startFCMOrderListener() {
             },
             tokens: tokens
           };
-
-          const response = await admin.messaging().sendMulticast(message);
+          const response = await admin.messaging().sendEachForMulticast(message);
           console.log(`[FCM Listener] Push sent to ${tokens.length} devices. Success: ${response.successCount}, Failures: ${response.failureCount}`);
           
           if (response.failureCount > 0) {

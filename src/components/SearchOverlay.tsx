@@ -262,10 +262,12 @@ export default function SearchOverlay({ onClose, onSelect, initialQuery = '' }: 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[200] bg-white flex flex-col"
+      className="fixed inset-0 z-[200] flex flex-col bg-transparent"
     >
+      <div className="w-full h-[env(safe-area-inset-top)] bg-transparent shrink-0"></div>
+      
       {/* Search Header */}
-      <div className="flex items-center px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 border-b border-gray-100 bg-white shadow-sm z-10">
+      <div className="flex items-center px-4 py-3 border-b border-gray-100 bg-white shadow-sm z-10">
         <button 
           onClick={onClose}
           className="p-2 -ml-2 mr-1 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
