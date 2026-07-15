@@ -390,32 +390,31 @@ export function useRiderOperations() {
       let idToken = "";
 
       if (confirmationResult) {
+        console.log(
+          "[Client OTP Verification] Confirming rider OTP directly using Client SDK...",
+        );
         try {
-          console.log(
-            "[Client OTP Verification] Confirming rider OTP directly using Client SDK...",
-          );
-          try {
-            if (confirmationResult.isNativeAuth) {
-              if (confirmationResult.autoVerified) {
-                clientUid = confirmationResult.user?.uid || "";
-              } else {
-                const userCredential = await FirebaseAuthentication.signInWithPhoneNumber({ verificationId: confirmationResult.verificationId, smsCode: otpInput });
-                clientUid = userCredential.user?.uid || "";
-              }
+          if (confirmationResult.isNativeAuth) {
+            if (confirmationResult.autoVerified) {
+              clientUid = confirmationResult.user?.uid || "";
             } else {
-              const userCredential = await confirmationResult.confirm(otpInput);
-              clientUid = userCredential.user.uid;
-              try {
-                idToken = await userCredential.user.getIdToken();
-              } catch (e) {}
+              const userCredential = await FirebaseAuthentication.signInWithPhoneNumber({ verificationId: confirmationResult.verificationId, smsCode: otpInput });
+              clientUid = userCredential.user?.uid || "";
             }
-            isVerified = true;
-          } catch (err: any) {
-            setIsVerifyingOtp(false);
-            return toast.error(
-              "Incorrect OTP! Please enter the correct 6-digit verification code.",
-            );
+          } else {
+            const userCredential = await confirmationResult.confirm(otpInput);
+            clientUid = userCredential.user.uid;
+            try {
+              idToken = await userCredential.user.getIdToken();
+            } catch (e) {}
           }
+          isVerified = true;
+        } catch (err: any) {
+          setIsVerifyingOtp(false);
+          return toast.error(
+            "Incorrect OTP! Please enter the correct 6-digit verification code.",
+          );
+        }
       }
 
       const response = await fetch(getApiUrl("/api/auth/verify-otp"), {
