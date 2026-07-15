@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.my.grezto" />
-                  <option name="mobileSdkAppId" value="1:976118890930:android:bc2655abd74833566564ab" />
-                  <option name="projectId" value="project-4adf87a7-03c0-48e0-a8f" />
-                  <option name="projectNumber" value="976118890930" />
+                  <option name="appId" value="my.grezto.app" />
+                  <option name="mobileSdkAppId" value="1:420548363465:android:6974809fc80649afe93918" />
+                  <option name="projectId" value="auth-grezto-application" />
+                  <option name="projectNumber" value="420548363465" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
