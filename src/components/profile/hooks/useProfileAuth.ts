@@ -210,7 +210,6 @@ export function useProfileAuth() {
 
         if (Capacitor.isNativePlatform()) {
           try {
-            let codeSentListener: any;
             let codeSentListener: any = null;
             let failCleanup: any = null;
             let authStateListener: any = null;
