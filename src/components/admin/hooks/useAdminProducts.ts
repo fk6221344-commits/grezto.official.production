@@ -16,7 +16,6 @@ export function useAdminProducts(
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [adminOwnerPhoto, setAdminOwnerPhoto] = useState<string | null>(null);
   const [isUpdatingStock, setIsUpdatingStock] = useState<Record<string, boolean>>({});
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newProduct, setNewProduct] = useState({
