@@ -148,35 +148,69 @@ export function useProfileAuth() {
     }
 
     try {
-      const firebasePromise = (async () => {
-        // Bulletproof container check to prevent DOM errors
-        if (!document.getElementById('recaptcha-container')) {
-          const newContainer = document.createElement('div');
-          newContainer.id = 'recaptcha-container';
-          newContainer.style.position = 'fixed';
-          newContainer.style.bottom = '10px';
-          newContainer.style.right = '10px';
-          newContainer.style.width = '1px';
-          newContainer.style.height = '1px';
-          newContainer.style.opacity = '0.01';
-          newContainer.style.pointerEvents = 'none';
-          newContainer.style.zIndex = '99999';
-          document.body.appendChild(newContainer);
-        }
+      const firebasePromise = new Promise(async (resolve, reject) => {
+        const triggerWebFallback = async () => {
+          console.log("[Fallback] Trying Web Invisible reCAPTCHA...");
+          try {
+            // Bulletproof container check to prevent DOM errors
+            if (!document.getElementById('recaptcha-container')) {
+              const newContainer = document.createElement('div');
+              newContainer.id = 'recaptcha-container';
+              newContainer.style.position = 'fixed';
+              newContainer.style.bottom = '10px';
+              newContainer.style.right = '10px';
+              newContainer.style.width = '1px';
+              newContainer.style.height = '1px';
+              newContainer.style.opacity = '0.01';
+              newContainer.style.pointerEvents = 'none';
+              newContainer.style.zIndex = '99999';
+              document.body.appendChild(newContainer);
+            }
 
-        let verifier = (window as any).recaptchaVerifier;
-        if (!verifier) {
-          verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'invisible',
-            callback: () => {}
-          });
-          await verifier.render();
-          (window as any).recaptchaVerifier = verifier;
+            let verifier = (window as any).recaptchaVerifier;
+            if (!verifier) {
+              verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+                callback: () => {}
+              });
+              await verifier.render();
+              (window as any).recaptchaVerifier = verifier;
+            }
+            
+            const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
+            resolve(confirmation);
+          } catch (err) {
+            reject(err);
+          }
+        };
+
+        if (Capacitor.isNativePlatform()) {
+          try {
+            const cleanup = await FirebaseAuthentication.addListener('authStateChange', async (event) => {
+              if (event.user) {
+                await cleanup();
+                resolve(null);
+              }
+            });
+
+            const failCleanup = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
+              await failCleanup();
+              console.warn("Native phone auth failed. Attempting fallback.", event.message);
+              await triggerWebFallback();
+            });
+
+            console.log("[Native Phone Auth] signInWithPhoneNumber calling with +91" + loginPhone);
+            await FirebaseAuthentication.signInWithPhoneNumber({
+              phoneNumber: `+91${loginPhone}`,
+            });
+          } catch (err) {
+            console.warn("Native phone auth invocation failed. Attempting fallback.", err);
+            await triggerWebFallback();
+          }
+        } else {
+          await triggerWebFallback();
         }
-        
-        const confirmation = await signInWithPhoneNumber(auth, `+91${loginPhone}`, verifier);
-        return confirmation;
-      })();
+      });
 
       const result = await promiseTimeout(firebasePromise, 30000);
       setConfirmationResult(result);

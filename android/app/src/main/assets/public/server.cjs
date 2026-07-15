@@ -815,11 +815,14 @@ function startFCMOrderListener() {
           android: {
             priority: "high",
             notification: {
-              channelId: "grezto_order_channel_v4",
+              channelId: "grezto_order_channel_v5",
               sound: "spaceship_alarm",
               // plays android/app/src/main/res/raw/spaceship_alarm.mp3
               clickAction: "FCM_PLUGIN_ACTIVITY",
-              visibility: "public"
+              visibility: "public",
+              defaultVibrateTimings: false,
+              vibrateTimingsMillis: [0, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3]
+              // Aggressive vibration pattern
             }
           },
           data: {
@@ -839,6 +842,55 @@ function startFCMOrderListener() {
         }
       } catch (err) {
         console.error("[FCM Listener] Error processing new order push:", err);
+      }
+    }
+  ).on(
+    "postgres_changes",
+    { event: "UPDATE", schema: "public", table: "orders" },
+    async (payload) => {
+      try {
+        const newOrder = payload.new;
+        const oldOrder = payload.old;
+        if (!newOrder || !newOrder.assignedRiderId) return;
+        if (oldOrder && oldOrder.assignedRiderId === newOrder.assignedRiderId) return;
+        console.log(`[FCM Listener] Order ${newOrder.id} assigned to rider: ${newOrder.assignedRiderId}`);
+        const { data: rider, error: riderErr } = await supabase.from("team").select("phone").eq("id", newOrder.assignedRiderId).single();
+        if (riderErr || !rider || !rider.phone) {
+          console.log("[FCM Listener] Could not find phone for assigned rider:", newOrder.assignedRiderId);
+          return;
+        }
+        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").eq("phone", rider.phone);
+        if (tokensErr || !tokensData || tokensData.length === 0) {
+          console.log("[FCM Listener] No FCM tokens found for rider phone:", rider.phone);
+          return;
+        }
+        const tokens = tokensData.map((t) => t.token);
+        const message = {
+          notification: {
+            title: "\u{1F6F5} New Delivery Assigned! \u{1F6F5}",
+            body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`
+          },
+          android: {
+            priority: "high",
+            notification: {
+              channelId: "grezto_order_channel_v5",
+              sound: "spaceship_alarm",
+              clickAction: "FCM_PLUGIN_ACTIVITY",
+              visibility: "public",
+              defaultVibrateTimings: false,
+              vibrateTimingsMillis: [0, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3, 1e3]
+            }
+          },
+          data: {
+            orderId: String(newOrder.id),
+            type: "rider_assigned"
+          },
+          tokens
+        };
+        const response = await import_firebase_admin.default.messaging().sendEachForMulticast(message);
+        console.log(`[FCM Listener] Rider Assignment Push sent. Success: ${response.successCount}, Failures: ${response.failureCount}`);
+      } catch (err) {
+        console.error("[FCM Listener] Error processing rider assignment push:", err);
       }
     }
   ).subscribe((status) => {

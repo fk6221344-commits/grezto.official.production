@@ -29,7 +29,7 @@ export default function MerchantSlideHistoryModal({
     <AnimatePresence>
       {showMerchantHistoryModal && (
         <div className="fixed inset-0 z-[9998] bg-slate-50 flex flex-col h-full w-full overflow-hidden">
-          <motion.div 
+          <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -74,7 +74,7 @@ export default function MerchantSlideHistoryModal({
                 <>
                   <div className="space-y-4 max-w-sm mx-auto">
                     {historyOrders.map((order: any) => (
-                      <MerchantOrderCard 
+                      <MerchantOrderCard
                         key={order.id}
                         order={order}
                         shop={shop}
