@@ -32,34 +32,21 @@ public class CustomMessagingService extends MessagingService {
     private void startFullScreenIntent(String title, String body, String type) {
         Context context = getApplicationContext();
 
-        // Intent to launch MainActivity
-        Intent fullScreenIntent = new Intent(context, MainActivity.class);
-        fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        fullScreenIntent.putExtra("title", title);
-        fullScreenIntent.putExtra("body", body);
-        fullScreenIntent.putExtra("type", type);
-        fullScreenIntent.putExtra("trigger_ringtone", true); // Flag to tell MainActivity to ring
-
-        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                fullScreenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "grezto_order_channel_v5")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(title)
-                .setContentText(body)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setFullScreenIntent(fullScreenPendingIntent, true)
-                .setAutoCancel(true);
-
+        // START THE RINGTONE SERVICE DIRECTLY IN THE BACKGROUND!
+        // Because this is triggered by a High-Priority FCM message, Android OS allows us to start a Foreground Service even from the background.
+        // This bypasses the UI-blocking restriction of Xiaomi/Oppo/Vivo.
         try {
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-            notificationManager.notify(new Random().nextInt(1000), builder.build());
-        } catch (SecurityException e) {
+            Intent serviceIntent = new Intent(context, OrderRingService.class);
+            serviceIntent.putExtra("title", title);
+            serviceIntent.putExtra("body", body);
+            serviceIntent.putExtra("type", type);
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent);
+            } else {
+                context.startService(serviceIntent);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

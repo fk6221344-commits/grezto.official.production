@@ -58,8 +58,6 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
-        handlePossibleRingtoneTrigger(getIntent());
     }
 
     @Override
@@ -71,30 +69,6 @@ public class MainActivity extends BridgeActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        handlePossibleRingtoneTrigger(intent);
-    }
-    
-    private void handlePossibleRingtoneTrigger(Intent intent) {
-        if (intent != null && intent.getBooleanExtra("trigger_ringtone", false)) {
-            // Remove the flag so it doesn't trigger again on rotation
-            intent.removeExtra("trigger_ringtone");
-            
-            // Start the OrderRingService
-            try {
-                Intent serviceIntent = new Intent(this, OrderRingService.class);
-                serviceIntent.putExtra("title", intent.getStringExtra("title"));
-                serviceIntent.putExtra("body", intent.getStringExtra("body"));
-                serviceIntent.putExtra("type", intent.getStringExtra("type"));
-                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent);
-                } else {
-                    startService(serviceIntent);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void stopOrderRingService() {

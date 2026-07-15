@@ -454,7 +454,7 @@ async function validateFirebaseToken(req, res, next) {
 }
 function isMasterAdmin(phone) {
   const clean = phone.replace(/\D/g, "").slice(-10);
-  return clean === "9864975438" || clean === "8638089161";
+  return clean === "9864975438" || clean === "8638089161" || clean === "8486087096";
 }
 async function verifyShopOwnershipOrTeam(phone, shopId) {
   if (!supabase) return false;
