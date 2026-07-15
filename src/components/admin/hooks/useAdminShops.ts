@@ -4,7 +4,7 @@ import { getApiUrl, getAuthHeaders } from "../../../utils/api";
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, secondaryAuth } from "../../../services/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber, signInWithCustomToken } from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber, signInWithCustomToken, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
 import toast from "react-hot-toast";
 import { triggerCacheFlush } from "../../../utils/cacheApi";
 import { prefetchImage } from "../../../utils/imagePrefetcher";
@@ -104,38 +104,7 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     });
   }, [shops, adminSelectedCityFilter]);
 
-  useEffect(() => {
-    if (showAddShopModal) {
-      const initializeWarmupShop = async () => {
-        try {
-          if (!document.getElementById("recaptcha-container-shop")) {
-            const newContainer = document.createElement("div");
-            newContainer.id = "recaptcha-container-shop";
-            newContainer.style.position = "fixed";
-            newContainer.style.bottom = "10px";
-            newContainer.style.right = "10px";
-            newContainer.style.width = "1px";
-            newContainer.style.height = "1px";
-            newContainer.style.opacity = "0.01";
-            newContainer.style.pointerEvents = "none";
-            document.body.appendChild(newContainer);
-          }
-          if (!(window as any).recaptchaVerifierShop) {
-            const verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-shop", {
-              size: "invisible",
-              callback: () => {},
-            });
-            await verifier.render();
-            (window as any).recaptchaVerifierShop = verifier;
-            console.log("[Shop Verification] Warm-up complete via secondaryAuth.");
-          }
-        } catch (e) {
-          console.warn("Shop Recaptcha warm-up delayed:", e);
-        }
-      };
-      initializeWarmupShop();
-    }
-  }, [showAddShopModal]);
+  // Warmup removed as Native handles browser popup
 
   const handleSendShopOtp = async () => {
     if (!newShop.ownerPhone || newShop.ownerPhone.length !== 10 || !/^[0-9]+$/.test(newShop.ownerPhone)) {
@@ -144,36 +113,85 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     }
     setShopOtpLoading(true);
     try {
-      const firebasePromise = (async () => {
-        let verifier = (window as any).recaptchaVerifierShop;
-        if (!verifier) {
-          if (!document.getElementById("recaptcha-container-shop")) {
-            const newContainer = document.createElement("div");
-            newContainer.id = "recaptcha-container-shop";
-            newContainer.style.position = "fixed";
-            newContainer.style.bottom = "10px";
-            newContainer.style.right = "10px";
-            newContainer.style.width = "1px";
-            newContainer.style.height = "1px";
-            newContainer.style.opacity = "0.01";
-            newContainer.style.pointerEvents = "none";
-            document.body.appendChild(newContainer);
+      const firebasePromise = new Promise<any>(async (resolve, reject) => {
+        const dispatchWebAuth = async () => {
+          try {
+            if (!document.getElementById("recaptcha-container-shop")) {
+              const newContainer = document.createElement("div");
+              newContainer.id = "recaptcha-container-shop";
+              newContainer.style.position = "fixed";
+              newContainer.style.bottom = "10px";
+              newContainer.style.right = "10px";
+              newContainer.style.width = "1px";
+              newContainer.style.height = "1px";
+              newContainer.style.opacity = "0.01";
+              newContainer.style.pointerEvents = "none";
+              document.body.appendChild(newContainer);
+            }
+            let verifier = (window as any).recaptchaVerifierShop;
+            if (!verifier) {
+              verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-shop", { size: "invisible", callback: () => {} });
+              await verifier.render();
+              (window as any).recaptchaVerifierShop = verifier;
+            }
+            const confirmation = await signInWithPhoneNumber(secondaryAuth, `+91${newShop.ownerPhone}`, verifier);
+            resolve(confirmation);
+          } catch (err) {
+            reject(err);
           }
-          verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-shop", { size: "invisible", callback: () => {} });
-          await verifier.render();
-          (window as any).recaptchaVerifierShop = verifier;
+        };
+
+        if (Capacitor.isNativePlatform()) {
+          try {
+            let codeSentListener: any = null;
+            let failCleanup: any = null;
+            let authStateListener: any = null;
+            const removeAllListeners = async () => {
+              try {
+                if (codeSentListener) await codeSentListener.remove().catch(() => {});
+                if (failCleanup) await failCleanup.remove().catch(() => {});
+                if (authStateListener) await authStateListener.remove().catch(() => {});
+              } catch (e) {}
+            };
+
+            authStateListener = await FirebaseAuthentication.addListener("authStateChange", async (event) => {
+              if (event.user) {
+                await removeAllListeners();
+                resolve({ isNativeAuth: true, autoVerified: true, verificationId: "auto", user: event.user });
+              }
+            });
+
+            codeSentListener = await FirebaseAuthentication.addListener("phoneCodeSent", async (event: any) => {
+              await removeAllListeners();
+              resolve({ isNativeAuth: true, verificationId: event.verificationId });
+            });
+
+            failCleanup = await FirebaseAuthentication.addListener("phoneVerificationFailed", async (event: any) => {
+              await removeAllListeners();
+              reject(event);
+            });
+
+            await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: `+91${newShop.ownerPhone}` });
+          } catch (nativeErr) {
+            console.warn("Native OTP dispatch failed, falling back to Web SDK:", nativeErr);
+            dispatchWebAuth();
+          }
+        } else {
+          dispatchWebAuth();
         }
-        // Force JS SDK with secondaryAuth (even on native) to prevent Admin logout
-        const confirmation = await signInWithPhoneNumber(secondaryAuth, `+91${newShop.ownerPhone}`, verifier);
-        return confirmation;
-      })();
+      });
+
       const confirmationResultData = await firebasePromise;
       setShopConfirmationResult(confirmationResultData);
       setShopOtpError(null);
       setShopOtpSent(true);
-      toast.success(`Secure OTP sent to +91 ${newShop.ownerPhone} via SMS! 📲`);
+      if (confirmationResultData.autoVerified) {
+        toast.success("Phone number verified automatically! 🎉");
+      } else {
+        toast.success(`Secure OTP sent to +91 ${newShop.ownerPhone}! 📲`);
+      }
     } catch (err: any) {
-      console.warn("Real shop Firebase OTP dispatch failed. Generating dynamic audit details:", err);
+      console.warn("Real shop Firebase OTP dispatch failed:", err);
       toast.error("Standard verification failed. Please try again later.");
     } finally {
       setShopOtpLoading(false);
@@ -196,11 +214,22 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
         let isVerified = false, clientUid = "", idToken = "";
         if (shopConfirmationResult) {
           try {
-            const userCredential = await shopConfirmationResult.confirm(shopOtpInput);
-            clientUid = userCredential.user.uid;
-            
-            // Sign out the secondary instance immediately so we don't leak sessions!
-            await secondaryAuth.signOut();
+            if (shopConfirmationResult.isNativeAuth) {
+              if (shopConfirmationResult.autoVerified) {
+                clientUid = shopConfirmationResult.user?.uid || "";
+              } else {
+                // VERY IMPORTANT: Use secondaryAuth (Web SDK) + PhoneAuthProvider to verify Native verificationId!
+                // This prevents the Native Plugin from signing the user in and logging out the Admin.
+                const credential = PhoneAuthProvider.credential(shopConfirmationResult.verificationId, shopOtpInput);
+                const userCredential = await signInWithCredential(secondaryAuth, credential);
+                clientUid = userCredential.user.uid;
+                await secondaryAuth.signOut();
+              }
+            } else {
+              const userCredential = await shopConfirmationResult.confirm(shopOtpInput);
+              clientUid = userCredential.user.uid;
+              await secondaryAuth.signOut();
+            }
             isVerified = true;
           } catch (err) {
             toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");
@@ -220,19 +249,7 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
           })
         });
         const resData = await response.json();
-        if (resData.fallbackToken) {
-          localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
-          console.log("[Fallback Auth] Cryptographic fallback token stored securely (Admin shop verification).");
-        }
-        if (!response.ok || !resData.success) {
-          if (!isVerified) throw new Error(resData.error || "Invalid OTP");
-        }
-        if (resData.customToken && !isVerified) {
-          try {
-            if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signInWithCustomToken({ token: resData.customToken });
-            else await signInWithCustomToken(auth, resData.customToken);
-          } catch (e) {}
-        }
+        // Skip calling signInWithCustomToken to PREVENT hijacking the Admin's active session!
         setIsShopPhoneVerified(true);
         toast.success("Shop Phone verified securely! 🔐");
       } catch (err: any) {
