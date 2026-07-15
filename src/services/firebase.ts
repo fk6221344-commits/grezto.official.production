@@ -22,6 +22,10 @@ isSupported().then((supported) => {
 
 export const auth = getAuth(app);
 
+// Secondary App instance for Admin Registration (Prevents Admin session override)
+const secondaryApp = initializeApp(firebaseConfig, "GreztoRegistryApp");
+export const secondaryAuth = getAuth(secondaryApp);
+
 // Automatically authenticate client session anonymously on startup if there is no active/saved phone credential
 try {
   const saved = localStorage.getItem('grezto_user');

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../../services/supabase";
-import { auth } from "../../../services/firebase";
+import { auth, secondaryAuth } from "../../../services/firebase";
 import { Dialog } from "@capacitor/dialog";
 import {
   RecaptchaVerifier,
@@ -109,6 +109,42 @@ export function useRiderOperations() {
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (showAddForm) {
+      const initializeWarmupRider = async () => {
+        try {
+          if (!document.getElementById("recaptcha-container-rider")) {
+            const newContainer = document.createElement("div");
+            newContainer.id = "recaptcha-container-rider";
+            newContainer.style.position = "fixed";
+            newContainer.style.bottom = "10px";
+            newContainer.style.right = "10px";
+            newContainer.style.width = "1px";
+            newContainer.style.height = "1px";
+            newContainer.style.opacity = "0.01";
+            newContainer.style.pointerEvents = "none";
+            newContainer.style.zIndex = "99999";
+            document.body.appendChild(newContainer);
+          }
+          if (!(window as any).recaptchaVerifierRider) {
+            const verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-rider", {
+              size: "invisible",
+              callback: () => {
+                console.log("[Firebase Recaptcha] Rider Callback triggered.");
+              },
+            });
+            await verifier.render();
+            (window as any).recaptchaVerifierRider = verifier;
+            console.log("[Rider Verification] Warm-up complete via secondaryAuth.");
+          }
+        } catch (e) {
+          console.warn("Rider Recaptcha warm-up delayed:", e);
+        }
+      };
+      initializeWarmupRider();
+    }
+  }, [showAddForm]);
+
   const fetchRiders = useCallback(async () => {
     const { data } = await supabase
       .from("team")
@@ -206,125 +242,41 @@ export function useRiderOperations() {
     try {
       console.log("[Firebase Auth] Web Phone OTP initialization...");
       const firebasePromise = (async () => {
-        if (Capacitor.isNativePlatform()) {
-          return new Promise(async (resolve, reject) => {
-            let codeSentListener: any = null;
-            let verificationFailedListener: any = null;
-            let authStateListener: any = null;
-
-            const cleanup = async () => {
-              try {
-                if (codeSentListener)
-                  await codeSentListener.remove().catch(() => {});
-                if (verificationFailedListener)
-                  await verificationFailedListener.remove().catch(() => {});
-                if (authStateListener)
-                  await authStateListener.remove().catch(() => {});
-              } catch (cleanErr) {
-                console.warn(
-                  "[Native Phone Auth] Listener cleanup error:",
-                  cleanErr,
-                );
-              }
-            };
-
-            try {
-              authStateListener = await FirebaseAuthentication.addListener(
-                "authStateChange",
-                async (event) => {
-                  if (event.user) {
-                    await cleanup();
-                    resolve({
-                      isNativeAuth: true,
-                      autoVerified: true,
-                      verificationId: "auto",
-                    });
-                  }
-                },
-              );
-
-              codeSentListener = await FirebaseAuthentication.addListener(
-                "phoneCodeSent",
-                async (event: any) => {
-                  console.log(
-                    "[Native Phone Auth] phoneCodeSent trigger:",
-                    event,
-                  );
-                  await cleanup();
-                  resolve({
-                    isNativeAuth: true,
-                    verificationId: event.verificationId,
-                  });
-                },
-              );
-
-              verificationFailedListener =
-                await FirebaseAuthentication.addListener(
-                  "phoneVerificationFailed",
-                  async (event: any) => {
-                    console.error(
-                      "[Native Phone Auth] phoneVerificationFailed trigger:",
-                      event,
-                    );
-                    await cleanup();
-                    reject(
-                      new Error(
-                        event.message ||
-                          "Android Phone Authentication failed. Please check your network connection or Firebase settings.",
-                      ),
-                    );
-                  },
-                );
-
-              console.log(
-                "[Native Phone Auth] signInWithPhoneNumber calling with +91" +
-                  formattedPhone,
-              );
-              await FirebaseAuthentication.signInWithPhoneNumber({
-                phoneNumber: `+91${formattedPhone}`,
-              });
-            } catch (err) {
-              await cleanup();
-              reject(err);
-            }
-          });
-        } else {
-          let verifier = (window as any).recaptchaVerifier;
-          if (!verifier) {
-            if (!document.getElementById("recaptcha-container-rider")) {
-              const newContainer = document.createElement("div");
-              newContainer.id = "recaptcha-container-rider";
-              newContainer.style.position = "fixed";
-              newContainer.style.bottom = "10px";
-              newContainer.style.right = "10px";
-              newContainer.style.width = "1px";
-              newContainer.style.height = "1px";
-              newContainer.style.opacity = "0.01";
-              newContainer.style.pointerEvents = "none";
-              newContainer.style.zIndex = "99999";
-              document.body.appendChild(newContainer);
-            }
-            verifier = new RecaptchaVerifier(
-              auth,
-              "recaptcha-container-rider",
-              {
-                size: "invisible",
-                callback: () => {
-                  console.log("[Firebase Recaptcha] Callback triggered.");
-                },
-              },
-            );
-            await verifier.render();
-            (window as any).recaptchaVerifier = verifier;
+        let verifier = (window as any).recaptchaVerifierRider;
+        if (!verifier) {
+          if (!document.getElementById("recaptcha-container-rider")) {
+            const newContainer = document.createElement("div");
+            newContainer.id = "recaptcha-container-rider";
+            newContainer.style.position = "fixed";
+            newContainer.style.bottom = "10px";
+            newContainer.style.right = "10px";
+            newContainer.style.width = "1px";
+            newContainer.style.height = "1px";
+            newContainer.style.opacity = "0.01";
+            newContainer.style.pointerEvents = "none";
+            newContainer.style.zIndex = "99999";
+            document.body.appendChild(newContainer);
           }
-
-          const confirmation = await signInWithPhoneNumber(
-            auth,
-            `+91${formattedPhone}`,
-            verifier,
+          verifier = new RecaptchaVerifier(
+            secondaryAuth,
+            "recaptcha-container-rider",
+            {
+              size: "invisible",
+              callback: () => {
+                console.log("[Firebase Recaptcha] Callback triggered.");
+              },
+            },
           );
-          return confirmation;
+          await verifier.render();
+          (window as any).recaptchaVerifierRider = verifier;
         }
+
+        const confirmation = await signInWithPhoneNumber(
+          secondaryAuth,
+          `+91${formattedPhone}`,
+          verifier,
+        );
+        return confirmation;
       })();
 
       const confirmationResultData = await firebasePromise;
@@ -400,52 +352,23 @@ export function useRiderOperations() {
           console.log(
             "[Client OTP Verification] Confirming rider OTP directly using Client SDK...",
           );
-          if (confirmationResult.isNativeAuth) {
-            const currentUser = await FirebaseAuthentication.getCurrentUser();
-            if (
-              currentUser &&
-              currentUser.user &&
-              confirmationResult.autoVerified
-            ) {
-              console.log(
-                "[Native OTP Verification] Rider already auto-verified by Play Services!",
-              );
-              const tokenResult = await FirebaseAuthentication.getIdToken();
-              clientUid = currentUser.user.uid;
-              idToken = tokenResult.token;
-              isVerified = true;
-            } else {
-              const nativeResult =
-                await FirebaseAuthentication.confirmVerificationCode({
-                  verificationId: confirmationResult.verificationId,
-                  verificationCode: otpInput,
-                });
-              const tokenResult = await FirebaseAuthentication.getIdToken();
-              clientUid = nativeResult.user?.uid || "";
-              idToken = tokenResult.token;
-              isVerified = true;
-              console.log(
-                "[Native OTP Verification SUCCESS] Verified native client-side for rider UID:",
-                clientUid,
-              );
-            }
-          } else {
+          try {
             const userCredential = await confirmationResult.confirm(otpInput);
             clientUid = userCredential.user.uid;
             try {
               idToken = await userCredential.user.getIdToken();
-            } catch (tokenErr) {
-              console.warn(
-                "Failed to retrieve rider client idToken:",
-                tokenErr,
-              );
-            }
+            } catch (e) {}
             isVerified = true;
-            console.log(
-              "[Client OTP Verification SUCCESS] Verified client-side for rider UID:",
-              clientUid,
+            
+            // Sign out the secondary instance immediately so we don't leak sessions!
+            await secondaryAuth.signOut();
+          } catch (err: any) {
+            setIsVerifyingOtp(false);
+            return toast.error(
+              "Incorrect OTP! Please enter the correct 6-digit verification code.",
             );
-          }
+          }        setIsVerifyingOtp(false);
+            return;
         } catch (clientVerifyErr: any) {
           console.error(
             "Client confirm failed for rider identification:",

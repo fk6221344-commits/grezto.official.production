@@ -103,6 +103,40 @@ export function useProfileAuth() {
       window.removeEventListener("open-login-modal", handleOpenLogin);
   }, []);
 
+  useEffect(() => {
+    if (showLoginModal) {
+      const initializeWarmupProfile = async () => {
+        try {
+          if (!document.getElementById("recaptcha-container")) {
+            const newContainer = document.createElement("div");
+            newContainer.id = "recaptcha-container";
+            newContainer.style.position = "fixed";
+            newContainer.style.bottom = "10px";
+            newContainer.style.right = "10px";
+            newContainer.style.width = "1px";
+            newContainer.style.height = "1px";
+            newContainer.style.opacity = "0.01";
+            newContainer.style.pointerEvents = "none";
+            newContainer.style.zIndex = "99999";
+            document.body.appendChild(newContainer);
+          }
+          if (!(window as any).recaptchaVerifier) {
+            const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+              size: "invisible",
+              callback: () => {},
+            });
+            await verifier.render();
+            (window as any).recaptchaVerifier = verifier;
+            console.log("[Profile Verification] Warm-up complete.");
+          }
+        } catch (e) {
+          console.warn("Profile Recaptcha warm-up delayed:", e);
+        }
+      };
+      initializeWarmupProfile();
+    }
+  }, [showLoginModal]);
+
   const promiseTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Timeout")), ms);
