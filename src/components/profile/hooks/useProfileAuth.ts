@@ -301,7 +301,9 @@ export function useProfileAuth() {
                                    errMsg.includes("too-many-requests") || 
                                    errMsg.includes("quota") || 
                                    errMsg.includes("limit") || 
-                                   errMsg.includes("exceeded");
+                                   errMsg.includes("exceeded") ||
+                                   errMsg.includes("blocked") ||
+                                   errMsg.includes("unusual activity");
         
         if (isQuotaOrRateLimit) {
           setAuthError({
