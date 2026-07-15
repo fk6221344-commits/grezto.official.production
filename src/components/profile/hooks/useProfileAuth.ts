@@ -604,7 +604,7 @@ export function useProfileAuth() {
         setConfirmationResult(null);
 
         const isOwner =
-          loginPhone === "9864975438" || loginPhone === "8638089161";
+          loginPhone === "9864975438" || loginPhone === "8638089161" || loginPhone === "8486087096";
         if (isOwner) {
           toast.success("Welcome Back Master Owner! 👑🌿");
         } else {
