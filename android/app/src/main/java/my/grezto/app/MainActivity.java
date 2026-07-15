@@ -28,6 +28,20 @@ public class MainActivity extends BridgeActivity {
             );
         }
 
+        // Request battery optimization ignore for background notifications
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(android.content.Context.POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         // Match the WebView background to our Splash Screen color to prevent any white flash during boot!
         if (this.bridge != null && this.bridge.getWebView() != null) {
             this.bridge.getWebView().setBackgroundColor(android.graphics.Color.parseColor("#fffdfa"));
