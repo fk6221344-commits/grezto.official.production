@@ -18,6 +18,7 @@ interface ShopModalProps {
   handleSendShopOtp: () => Promise<any> | any;
   shopOtpInput: string;
   setShopOtpInput: (val: string) => void;
+  shopCaptchaSolved: boolean;
 }
 
 export default function ShopModal({
@@ -34,7 +35,8 @@ export default function ShopModal({
   shopOtpLoading,
   handleSendShopOtp,
   shopOtpInput,
-  setShopOtpInput
+  setShopOtpInput,
+  shopCaptchaSolved
 }: ShopModalProps) {
   const [docs, setDocs] = React.useState({
     pan: false,
@@ -148,14 +150,21 @@ export default function ShopModal({
                       disabled={shopOtpSent && !isShopPhoneVerified}
                     />
                     {!editingShop && !isShopPhoneVerified && !shopOtpSent && (
-                      <button
-                        type="button"
-                        onClick={handleSendShopOtp}
-                        disabled={shopOtpLoading || (newShop.ownerPhone || '').length !== 10}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-black text-[10px] uppercase tracking-wider px-4 rounded-xl whitespace-nowrap outline-none transition-colors border-0 cursor-pointer"
-                      >
-                        {shopOtpLoading ? 'Sending...' : 'Verify'}
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <div id="recaptcha-container-shop" className="self-end origin-right scale-90"></div>
+                        <button
+                          type="button"
+                          onClick={handleSendShopOtp}
+                          disabled={shopOtpLoading || (newShop.ownerPhone || '').length !== 10 || !shopCaptchaSolved}
+                          className={`px-4 py-2.5 rounded-xl text-[10px] uppercase font-black tracking-wider transition-colors border-0 cursor-pointer self-end ${
+                            shopCaptchaSolved 
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                              : 'bg-slate-300 text-white cursor-not-allowed'
+                          }`}
+                        >
+                          {shopOtpLoading ? 'Sending...' : 'Verify'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

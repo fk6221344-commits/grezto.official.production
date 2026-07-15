@@ -43,6 +43,7 @@ interface AdminMgmtModalsProps {
   handleSendShopOtp: () => Promise<any> | any;
   shopOtpInput: string;
   setShopOtpInput: (val: string) => void;
+  shopCaptchaSolved: boolean;
 
   // Confirmation Modal
   confirmModal: any;
@@ -114,6 +115,7 @@ export default function AdminMgmtModals({
   handleSendShopOtp,
   shopOtpInput,
   setShopOtpInput,
+  shopCaptchaSolved,
 
   confirmModal,
   setConfirmModal,
@@ -187,6 +189,7 @@ export default function AdminMgmtModals({
         handleSendShopOtp={handleSendShopOtp}
         shopOtpInput={shopOtpInput}
         setShopOtpInput={setShopOtpInput}
+        shopCaptchaSolved={shopCaptchaSolved}
       />
 
       <ConfirmationModal
