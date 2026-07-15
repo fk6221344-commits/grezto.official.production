@@ -211,8 +211,8 @@ export function useProfileAuth() {
               if (cleanup) await cleanup();
               if (codeSentListener) await codeSentListener();
               if (failCleanup) await failCleanup();
-              console.warn("Native phone auth failed. Attempting fallback.", event.message);
-              await triggerWebFallback();
+              console.warn("Native phone auth failed.", event.message);
+              reject(event);
             });
 
             console.log("[Native Phone Auth] signInWithPhoneNumber calling with +91" + loginPhone);
@@ -220,8 +220,8 @@ export function useProfileAuth() {
               phoneNumber: `+91${loginPhone}`,
             });
           } catch (err) {
-            console.warn("Native phone auth invocation failed. Attempting fallback.", err);
-            await triggerWebFallback();
+            console.warn("Native phone auth invocation failed.", err);
+            reject(err);
           }
         } else {
           await triggerWebFallback();
