@@ -34,12 +34,12 @@ public class CustomMessagingService extends MessagingService {
             if ("new_order".equals(type) || "rider_assigned".equals(type)) {
                 String title = data.get("title") != null ? data.get("title") : "New Order!";
                 String body = data.get("body") != null ? data.get("body") : "Tap to open";
-                showFullScreenNotification(title, body);
+                showFullScreenNotification(title, body, type);
             }
         }
     }
 
-    private void showFullScreenNotification(String title, String body) {
+    private void showFullScreenNotification(String title, String body, String type) {
         Context context = getApplicationContext();
 
         // 1. Wake up the screen
@@ -55,7 +55,7 @@ public class CustomMessagingService extends MessagingService {
         }
 
         // 2. Start loud looping ringtone & vibrate
-        startRinging(context);
+        startRinging(context, type);
 
         // 3. Create Notification Channel
         String channelId = "grezto_fullscreen_channel_v1";
@@ -118,7 +118,7 @@ public class CustomMessagingService extends MessagingService {
         }
     }
 
-    private void startRinging(Context context) {
+    private void startRinging(Context context, String type) {
         stopRinging(); // Stop any existing
 
         // Vibrate
@@ -134,8 +134,17 @@ public class CustomMessagingService extends MessagingService {
 
         // Audio
         try {
-            int soundResId = context.getResources().getIdentifier("spaceship_alarm", "raw", context.getPackageName());
-            if (soundResId == 0) return; // Audio not found
+            String soundName = "spaceship_alarm"; // Default for merchants (new_order)
+            if ("rider_assigned".equals(type)) {
+                soundName = "rider_alarm"; // WE CAN CHANGE THIS NAME ONCE USER PROVIDES IT
+            }
+
+            int soundResId = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
+            if (soundResId == 0) {
+                // Fallback to spaceship_alarm if rider_alarm is not found
+                soundResId = context.getResources().getIdentifier("spaceship_alarm", "raw", context.getPackageName());
+            }
+            if (soundResId == 0) return; // Audio not found at all
 
             Uri soundUri = Uri.parse("android.resource://" + context.getPackageName() + "/" + soundResId);
             
