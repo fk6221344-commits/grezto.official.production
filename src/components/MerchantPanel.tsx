@@ -79,7 +79,8 @@ export default function MerchantPanel({ onClose, shop }: MerchantPanelProps) {
     handleSaveMenuItem,
     handleDeleteItem,
     isSaving,
-    isUploadingImage
+    isUploadingImage,
+    isUpdatingStock
   } = useMerchantMenu(shop, firebaseAuthReady, shopName);
 
   const {
@@ -269,6 +270,7 @@ export default function MerchantPanel({ onClose, shop }: MerchantPanelProps) {
             setShowAddMenuModal={setShowAddMenuModal}
             handleToggleStock={handleToggleStock}
             handleDeleteItem={handleDeleteItem}
+            isUpdatingStock={isUpdatingStock}
           />
         )}
 

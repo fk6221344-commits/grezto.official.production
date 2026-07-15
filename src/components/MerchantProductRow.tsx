@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Package, Trash2 } from 'lucide-react';
+import { Edit, Package, Trash2, Loader2 } from 'lucide-react';
 
 interface MerchantProductRowProps {
   item: any;
@@ -8,6 +8,7 @@ interface MerchantProductRowProps {
   setNewItem: (fields: any) => void;
   setShowAddMenuModal: (show: boolean) => void;
   handleDeleteItem: (id: string) => void;
+  isUpdating?: boolean;
 }
 
 export const MerchantProductRow = React.memo(({ 
@@ -16,7 +17,8 @@ export const MerchantProductRow = React.memo(({
   setEditingItem, 
   setNewItem, 
   setShowAddMenuModal, 
-  handleDeleteItem 
+  handleDeleteItem,
+  isUpdating = false
 }: MerchantProductRowProps) => {
   const [deleteStep, setDeleteStep] = React.useState(0);
 
@@ -32,6 +34,8 @@ export const MerchantProductRow = React.memo(({
 
   return (
     <div className={`p-4 rounded-xl flex items-center justify-between border transition-all gap-2.5 relative group ${
+      isUpdating ? "opacity-50 pointer-events-none" : ""
+    } ${
       isLowStock 
         ? "bg-rose-50/40 border-rose-200 shadow-xs" 
         : "bg-white border-slate-200/80 shadow-xs hover:border-slate-300"
@@ -60,7 +64,7 @@ export const MerchantProductRow = React.memo(({
           }`}
           title={numStock > 0 ? "Mark Out of Stock" : "Mark In Stock"}
         >
-          <Package className="w-3.5 h-3.5" />
+          {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
         </button>
 
         <button 

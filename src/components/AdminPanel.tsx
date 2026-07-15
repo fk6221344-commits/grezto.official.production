@@ -71,7 +71,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const {
     products, filteredProducts, isLoading, showAddModal, setShowAddModal,
     editingProduct, setEditingProduct, newProduct, setNewProduct,
-    toggleStock, handleAddProduct, handleDeleteProduct, startAdd, startEdit, handleImageUpload
+    toggleStock, handleAddProduct, handleDeleteProduct, startAdd, startEdit, handleImageUpload, isUpdatingStock
   } = useAdminProducts(isAuthenticated, firebaseAuthReady, adminSelectedCityFilter, localTick, setLocalTick, setAdminOwnerPhoto);
 
   const {
@@ -294,7 +294,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {activeTab === "orders" && <AdminOrdersTab orders={filteredOrdersActive} adminActiveOrders={filteredAdminActiveOrdersActive} riders={filteredRiders} busyRiders={busyRiders} updateOrderStatus={updateOrderStatus} isHistory={false} isLoadingActive={isLoadingActive} />}
         {activeTab === "history" && <AdminOrdersTab orders={filteredOrdersHistory} adminActiveOrders={filteredAdminActiveOrdersHistory} riders={filteredRiders} busyRiders={busyRiders} updateOrderStatus={updateOrderStatus} isHistory={true} />}
-        {activeTab === "products" && <AdminInventoryTab products={filteredProducts} shops={filteredShops} startAdd={startAdd} toggleStock={toggleStock} handleDeleteProduct={handleDeleteProduct} startEdit={startEdit} isLoading={isLoading} />}
+        {activeTab === "products" && <AdminInventoryTab products={filteredProducts} shops={filteredShops} startAdd={startAdd} toggleStock={toggleStock} handleDeleteProduct={handleDeleteProduct} startEdit={startEdit} isLoading={isLoading} isUpdatingStock={isUpdatingStock} />}
         {activeTab === "shops" && <AdminShopsTab shops={filteredShops} setEditingShop={setEditingShop} setNewShop={setNewShop} setShowAddShopModal={setShowAddShopModal} setConfirmModal={setConfirmModal} />}
       </div>
       <div className="pb-10"></div>

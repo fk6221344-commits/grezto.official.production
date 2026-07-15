@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Edit, Package, Trash2, AlertTriangle } from 'lucide-react';
+import { Edit, Package, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ProductAdminRowProps {
   name: string;
@@ -10,9 +10,10 @@ interface ProductAdminRowProps {
   onToggleStock: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  isUpdating?: boolean;
 }
 
-export const ProductAdminRow = React.memo(({ name, price, stock, imageUrl, onToggleStock, onDelete, onEdit }: ProductAdminRowProps) => {
+export const ProductAdminRow = React.memo(({ name, price, stock, imageUrl, onToggleStock, onDelete, onEdit, isUpdating = false }: ProductAdminRowProps) => {
   const numStock = typeof stock === 'number' ? stock : 10;
   const isLowStock = numStock < 5;
   const [deleteStep, setDeleteStep] = React.useState(0);
@@ -26,6 +27,8 @@ export const ProductAdminRow = React.memo(({ name, price, stock, imageUrl, onTog
 
   return (
     <div className={`p-4 rounded-xl flex items-center justify-between border transition-all ${
+      isUpdating ? "opacity-50 pointer-events-none" : ""
+    } ${
       isLowStock 
         ? "bg-rose-50/40 border-rose-200 shadow-xs" 
         : "bg-white border-slate-200/80 shadow-xs hover:border-slate-300"
@@ -73,7 +76,7 @@ export const ProductAdminRow = React.memo(({ name, price, stock, imageUrl, onTog
           }`}
           title={numStock > 0 ? "Mark Out of Stock" : "Mark In Stock"}
         >
-          <Package className="w-3.5 h-3.5" />
+          {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onEdit(); }}

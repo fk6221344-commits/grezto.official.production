@@ -11,6 +11,7 @@ interface MerchantMenuTabProps {
   handleToggleStock: (productId: string, currentStock: any) => Promise<any> | any;
   handleDeleteItem: (productId: string) => Promise<any> | any;
   isLoading?: boolean;
+  isUpdatingStock?: Record<string, boolean>;
 }
 
 export function MerchantMenuTab({
@@ -20,7 +21,8 @@ export function MerchantMenuTab({
   setShowAddMenuModal,
   handleToggleStock,
   handleDeleteItem,
-  isLoading = false
+  isLoading = false,
+  isUpdatingStock = {}
 }: MerchantMenuTabProps) {
   
   // [PILLAR 4: LAZY LOADING & INFINITE SCROLL STATE]
@@ -117,6 +119,7 @@ export function MerchantMenuTab({
                 setNewItem={setNewItem}
                 setShowAddMenuModal={setShowAddMenuModal}
                 handleDeleteItem={handleDeleteItem}
+                isUpdating={isUpdatingStock[item.id] || false}
               />
             </VirtualListItem>
           ))}

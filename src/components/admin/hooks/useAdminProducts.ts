@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "../../../services/supabase";
 import { compressImage, uploadToR2 } from "../../../lib/utils";
 import toast from "react-hot-toast";
@@ -16,6 +16,8 @@ export function useAdminProducts(
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [adminOwnerPhoto, setAdminOwnerPhoto] = useState<string | null>(null);
+  const [isUpdatingStock, setIsUpdatingStock] = useState<Record<string, boolean>>({});
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -157,11 +159,8 @@ export function useAdminProducts(
   const toggleStock = async (productId: string, currentStock: number) => {
     const newStock = currentStock > 0 ? 0 : 10;
     
-    // Optimistic local update
-    setDbProducts((prev) => 
-      prev.map((p) => (p.id === productId ? { ...p, stock: newStock, inStock: newStock > 0 } : p))
-    );
-    toast.success(newStock > 0 ? "Product is back in stock! 🥦" : "Product marked out of stock 🚫");
+    // Set loading state for this specific product
+    setIsUpdatingStock(prev => ({ ...prev, [productId]: true }));
 
     const targetProduct = dbProducts.find(p => p.id === productId);
     const shopId = targetProduct ? targetProduct.shopId : undefined;
@@ -178,16 +177,23 @@ export function useAdminProducts(
           category
         })
       });
+      
       if (!response.ok) {
         throw new Error('Server returned error status');
       }
+
+      // Optimistic local update ONLY AFTER backend succeeds (resolves race condition)
+      setDbProducts((prev) => 
+        prev.map((p) => (p.id === productId ? { ...p, stock: newStock, inStock: newStock > 0 } : p))
+      );
+      toast.success(newStock > 0 ? "Product is back in stock! 🥦" : "Product marked out of stock 🚫");
+
     } catch (e) {
       console.error(e);
-      // Revert if API call fails
-      setDbProducts((prev) => 
-        prev.map((p) => (p.id === productId ? { ...p, stock: currentStock, inStock: currentStock > 0 } : p))
-      );
       toast.error("Failed to update stock status");
+    } finally {
+      // Remove loading state
+      setIsUpdatingStock(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -504,5 +510,6 @@ export function useAdminProducts(
     startAdd,
     startEdit,
     handleImageUpload,
+    isUpdatingStock,
   };
 }

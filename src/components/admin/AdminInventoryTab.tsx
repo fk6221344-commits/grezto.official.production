@@ -11,6 +11,7 @@ interface AdminInventoryTabProps {
   handleDeleteProduct: (id: string) => void;
   startEdit: (product: any) => void;
   isLoading?: boolean;
+  isUpdatingStock?: Record<string, boolean>;
 }
 
 export default function AdminInventoryTab({
@@ -21,6 +22,7 @@ export default function AdminInventoryTab({
   handleDeleteProduct,
   startEdit,
   isLoading = false,
+  isUpdatingStock = {},
 }: AdminInventoryTabProps) {
   
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>('direct');
@@ -110,10 +112,11 @@ export default function AdminInventoryTab({
           onToggleStock={() => toggleStock(product.id, product.stock)}
           onDelete={() => handleDeleteProduct(product.id)}
           onEdit={() => startEdit(product)}
+          isUpdating={isUpdatingStock[product.id] || false}
         />
       </VirtualListItem>
     ));
-  }, [isLoading, filteredProductsMemo, visibleCount, toggleStock, handleDeleteProduct, startEdit]);
+  }, [isLoading, filteredProductsMemo, visibleCount, toggleStock, handleDeleteProduct, startEdit, isUpdatingStock]);
 
   return (
     <div className="space-y-4 animate-fade-in text-stone-850">
