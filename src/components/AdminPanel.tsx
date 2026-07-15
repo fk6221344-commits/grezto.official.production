@@ -312,7 +312,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         isShopPhoneVerified={isShopPhoneVerified} setIsShopPhoneVerified={setIsShopPhoneVerified}
         shopOtpSent={shopOtpSent} setShopOtpSent={setShopOtpSent} shopOtpLoading={shopOtpLoading}
         handleSendShopOtp={handleSendShopOtp} shopOtpInput={shopOtpInput} setShopOtpInput={setShopOtpInput}
-        shopCaptchaSolved={shopCaptchaSolved}
         confirmModal={confirmModal} setConfirmModal={setConfirmModal}
         handleDeleteShop={handleDeleteShop} handleToggleBlockShop={handleToggleBlockShop}
         showAdminProfileModal={showAdminProfileModal} setShowAdminProfileModal={setShowAdminProfileModal}

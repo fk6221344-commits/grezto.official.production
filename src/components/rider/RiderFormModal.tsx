@@ -43,9 +43,8 @@ interface RiderFormModalProps {
   isVerifyingOtp: boolean;
   handleSaveRider: (e: React.FormEvent) => Promise<any>;
   handleDeleteRider: (id: string) => Promise<any>;
-  riderOtpError: string | null;
-  setRiderOtpError: (err: string | null) => void;
-  riderCaptchaSolved: boolean;
+  riderOtpError?: string | null;
+  setRiderOtpError?: (val: string | null) => void;
 }
 
 export default function RiderFormModal({
@@ -76,7 +75,6 @@ export default function RiderFormModal({
   handleDeleteRider,
   riderOtpError,
   setRiderOtpError,
-  riderCaptchaSolved,
 }: RiderFormModalProps) {
   return (
     <AnimatePresence>
@@ -144,27 +142,22 @@ export default function RiderFormModal({
                     className="flex-1 bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:bg-white focus:ring-1 focus:ring-rose-500/20 disabled:opacity-75"
                   />
                   {!editingRider && (
-                    <div className="flex flex-col gap-2">
-                      <div id="recaptcha-container-rider" className="self-end origin-right scale-90"></div>
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={phone.length !== 10 || isSendingOtp || isOtpVerified || !riderCaptchaSolved}
-                        className={`px-4.5 py-3 rounded-xl text-[9.5px] font-bold transition-all border-0 cursor-pointer flex items-center justify-center min-w-[76px] self-end ${
-                          isOtpVerified
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            : isSendingOtp
-                            ? 'bg-slate-100 text-slate-400'
-                            : isOtpSent
-                            ? 'bg-rose-100 text-rose-800'
-                            : !riderCaptchaSolved
-                            ? 'bg-slate-300 text-white cursor-not-allowed'
-                            : 'bg-rose-900 text-white hover:bg-rose-950 shadow-sm shadow-rose-900/15'
-                        }`}
-                      >
-                        {isOtpVerified ? 'Verified ✓' : isSendingOtp ? 'Sending...' : isOtpSent ? 'Resend' : 'Verify'}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={phone.length !== 10 || isSendingOtp || isOtpVerified}
+                      className={`px-4.5 rounded-xl text-[9.5px] font-bold transition-all border-0 cursor-pointer flex items-center justify-center min-w-[76px] ${
+                        isOtpVerified
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : isSendingOtp
+                          ? 'bg-slate-100 text-slate-400'
+                          : isOtpSent
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-rose-900 text-white hover:bg-rose-950 shadow-sm shadow-rose-900/15'
+                      }`}
+                    >
+                      {isOtpVerified ? 'Verified ✓' : isSendingOtp ? 'Sending...' : isOtpSent ? 'Resend' : 'Verify'}
+                    </button>
                   )}
                 </div>
               </div>

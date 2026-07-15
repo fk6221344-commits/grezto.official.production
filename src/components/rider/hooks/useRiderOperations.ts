@@ -109,43 +109,39 @@ export function useRiderOperations() {
     setIsMounted(true);
   }, []);
 
-  const [riderCaptchaSolved, setRiderCaptchaSolved] = useState(false);
-
   useEffect(() => {
     if (showAddForm) {
-      setRiderCaptchaSolved(false);
-      const initializeRiderCaptcha = async () => {
+      const initializeWarmupRider = async () => {
         try {
-          // Wait for DOM to render the container
-          for (let i = 0; i < 10; i++) {
-            if (document.getElementById("recaptcha-container-rider")) break;
-            await new Promise(r => setTimeout(r, 100));
+          if (!document.getElementById("recaptcha-container-rider")) {
+            const newContainer = document.createElement("div");
+            newContainer.id = "recaptcha-container-rider";
+            newContainer.style.position = "fixed";
+            newContainer.style.bottom = "10px";
+            newContainer.style.right = "10px";
+            newContainer.style.width = "1px";
+            newContainer.style.height = "1px";
+            newContainer.style.opacity = "0.01";
+            newContainer.style.pointerEvents = "none";
+            newContainer.style.zIndex = "99999";
+            document.body.appendChild(newContainer);
           }
-
-          if (document.getElementById("recaptcha-container-rider") && !(window as any).recaptchaVerifierRider) {
+          if (!(window as any).recaptchaVerifierRider) {
             const verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-rider", {
-              size: "normal",
+              size: "invisible",
               callback: () => {
-                setRiderCaptchaSolved(true);
+                console.log("[Firebase Recaptcha] Rider Callback triggered.");
               },
-              "expired-callback": () => {
-                setRiderCaptchaSolved(false);
-              }
             });
             await verifier.render();
             (window as any).recaptchaVerifierRider = verifier;
+            console.log("[Rider Verification] Warm-up complete via secondaryAuth.");
           }
         } catch (e) {
-          console.warn("Rider Recaptcha render failed:", e);
+          console.warn("Rider Recaptcha warm-up delayed:", e);
         }
       };
-      initializeRiderCaptcha();
-    } else {
-      if ((window as any).recaptchaVerifierRider) {
-        try { (window as any).recaptchaVerifierRider.clear(); } catch(e) {}
-        (window as any).recaptchaVerifierRider = null;
-      }
-      setRiderCaptchaSolved(false);
+      initializeWarmupRider();
     }
   }, [showAddForm]);
 
@@ -238,10 +234,6 @@ export function useRiderOperations() {
     if (formattedPhone.length !== 10) {
       return toast.error("Please enter a valid 10-digit mobile number!");
     }
-    if (!riderCaptchaSolved) {
-      toast.error("Please verify that you are not a robot first!");
-      return;
-    }
 
     setIsSendingOtp(true);
     setOtpInput("");
@@ -251,7 +243,33 @@ export function useRiderOperations() {
       console.log("[Firebase Auth] Web Phone OTP initialization...");
       const firebasePromise = (async () => {
         let verifier = (window as any).recaptchaVerifierRider;
-        if (!verifier) throw new Error("Captcha not initialized.");
+        if (!verifier) {
+          if (!document.getElementById("recaptcha-container-rider")) {
+            const newContainer = document.createElement("div");
+            newContainer.id = "recaptcha-container-rider";
+            newContainer.style.position = "fixed";
+            newContainer.style.bottom = "10px";
+            newContainer.style.right = "10px";
+            newContainer.style.width = "1px";
+            newContainer.style.height = "1px";
+            newContainer.style.opacity = "0.01";
+            newContainer.style.pointerEvents = "none";
+            newContainer.style.zIndex = "99999";
+            document.body.appendChild(newContainer);
+          }
+          verifier = new RecaptchaVerifier(
+            secondaryAuth,
+            "recaptcha-container-rider",
+            {
+              size: "invisible",
+              callback: () => {
+                console.log("[Firebase Recaptcha] Callback triggered.");
+              },
+            },
+          );
+          await verifier.render();
+          (window as any).recaptchaVerifierRider = verifier;
+        }
 
         const confirmation = await signInWithPhoneNumber(
           secondaryAuth,
@@ -1079,7 +1097,6 @@ export function useRiderOperations() {
     setIsOtpVerified,
     riderOtpError,
     setRiderOtpError,
-    riderCaptchaSolved,
     confirmationResult,
     setConfirmationResult,
     collectAmount,

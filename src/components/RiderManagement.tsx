@@ -54,7 +54,6 @@ export default function RiderManagement({ onClose }: { onClose: () => void }) {
     setIsOtpVerified,
     riderOtpError,
     setRiderOtpError,
-    riderCaptchaSolved,
     collectAmount,
     setCollectAmount,
     settlePayAmount,
@@ -177,7 +176,6 @@ export default function RiderManagement({ onClose }: { onClose: () => void }) {
         handleDeleteRider={handleDeleteRider}
         riderOtpError={riderOtpError}
         setRiderOtpError={setRiderOtpError}
-        riderCaptchaSolved={riderCaptchaSolved}
       />
 
       {/* MODAL 2: Collect cash balance modal with Interactive Paid/Unpaid Selection */}
