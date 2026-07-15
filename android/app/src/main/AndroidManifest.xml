@@ -50,6 +50,19 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_sound"
             android:value="spaceship_alarm" />
+
+        <!-- Advanced Native Order Push Settings -->
+        <service
+            android:name=".CustomMessagingService"
+            android:exported="true">
+            <intent-filter android:priority="999">
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".StopRingReceiver"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
@@ -72,6 +85,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 </manifest>

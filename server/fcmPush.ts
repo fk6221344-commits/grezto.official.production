@@ -74,22 +74,12 @@ export function startFCMOrderListener() {
           const tokens = tokensData.map((t: any) => t.token);
           
           const message = {
-            notification: {
-              title: '🚨 New Order Received! 🚨',
-              body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`,
-            },
             android: {
               priority: 'high' as const,
-              notification: {
-                channelId: 'grezto_order_channel_v5',
-                sound: 'spaceship_alarm', // plays android/app/src/main/res/raw/spaceship_alarm.mp3
-                clickAction: 'FCM_PLUGIN_ACTIVITY',
-                visibility: 'public' as const,
-                defaultVibrateTimings: false,
-                vibrateTimingsMillis: [0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], // Aggressive vibration pattern
-              }
             },
             data: {
+              title: '🚨 New Order Received! 🚨',
+              body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`,
               orderId: String(order.id),
               type: 'new_order'
             },
@@ -152,22 +142,12 @@ export function startFCMOrderListener() {
           const tokens = tokensData.map((t: any) => t.token);
           
           const message = {
-            notification: {
-              title: '🛵 New Delivery Assigned! 🛵',
-              body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`,
-            },
             android: {
               priority: 'high' as const,
-              notification: {
-                channelId: 'grezto_order_channel_v5',
-                sound: 'spaceship_alarm',
-                clickAction: 'FCM_PLUGIN_ACTIVITY',
-                visibility: 'public' as const,
-                defaultVibrateTimings: false,
-                vibrateTimingsMillis: [0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
-              }
             },
             data: {
+              title: '🛵 New Delivery Assigned! 🛵',
+              body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`,
               orderId: String(newOrder.id),
               type: 'rider_assigned'
             },

@@ -7,6 +7,7 @@ import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import androidx.core.splashscreen.SplashScreen;
+import android.content.Intent;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -30,6 +31,20 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Stop the loud ringtone if the user opens the app!
+        CustomMessagingService.stopRinging();
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // Stop the loud ringtone if the app was in background and user clicked notification!
+        CustomMessagingService.stopRinging();
     }
 
     // Bulletproof Native Override: Forces system-level FontScale context to exactly 1.0 (100%)
