@@ -8,8 +8,10 @@ import android.app.NotificationManager;
 public class StopRingReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        // Stop the loud looping ringtone
-        CustomMessagingService.stopRinging();
+        // Stop the Foreground Service
+        Intent serviceIntent = new Intent(context, OrderRingService.class);
+        serviceIntent.setAction(OrderRingService.ACTION_STOP);
+        context.startService(serviceIntent);
         
         // Cancel the ongoing notification
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

@@ -36,15 +36,28 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        // Stop the loud ringtone if the user opens the app!
-        CustomMessagingService.stopRinging();
+        stopOrderRingService();
     }
 
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        // Stop the loud ringtone if the app was in background and user clicked notification!
-        CustomMessagingService.stopRinging();
+        stopOrderRingService();
+    }
+
+    private void stopOrderRingService() {
+        try {
+            Intent serviceIntent = new Intent(this, OrderRingService.class);
+            serviceIntent.setAction(OrderRingService.ACTION_STOP);
+            startService(serviceIntent);
+            
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.cancel(1001);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Bulletproof Native Override: Forces system-level FontScale context to exactly 1.0 (100%)
