@@ -186,15 +186,31 @@ export function useProfileAuth() {
 
         if (Capacitor.isNativePlatform()) {
           try {
-            const cleanup = await FirebaseAuthentication.addListener('authStateChange', async (event) => {
+            let codeSentListener: any;
+            let failCleanup: any;
+            let cleanup: any;
+
+            cleanup = await FirebaseAuthentication.addListener('authStateChange', async (event) => {
               if (event.user) {
-                await cleanup();
+                if (cleanup) await cleanup();
+                if (codeSentListener) await codeSentListener();
+                if (failCleanup) await failCleanup();
                 resolve(null);
               }
             });
 
-            const failCleanup = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
-              await failCleanup();
+            codeSentListener = await FirebaseAuthentication.addListener('phoneCodeSent', async (event: any) => {
+              console.log("[Native Phone Auth] phoneCodeSent trigger:", event);
+              if (cleanup) await cleanup();
+              if (codeSentListener) await codeSentListener();
+              if (failCleanup) await failCleanup();
+              resolve({ isNativeAuth: true, verificationId: event.verificationId });
+            });
+
+            failCleanup = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event: any) => {
+              if (cleanup) await cleanup();
+              if (codeSentListener) await codeSentListener();
+              if (failCleanup) await failCleanup();
               console.warn("Native phone auth failed. Attempting fallback.", event.message);
               await triggerWebFallback();
             });
@@ -330,12 +346,22 @@ export function useProfileAuth() {
       if (confirmationResult) {
           try {
             console.log("[Client OTP Verification] Confirming OTP directly using Client SDK...");
-            const userCredential = await confirmationResult.confirm(otpCode);
-            clientUid = userCredential.user.uid;
-            try {
-              idToken = await userCredential.user.getIdToken();
-            } catch (tokenErr) {
-              console.warn("Failed to retrieve client idToken:", tokenErr);
+            if (confirmationResult.isNativeAuth) {
+              const nativeResult = await FirebaseAuthentication.confirmVerificationCode({
+                verificationId: confirmationResult.verificationId,
+                verificationCode: otpCode
+              });
+              const tokenResult = await FirebaseAuthentication.getIdToken();
+              clientUid = nativeResult.user?.uid || "";
+              idToken = tokenResult.token;
+            } else {
+              const userCredential = await confirmationResult.confirm(otpCode);
+              clientUid = userCredential.user.uid;
+              try {
+                idToken = await userCredential.user.getIdToken();
+              } catch (tokenErr) {
+                console.warn("Failed to retrieve client idToken:", tokenErr);
+              }
             }
             isVerified = true;
             console.log("[Client OTP Verification SUCCESS] Authenticated client-side with UID:", clientUid);
