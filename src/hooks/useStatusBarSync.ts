@@ -49,9 +49,12 @@ export function useStatusBarSync({
         } else if (showMerchant || showMerchantCalculationModal) {
           // Merchant Panel - White Theme Header
           style = Style.Light; // Suit light background (dark text/icons)
-        } else if (showRider || showRiderManagement) {
+        } else if (showRider) {
           // Rider Console - White Theme Header
           style = Style.Light; // Suit light background (dark text/icons)
+        } else if (showRiderManagement) {
+          // Rider Management - Dark Theme Header
+          style = Style.Dark; // Suit dark background (light text/icons)
         } else if (showCheckout || showOrderSuccess || trackingOrder) {
           // Light pages: Checkout / Success / Tracking
           style = Style.Light; // Suit light background (dark text/icons)
