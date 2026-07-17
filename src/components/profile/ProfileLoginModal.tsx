@@ -179,7 +179,11 @@ export default function ProfileLoginModal({
                           type="button"
                           onClick={handleSendOtpInline}
                           disabled={authLoading || loginPhone.length !== 10 || !loginName.trim() || resendTimer > 0}
-                          className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
+                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] ${
+                            resendTimer > 0
+                              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 border border-emerald-400 shadow-md shadow-emerald-600/30"
+                              : "bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40"
+                          }`}
                         >
                           {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
                         </button>
@@ -211,7 +215,11 @@ export default function ProfileLoginModal({
                           type="button"
                           onClick={handleSendOtpInline}
                           disabled={authLoading || loginPhone.length !== 10 || resendTimer > 0}
-                          className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
+                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] ${
+                            resendTimer > 0
+                              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 border border-emerald-400 shadow-md shadow-emerald-600/30"
+                              : "bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40"
+                          }`}
                         >
                           {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
                         </button>
