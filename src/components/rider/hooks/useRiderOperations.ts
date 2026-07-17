@@ -282,12 +282,6 @@ export function useRiderOperations() {
     setVehicle("Electric Scooter");
     setStatus("Online");
     setCodBalanceInit("0");
-    setIsSendingOtp(false);
-    setIsOtpSent(false);
-    setOtpInput("");
-    setIsVerifyingOtp(false);
-    setIsOtpVerified(false);
-    setConfirmationResult(null);
   };
 
   const handleCleanRiderConsole = async (rider: Rider) => {
