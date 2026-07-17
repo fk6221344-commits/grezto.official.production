@@ -35,14 +35,7 @@ interface AdminMgmtModalsProps {
   newShop: any;
   setNewShop: React.Dispatch<React.SetStateAction<any>>;
   handleSaveShop: (e: React.FormEvent) => Promise<any> | any;
-  isShopPhoneVerified: boolean;
-  setIsShopPhoneVerified: (val: boolean) => void;
-  shopOtpSent: boolean;
-  setShopOtpSent: (val: boolean) => void;
-  shopOtpLoading: boolean;
-  handleSendShopOtp: () => Promise<any> | any;
-  shopOtpInput: string;
-  setShopOtpInput: (val: string) => void;
+
 
   // Confirmation Modal
   confirmModal: any;
@@ -106,14 +99,7 @@ export default function AdminMgmtModals({
   newShop,
   setNewShop,
   handleSaveShop,
-  isShopPhoneVerified,
-  setIsShopPhoneVerified,
-  shopOtpSent,
-  setShopOtpSent,
-  shopOtpLoading,
-  handleSendShopOtp,
-  shopOtpInput,
-  setShopOtpInput,
+
 
   confirmModal,
   setConfirmModal,
@@ -179,14 +165,6 @@ export default function AdminMgmtModals({
         newShop={newShop}
         setNewShop={setNewShop}
         handleSaveShop={handleSaveShop}
-        isShopPhoneVerified={isShopPhoneVerified}
-        setIsShopPhoneVerified={setIsShopPhoneVerified}
-        shopOtpSent={shopOtpSent}
-        setShopOtpSent={setShopOtpSent}
-        shopOtpLoading={shopOtpLoading}
-        handleSendShopOtp={handleSendShopOtp}
-        shopOtpInput={shopOtpInput}
-        setShopOtpInput={setShopOtpInput}
       />
 
       <ConfirmationModal

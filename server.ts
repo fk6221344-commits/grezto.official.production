@@ -22,6 +22,7 @@ import { warmShopProductsCache, warmCategoryProductsCache, warmCityShopsCache } 
 import { createRateLimiter } from "./server/rateLimiter";
 
 import { startFCMOrderListener } from "./server/fcmPush";
+import whatsappOtpRouter from "./server/whatsappOtp";
 
 async function ensureDefaultDirectShop() {
   if (!supabase) return;
@@ -88,6 +89,8 @@ async function startServer() {
   const allowedOrigins = [
     "http://localhost",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1",
     "http://localhost:5173",
     "https://localhost",
     "https://localhost:3000",
@@ -229,6 +232,9 @@ async function startServer() {
   };
 
   app.use(antiSqlInjection);
+
+  // WhatsApp OTP Authentication Endpoints (With rate limiting)
+  app.use("/api/auth", otpLimiter, whatsappOtpRouter);
 
   // Setup S3 Client (Cloudflare R2)
   const getS3Client = () => {

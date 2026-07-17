@@ -156,26 +156,14 @@ export default function RiderManagement({ onClose }: { onClose: () => void }) {
         setName={setName}
         phone={phone}
         setPhone={setPhone}
-        isOtpVerified={isOtpVerified}
-        setIsOtpVerified={setIsOtpVerified}
-        isSendingOtp={isSendingOtp}
-        isOtpSent={isOtpSent}
-        setIsOtpSent={setIsOtpSent}
-        otpInput={otpInput}
-        setOtpInput={setOtpInput}
         vehicle={vehicle}
         setVehicle={setVehicle}
         status={status}
         setStatus={setStatus}
         codBalanceInit={codBalanceInit}
         setCodBalanceInit={setCodBalanceInit}
-        handleSendOtp={handleSendOtp}
-        handleVerifyOtp={handleVerifyOtp}
-        isVerifyingOtp={isVerifyingOtp}
         handleSaveRider={handleSaveRider}
         handleDeleteRider={handleDeleteRider}
-        riderOtpError={riderOtpError}
-        setRiderOtpError={setRiderOtpError}
       />
 
       {/* MODAL 2: Collect cash balance modal with Interactive Paid/Unpaid Selection */}

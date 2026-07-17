@@ -4,6 +4,8 @@
 	"webDir": "dist",
 	"backgroundColor": "#fffcf9",
 	"server": {
+		"url": "http://127.0.0.1:3000",
+		"cleartext": true,
 		"androidScheme": "https",
 		"allowNavigation": [
 			"localhost",

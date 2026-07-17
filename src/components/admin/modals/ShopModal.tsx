@@ -10,14 +10,6 @@ interface ShopModalProps {
   newShop: any;
   setNewShop: React.Dispatch<React.SetStateAction<any>>;
   handleSaveShop: (e: React.FormEvent) => Promise<any> | any;
-  isShopPhoneVerified: boolean;
-  setIsShopPhoneVerified: (val: boolean) => void;
-  shopOtpSent: boolean;
-  setShopOtpSent: (val: boolean) => void;
-  shopOtpLoading: boolean;
-  handleSendShopOtp: () => Promise<any> | any;
-  shopOtpInput: string;
-  setShopOtpInput: (val: string) => void;
 }
 
 export default function ShopModal({
@@ -26,15 +18,7 @@ export default function ShopModal({
   editingShop,
   newShop,
   setNewShop,
-  handleSaveShop,
-  isShopPhoneVerified,
-  setIsShopPhoneVerified,
-  shopOtpSent,
-  setShopOtpSent,
-  shopOtpLoading,
-  handleSendShopOtp,
-  shopOtpInput,
-  setShopOtpInput
+  handleSaveShop
 }: ShopModalProps) {
   const [docs, setDocs] = React.useState({
     pan: false,
@@ -128,35 +112,21 @@ export default function ShopModal({
                 <div className="space-y-1">
                   <label className="text-[8px] font-black text-gray-400 uppercase tracking-wider block">Owner Phone Number</label>
                   <div className="flex gap-2">
-                    <input 
-                      type="tel" 
-                      required
-                      maxLength={10}
-                      value={newShop.ownerPhone || ''}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '');
-                        if (editingShop && val !== editingShop.ownerPhone) {
-                          setIsShopPhoneVerified(false);
-                        } else if (!editingShop) {
-                          setIsShopPhoneVerified(false);
-                          setShopOtpSent(false);
-                        }
-                        setNewShop({...newShop, ownerPhone: val});
-                      }}
-                      placeholder="10-digit number"
-                      className="w-full bg-gray-50 border border-gray-100 text-gray-700 py-3 px-4 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/10 text-xs"
-                      disabled={shopOtpSent && !isShopPhoneVerified}
-                    />
-                    {!editingShop && !isShopPhoneVerified && !shopOtpSent && (
-                      <button
-                        type="button"
-                        onClick={handleSendShopOtp}
-                        disabled={shopOtpLoading || (newShop.ownerPhone || '').length !== 10}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-black text-[10px] uppercase tracking-wider px-4 rounded-xl whitespace-nowrap outline-none transition-colors border-0 cursor-pointer"
-                      >
-                        {shopOtpLoading ? 'Sending...' : 'Verify'}
-                      </button>
-                    )}
+                    <div className="relative flex-1">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs border-r border-gray-200 pr-2">+91</div>
+                      <input 
+                        type="tel" 
+                        required
+                        maxLength={10}
+                        value={newShop.ownerPhone || ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setNewShop({...newShop, ownerPhone: val});
+                        }}
+                        placeholder="10-digit number"
+                        className="w-full bg-gray-50 border border-gray-100 text-gray-700 py-3 pl-12 pr-4 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/10"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -413,39 +383,11 @@ export default function ShopModal({
                 </div>
               </div>
 
-              {shopOtpSent && !isShopPhoneVerified && (
-                <div className="space-y-1 mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center font-sans">
-                  <label className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block text-center">Enter OTP Sent to +91 {newShop.ownerPhone}</label>
-                  <input 
-                    type="text" 
-                    value={shopOtpInput}
-                    onChange={(e) => setShopOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="6-digit OTP"
-                    maxLength={6}
-                    pattern="[0-9]{6}"
-                    className="w-full bg-white border border-emerald-200 text-emerald-900 py-3 px-4 rounded-xl text-lg tracking-[0.5em] font-black outline-none focus:ring-2 focus:ring-emerald-500/30 text-center"
-                    required={shopOtpSent && !isShopPhoneVerified}
-                  />
-                </div>
-              )}
-
                <button 
                 type="submit"
-                disabled={shopOtpLoading}
-                className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg cursor-pointer mt-2 border-0 flex items-center justify-center gap-2 transition-all ${
-                  !shopOtpLoading
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100/50'
-                    : 'bg-gray-300 text-gray-500 shadow-none cursor-not-allowed'
-                }`}
+                className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg cursor-pointer mt-2 border-0 flex items-center justify-center gap-2 transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100/50`}
               >
-                {shopOtpLoading ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  editingShop ? "Update Shop Details" : "REGISTER PARTNER SHOP"
-                )}
+                {editingShop ? "Update Shop Details" : "REGISTER PARTNER SHOP"}
               </button>
             </form>
           </motion.div>

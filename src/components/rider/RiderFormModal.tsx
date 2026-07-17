@@ -25,26 +25,14 @@ interface RiderFormModalProps {
   setName: (name: string) => void;
   phone: string;
   setPhone: (phone: string) => void;
-  isOtpVerified: boolean;
-  setIsOtpVerified: (verified: boolean) => void;
-  isSendingOtp: boolean;
-  isOtpSent: boolean;
-  setIsOtpSent: (sent: boolean) => void;
-  otpInput: string;
-  setOtpInput: (otp: string) => void;
   vehicle: string;
   setVehicle: (vehicle: string) => void;
   status: string;
   setStatus: (status: string) => void;
   codBalanceInit: string;
   setCodBalanceInit: (val: string) => void;
-  handleSendOtp: () => Promise<any>;
-  handleVerifyOtp: () => Promise<any>;
-  isVerifyingOtp: boolean;
   handleSaveRider: (e: React.FormEvent) => Promise<any>;
   handleDeleteRider: (id: string) => Promise<any>;
-  riderOtpError?: string | null;
-  setRiderOtpError?: (val: string | null) => void;
 }
 
 export default function RiderFormModal({
@@ -55,26 +43,14 @@ export default function RiderFormModal({
   setName,
   phone,
   setPhone,
-  isOtpVerified,
-  setIsOtpVerified,
-  isSendingOtp,
-  isOtpSent,
-  setIsOtpSent,
-  otpInput,
-  setOtpInput,
   vehicle,
   setVehicle,
   status,
   setStatus,
   codBalanceInit,
   setCodBalanceInit,
-  handleSendOtp,
-  handleVerifyOtp,
-  isVerifyingOtp,
   handleSaveRider,
   handleDeleteRider,
-  riderOtpError,
-  setRiderOtpError,
 }: RiderFormModalProps) {
   return (
     <AnimatePresence>
@@ -124,79 +100,25 @@ export default function RiderFormModal({
                   Phone Number
                 </label>
                 <div className="flex gap-2">
-                  <input
-                    required
-                    maxLength={10}
-                    type="text"
-                    disabled={isOtpVerified || isSendingOtp}
-                    placeholder="10-digit mobile number"
-                    value={phone}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setPhone(val);
-                      if (isOtpSent) {
-                        setIsOtpSent(false);
-                        setIsOtpVerified(false);
-                      }
-                    }}
-                    className="flex-1 bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:bg-white focus:ring-1 focus:ring-rose-500/20 disabled:opacity-75"
-                  />
-                  {!editingRider && (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={phone.length !== 10 || isSendingOtp || isOtpVerified}
-                      className={`px-4.5 rounded-xl text-[9.5px] font-bold transition-all border-0 cursor-pointer flex items-center justify-center min-w-[76px] ${
-                        isOtpVerified
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : isSendingOtp
-                          ? 'bg-slate-100 text-slate-400'
-                          : isOtpSent
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-rose-900 text-white hover:bg-rose-950 shadow-sm shadow-rose-900/15'
-                      }`}
-                    >
-                      {isOtpVerified ? 'Verified ✓' : isSendingOtp ? 'Sending...' : isOtpSent ? 'Resend' : 'Verify'}
-                    </button>
-                  )}
+                  <div className="relative flex-1">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[11px] border-r border-slate-200 pr-2">+91</div>
+                    <input
+                      required
+                      maxLength={10}
+                      type="text"
+                      placeholder="10-digit mobile number"
+                      value={phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setPhone(val);
+                      }}
+                      className="w-full bg-slate-50 border border-slate-150 py-3.5 pl-11 pr-3 rounded-xl text-[11px] font-bold outline-none focus:bg-white focus:ring-1 focus:ring-rose-500/20 disabled:opacity-75"
+                    />
+                  </div>
                 </div>
               </div>
 
-               {/* Sub OTP Box */}
-              {isOtpSent && !isOtpVerified && !editingRider && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-[8px] font-black uppercase text-rose-600 tracking-widest ml-1">
-                    Enter 6-Digit Verification Code
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      maxLength={6}
-                      type="text"
-                      placeholder="Enter OTP code"
-                      value={otpInput}
-                      onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="flex-1 bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-[10.5px] font-bold outline-none focus:bg-white focus:ring-1 focus:ring-rose-500/20 text-center tracking-widest font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={otpInput.length !== 6 || isVerifyingOtp}
-                      className="bg-slate-950 text-white hover:bg-black px-4.5 py-2.5 rounded-xl text-[9.5px] font-black uppercase tracking-wider border-0 cursor-pointer transition active:scale-95 min-w-[85px] flex items-center justify-center"
-                    >
-                      {isVerifyingOtp ? 'Verifying...' : 'Submit'}
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {riderOtpError && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left text-[10.5px] text-amber-950 font-semibold space-y-2 leading-relaxed animate-fadeIn mt-3">
-                   <p className="font-extrabold text-[10.5px] text-amber-800 flex items-center gap-1.5 uppercase tracking-wide">
-                     ⚠️ Real SMS Dispatch Failed
-                   </p>
-                   <p className="whitespace-pre-line text-[10px] text-amber-900">{riderOtpError}</p>
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

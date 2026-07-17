@@ -57,22 +57,13 @@ export default function Profile({
     setLoginName,
     otpCode,
     setOtpCode,
-    serverOtp,
-    setServerOtp,
     authLoading,
     setAuthLoading,
     authMode,
     setAuthMode,
-    confirmationResult,
-    setConfirmationResult,
-    useFastOtp,
-    setUseFastOtp,
     isOtpSent,
     setIsOtpSent,
-    otpError,
-    setOtpError,
-    authError,
-    setAuthError,
+    resendTimer,
     handleSendOtpInline,
     handleVerifyAndLogin
   } = useProfileAuth();
@@ -303,15 +294,9 @@ export default function Profile({
         authLoading={authLoading}
         isOtpSent={isOtpSent}
         setIsOtpSent={setIsOtpSent}
-        setServerOtp={setServerOtp}
+        resendTimer={resendTimer}
         handleSendOtpInline={handleSendOtpInline}
         handleVerifyAndLogin={handleVerifyAndLogin}
-        otpError={otpError}
-        setOtpError={setOtpError}
-        useFastOtp={useFastOtp}
-        setUseFastOtp={setUseFastOtp}
-        authError={authError}
-        setAuthError={setAuthError}
         showAboutModal={showAboutModal}
         setShowAboutModal={setShowAboutModal}
         showSignOutConfirm={showSignOutConfirm}
@@ -346,7 +331,6 @@ export default function Profile({
         setLoginPhone={setLoginPhone}
         setOtpCode={setOtpCode}
         setIsOtpSent={setIsOtpSent}
-        setServerOtp={setServerOtp}
         setShowLoginModal={setShowLoginModal}
         statsOrdersCount={statsOrdersCount}
         statsDeliveredCount={statsDeliveredCount}
@@ -420,15 +404,9 @@ export default function Profile({
         authLoading={authLoading}
         isOtpSent={isOtpSent}
         setIsOtpSent={setIsOtpSent}
-        setServerOtp={setServerOtp}
+        resendTimer={resendTimer}
         handleSendOtpInline={handleSendOtpInline}
         handleVerifyAndLogin={handleVerifyAndLogin}
-        otpError={otpError}
-        setOtpError={setOtpError}
-        useFastOtp={useFastOtp}
-        setUseFastOtp={setUseFastOtp}
-        authError={authError}
-        setAuthError={setAuthError}
         showAboutModal={showAboutModal}
         setShowAboutModal={setShowAboutModal}
         showSignOutConfirm={showSignOutConfirm}

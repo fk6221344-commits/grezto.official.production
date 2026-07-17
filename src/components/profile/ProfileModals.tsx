@@ -20,27 +20,9 @@ interface ProfileModalsProps {
   authLoading: boolean;
   isOtpSent: boolean;
   setIsOtpSent: (val: boolean) => void;
-  setServerOtp: (val: string) => void;
+  resendTimer: number;
   handleSendOtpInline: () => void;
   handleVerifyAndLogin: (e: React.FormEvent) => void;
-  otpError?: string | null;
-  setOtpError?: (val: string | null) => void;
-  useFastOtp?: boolean;
-  setUseFastOtp?: (val: boolean) => void;
-  authError: {
-    show: boolean;
-    title: string;
-    message: string;
-    isOwner: boolean;
-    technicalDetails?: string;
-  } | null;
-  setAuthError: (val: {
-    show: boolean;
-    title: string;
-    message: string;
-    isOwner: boolean;
-    technicalDetails?: string;
-  } | null) => void;
 
   // About Modal
   showAboutModal: boolean;
@@ -75,15 +57,9 @@ export default function ProfileModals({
   authLoading,
   isOtpSent,
   setIsOtpSent,
-  setServerOtp,
+  resendTimer,
   handleSendOtpInline,
   handleVerifyAndLogin,
-  otpError,
-  setOtpError,
-  useFastOtp,
-  setUseFastOtp,
-  authError,
-  setAuthError,
 
   showAboutModal,
   setShowAboutModal,
@@ -100,14 +76,7 @@ export default function ProfileModals({
   userShop,
   handlePinSubmit,
 }: ProfileModalsProps) {
-  React.useEffect(() => {
-    if (authError?.show && !authError.isOwner) {
-      const timer = setTimeout(() => {
-        setAuthError(null);
-      }, 5000); // Auto-dismiss after 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [authError, setAuthError]);
+  // We no longer have authError, so we remove the useEffect handling its auto-dismiss
 
   return (
     <>
@@ -126,13 +95,9 @@ export default function ProfileModals({
         authLoading={authLoading}
         isOtpSent={isOtpSent}
         setIsOtpSent={setIsOtpSent}
-        setServerOtp={setServerOtp}
+        resendTimer={resendTimer}
         handleSendOtpInline={handleSendOtpInline}
         handleVerifyAndLogin={handleVerifyAndLogin}
-        otpError={otpError}
-        setOtpError={setOtpError}
-        useFastOtp={useFastOtp}
-        setUseFastOtp={setUseFastOtp}
       />
 
       {/* About Grezto Detail Info Modal */}
@@ -408,143 +373,6 @@ export default function ProfileModals({
         )}
       </AnimatePresence>
 
-      {/* Premium Auth Error Diagnosis Modal */}
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {authError?.show && (
-            authError.isOwner ? (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-              >
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.6 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setAuthError(null)}
-                  className="absolute inset-0 bg-black backdrop-blur-md"
-                />
-                <motion.div 
-                  initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                  animate={{ scale: 1, y: 0, opacity: 1 }}
-                  exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                  transition={{ type: "spring", duration: 0.4 }}
-                  className="bg-white w-full max-w-sm rounded-[2.5rem] p-7 relative z-[99999] shadow-2xl border border-stone-150/45 text-center flex flex-col"
-                >
-                  {/* Close Button */}
-                  <button 
-                    onClick={() => setAuthError(null)} 
-                    className="absolute top-4 right-4 p-2 bg-stone-50 hover:bg-stone-100 active:scale-95 text-stone-400 hover:text-stone-600 rounded-full border-0 transition-all cursor-pointer z-10"
-                  >
-                    <X size={12} className="stroke-[2.5]" />
-                  </button>
-
-                  {/* Badge Icon */}
-                  <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4.5 shadow-inner ring-4 bg-amber-50 text-amber-600 ring-amber-100/50">
-                    <span className="text-2xl">🛠️</span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-sm font-black tracking-tight uppercase font-sans text-amber-800">
-                    {authError.title}
-                  </h3>
-
-                  {/* Subtitle / Description */}
-                  <p className="text-[9px] text-stone-400 font-extrabold uppercase tracking-widest mt-1">
-                    Owner/Developer Diagnostic Console
-                  </p>
-
-                  {/* Message Content */}
-                  <div className="mt-4 text-left space-y-3">
-                    <p className="text-[11px] font-bold leading-relaxed text-stone-750">
-                      {authError.message}
-                    </p>
-
-                    {authError.technicalDetails && (
-                      <div className="bg-stone-950 p-4 rounded-2xl border border-stone-900 text-left font-mono text-[9px] text-amber-400 overflow-x-auto whitespace-pre-wrap max-h-[160px] leading-relaxed shadow-inner">
-                        {authError.technicalDetails}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Buttons block */}
-                  <div className="flex flex-col gap-2 mt-6">
-                    {authError.technicalDetails && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(authError.technicalDetails || '');
-                          toast.success("Diagnostic details copied! 📋");
-                        }}
-                        className="w-full bg-stone-900 hover:bg-stone-850 active:scale-97 text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer border-0"
-                      >
-                        Copy Diagnostic Report
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setAuthError(null)}
-                      className="w-full text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-97 transition-all cursor-pointer border-0 bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-700/15"
-                    >
-                      Acknowledge & Close
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <div className="fixed top-0 left-0 right-0 z-[100000] p-4 flex justify-center pointer-events-none pt-[max(env(safe-area-inset-top),16px)]">
-                <motion.div 
-                  initial={{ y: -120, opacity: 0, scale: 0.95 }}
-                  animate={{ y: 0, opacity: 1, scale: 1 }}
-                  exit={{ y: -120, opacity: 0, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 350, damping: 26 }}
-                  className="bg-slate-900/95 backdrop-blur-md pointer-events-auto w-full max-w-sm rounded-[1.25rem] p-3.5 shadow-[0_16px_36px_rgba(15,23,42,0.35)] border border-white/10 flex items-start gap-3 relative cursor-pointer active:scale-[0.98] transition-transform duration-100"
-                  onClick={() => setAuthError(null)}
-                >
-                  {/* Left Side App Icon Badge */}
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-emerald-400/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                    <span className="text-lg">🥬</span>
-                  </div>
-
-                  {/* Text Details */}
-                  <div className="flex-1 min-w-0 text-left pr-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[8.5px] font-black tracking-widest text-emerald-400 uppercase">
-                        GREZTO APP
-                      </span>
-                      <span className="text-[8.5px] font-black tracking-wider text-slate-400 uppercase">
-                        JUST NOW
-                      </span>
-                    </div>
-                    {/* Line 1: Title */}
-                    <h4 className="text-[11.5px] font-black text-white uppercase tracking-tight mt-0.5 line-clamp-1">
-                      ⚠️ {authError.title}
-                    </h4>
-                    {/* Line 2: Message (2 lines maximum with truncation if needed) */}
-                    <p className="text-[10px] font-bold text-slate-300 leading-tight mt-0.5 line-clamp-2">
-                      {authError.message}
-                    </p>
-                  </div>
-
-                  {/* Close icon button */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setAuthError(null);
-                    }}
-                    className="absolute top-3.5 right-3.5 p-1 bg-white/5 hover:bg-white/10 active:scale-90 text-slate-400 hover:text-white rounded-full border-0 transition-all cursor-pointer"
-                  >
-                    <X size={10} className="stroke-[2.5]" />
-                  </button>
-                </motion.div>
-              </div>
-            )
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
     </>
   );
 }

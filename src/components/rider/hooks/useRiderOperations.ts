@@ -82,14 +82,7 @@ export function useRiderOperations() {
   const [status, setStatus] = useState("Online");
   const [codBalanceInit, setCodBalanceInit] = useState("0");
 
-  // OTP Verification States
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otpInput, setOtpInput] = useState("");
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
-  const [riderOtpError, setRiderOtpError] = useState<string | null>(null);
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  // OTP logic removed. The Admin just creates the Rider and the Rider verifies their own number when logging in.
 
   // Collect Cash State
   const [collectAmount, setCollectAmount] = useState("");
@@ -109,41 +102,7 @@ export function useRiderOperations() {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (showAddForm) {
-      const initializeWarmupRider = async () => {
-        try {
-          if (!document.getElementById("recaptcha-container-rider")) {
-            const newContainer = document.createElement("div");
-            newContainer.id = "recaptcha-container-rider";
-            newContainer.style.position = "fixed";
-            newContainer.style.bottom = "10px";
-            newContainer.style.right = "10px";
-            newContainer.style.width = "1px";
-            newContainer.style.height = "1px";
-            newContainer.style.opacity = "0.01";
-            newContainer.style.pointerEvents = "none";
-            newContainer.style.zIndex = "99999";
-            document.body.appendChild(newContainer);
-          }
-          if (!(window as any).recaptchaVerifierRider) {
-            const verifier = new RecaptchaVerifier(secondaryAuth, "recaptcha-container-rider", {
-              size: "invisible",
-              callback: () => {
-                console.log("[Firebase Recaptcha] Rider Callback triggered.");
-              },
-            });
-            await verifier.render();
-            (window as any).recaptchaVerifierRider = verifier;
-            console.log("[Rider Verification] Warm-up complete via secondaryAuth.");
-          }
-        } catch (e) {
-          console.warn("Rider Recaptcha warm-up delayed:", e);
-        }
-      };
-      initializeWarmupRider();
-    }
-  }, [showAddForm]);
+
 
   const fetchRiders = useCallback(async () => {
     const { data } = await supabase
@@ -228,256 +187,7 @@ export function useRiderOperations() {
     };
   }, [fetchOrders]);
 
-  // OTP Verification Operations
-  const handleSendOtp = async () => {
-    const formattedPhone = phone.replace(/\D/g, "");
-    if (formattedPhone.length !== 10) {
-      return toast.error("Please enter a valid 10-digit mobile number!");
-    }
 
-    setIsSendingOtp(true);
-    setOtpInput("");
-    setIsOtpVerified(false);
-
-    try {
-      console.log("[Firebase Auth] Web Phone OTP initialization...");
-      const firebasePromise = new Promise<any>(async (resolve, reject) => {
-        const dispatchWebAuth = async () => {
-          try {
-            if (!document.getElementById("recaptcha-container-rider")) {
-              const newContainer = document.createElement("div");
-              newContainer.id = "recaptcha-container-rider";
-              newContainer.style.position = "fixed";
-              newContainer.style.bottom = "10px";
-              newContainer.style.right = "10px";
-              newContainer.style.width = "1px";
-              newContainer.style.height = "1px";
-              newContainer.style.opacity = "0.01";
-              newContainer.style.pointerEvents = "none";
-              newContainer.style.zIndex = "99999";
-              document.body.appendChild(newContainer);
-            }
-            let verifier = (window as any).recaptchaVerifierRider;
-            if (!verifier) {
-              verifier = new RecaptchaVerifier(auth, "recaptcha-container-rider", { size: "invisible", callback: () => {} });
-              await verifier.render();
-              (window as any).recaptchaVerifierRider = verifier;
-            }
-            const confirmation = await signInWithPhoneNumber(auth, `+91${formattedPhone}`, verifier);
-            resolve(confirmation);
-          } catch (err) {
-            reject(err);
-          }
-        };
-
-        if (Capacitor.isNativePlatform()) {
-          try {
-            let codeSentListener: any = null;
-            let failCleanup: any = null;
-            let authStateListener: any = null;
-            const removeAllListeners = async () => {
-              try {
-                if (codeSentListener) await codeSentListener.remove().catch(() => {});
-                if (failCleanup) await failCleanup.remove().catch(() => {});
-                if (authStateListener) await authStateListener.remove().catch(() => {});
-              } catch (e) {}
-            };
-
-            authStateListener = await FirebaseAuthentication.addListener("authStateChange", async (event) => {
-              if (event.user) {
-                await removeAllListeners();
-                resolve({ isNativeAuth: true, autoVerified: true, verificationId: "auto", user: event.user });
-              }
-            });
-
-            codeSentListener = await FirebaseAuthentication.addListener("phoneCodeSent", async (event: any) => {
-              await removeAllListeners();
-              resolve({ isNativeAuth: true, verificationId: event.verificationId });
-            });
-
-            failCleanup = await FirebaseAuthentication.addListener("phoneVerificationFailed", async (event: any) => {
-              await removeAllListeners();
-              reject(event);
-            });
-
-            await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: `+91${formattedPhone}` });
-          } catch (nativeErr) {
-            console.warn("Native OTP dispatch failed, falling back to Web SDK:", nativeErr);
-            dispatchWebAuth();
-          }
-        } else {
-          dispatchWebAuth();
-        }
-      });
-
-      const confirmationResultData = await firebasePromise;
-      setConfirmationResult(confirmationResultData);
-      setRiderOtpError(null);
-      setIsOtpSent(true);
-      if (confirmationResultData.autoVerified) {
-        toast.success("Rider's mobile number verified automatically! 🎉");
-      } else {
-        toast.success(
-          `Verification OTP has been sent to +91 ${formattedPhone}! 📲`,
-        );
-      }
-    } catch (err: any) {
-      try {
-        if ((window as any).recaptchaVerifierRider) {
-          (window as any).recaptchaVerifierRider.clear();
-          (window as any).recaptchaVerifierRider = null;
-        }
-      } catch (clearErr) {}
-
-      console.warn("Real Firebase OTP dispatch failed. Fallback active:", err);
-      const errCode = err?.code || "";
-      const errMsg = err?.message || String(err);
-
-      let detailedMsg = "";
-      if (
-        errCode === "auth/unauthorized-domain" ||
-        errMsg.includes("unauthorized") ||
-        errMsg.includes("domain")
-      ) {
-        detailedMsg = `Your current preview domain "${window.location.hostname}" is not added in the Firebase Console!
-        
-        This means Firebase is preventing real text message sending requests.
-        
-        To send SMS without issues:
-        1. Open Firebase Console -> Authentication -> Settings tab.
-        2. In "Authorized Domains" settings, click 'Add Domain'.
-        3. Enter domain address: ${window.location.hostname} and save!
-        4. Real SMS will dynamically start working!`;
-      } else if (
-        errCode === "auth/operation-not-allowed" ||
-        errMsg.includes("operation-not-allowed")
-      ) {
-        detailedMsg = `Phone Sign-in toggle is disabled in Firebase Project settings.
-        
-        Solution step:
-        1. Open Firebase Console -> Authentication -> Sign-in Method.
-        2. Enable the Phone method and save settings!`;
-      } else if (
-        errCode === "auth/api-key-expired" ||
-        errMsg.includes("api-key-expired")
-      ) {
-        detailedMsg = `Aapka Firebase Web API Key expire ho chuka hai.
-        
-        THEEK KAISE KAREIN:
-        1. Firebase Console -> Project Settings -> General me jayein.
-        2. Web API Key ko check karein. Agar expired hai, toh 'Google Cloud Console -> APIs & Services -> Credentials' me jaake naya key generate karein.`;
-      } else {
-        detailedMsg = `Firebase Auth Connection Error!\n\nReason: ${errMsg}\n\nPlease verify your real settings.`;
-      }
-
-      setRiderOtpError(detailedMsg);
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otpInput.length !== 6) {
-      return toast.error("Please enter a 6-digit OTP code!");
-    }
-
-    setIsVerifyingOtp(true);
-
-    try {
-      let verifyVerificationId = confirmationResult?.verificationId || "";
-      let isVerified = false;
-      let clientUid = "";
-      let idToken = "";
-
-      if (confirmationResult) {
-        console.log(
-          "[Client OTP Verification] Confirming rider OTP directly using Client SDK...",
-        );
-        try {
-          if (confirmationResult.isNativeAuth) {
-            if (confirmationResult.autoVerified) {
-              clientUid = confirmationResult.user?.uid || "";
-            } else {
-              const userCredential = await FirebaseAuthentication.signInWithPhoneNumber({ verificationId: confirmationResult.verificationId, smsCode: otpInput });
-              clientUid = userCredential.user?.uid || "";
-            }
-          } else {
-            const userCredential = await confirmationResult.confirm(otpInput);
-            clientUid = userCredential.user.uid;
-            try {
-              idToken = await userCredential.user.getIdToken();
-            } catch (e) {}
-          }
-          isVerified = true;
-        } catch (err: any) {
-          setIsVerifyingOtp(false);
-          return toast.error(
-            "Incorrect OTP! Please enter the correct 6-digit verification code.",
-          );
-        }
-      }
-
-      const response = await fetch(getApiUrl("/api/auth/verify-otp"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: phone.replace(/\D/g, ""), // Rider's phone
-          otp: otpInput,
-          verificationId: isVerified ? "client-verified" : verifyVerificationId,
-          clientUid: clientUid,
-          idToken: idToken,
-        }),
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
-        if (isVerified) {
-          console.warn(
-            "Client was verified but server sync profile failed:",
-            resData.error,
-          );
-        } else {
-          throw new Error(resData.error || "Incorrect OTP");
-        }
-      }
-
-      console.log("[SERVER RIDER OTP VERIFICATION SUCCESS]", resData);
-
-      if (resData.fallbackToken) {
-        localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
-        console.log(
-          "[Fallback Auth] Cryptographic fallback token stored securely (Rider mode).",
-        );
-      }
-
-      // Support native client session association if desired
-      if (resData.customToken && !isVerified) {
-        try {
-          if (Capacitor.isNativePlatform()) {
-            await FirebaseAuthentication.signInWithCustomToken({
-              token: resData.customToken,
-            });
-          } else {
-            await signInWithCustomToken(auth, resData.customToken);
-          }
-        } catch (signinErr) {
-          console.warn("Client auth sync bypassed:", signinErr);
-        }
-      }
-
-      setIsOtpVerified(true);
-      toast.success("Rider's mobile number verified successfully! ✓ 🟢");
-    } catch (err: any) {
-      console.error("OTP verification error:", err);
-      toast.error(
-        err.message ||
-          "Incorrect OTP entered! Please check the correct code. ❌",
-      );
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
 
   const handleSaveRider = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -489,12 +199,7 @@ export function useRiderOperations() {
       return toast.error("Please enter a valid 10-digit phone number.");
     }
 
-    // New rider must verify phone number first
-    if (!editingRider && !isOtpVerified) {
-      return toast.error(
-        "Please verify the Rider's phone number before registering!",
-      );
-    }
+
 
     const riderId = editingRider ? editingRider.id : `rider_${Date.now()}`;
     const riderData: any = {
@@ -1122,18 +827,7 @@ export function useRiderOperations() {
     setStatus,
     codBalanceInit,
     setCodBalanceInit,
-    isSendingOtp,
-    isOtpSent,
-    setIsOtpSent,
-    otpInput,
-    setOtpInput,
-    isVerifyingOtp,
-    isOtpVerified,
-    setIsOtpVerified,
-    riderOtpError,
-    setRiderOtpError,
-    confirmationResult,
-    setConfirmationResult,
+
     collectAmount,
     setCollectAmount,
     settlePayAmount,
@@ -1144,8 +838,7 @@ export function useRiderOperations() {
     setExpandedOrders,
     isMounted,
     fetchRiders,
-    handleSendOtp,
-    handleVerifyOtp,
+
     handleSaveRider,
     resetForm,
     handleCleanRiderConsole,

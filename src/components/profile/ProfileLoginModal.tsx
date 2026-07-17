@@ -18,13 +18,9 @@ interface ProfileLoginModalProps {
   authLoading: boolean;
   isOtpSent: boolean;
   setIsOtpSent: (val: boolean) => void;
-  setServerOtp: (val: string) => void;
+  resendTimer: number;
   handleSendOtpInline: () => void;
   handleVerifyAndLogin: (e: React.FormEvent) => void;
-  otpError?: string | null;
-  setOtpError?: (val: string | null) => void;
-  useFastOtp?: boolean;
-  setUseFastOtp?: (val: boolean) => void;
 }
 
 export default function ProfileLoginModal({
@@ -41,13 +37,9 @@ export default function ProfileLoginModal({
   authLoading,
   isOtpSent,
   setIsOtpSent,
-  setServerOtp,
+  resendTimer,
   handleSendOtpInline,
   handleVerifyAndLogin,
-  otpError,
-  setOtpError,
-  useFastOtp = true,
-  setUseFastOtp,
 }: ProfileLoginModalProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -117,7 +109,6 @@ export default function ProfileLoginModal({
                   setLoginPhone('');
                   setOtpCode('');
                   setIsOtpSent(false);
-                  setServerOtp('');
                   setIsFocused(false);
                 }}
                 className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
@@ -136,7 +127,6 @@ export default function ProfileLoginModal({
                   setLoginPhone('');
                   setOtpCode('');
                   setIsOtpSent(false);
-                  setServerOtp('');
                   setIsFocused(false);
                 }}
                 className={`py-2 text-center text-[9px] rounded-lg font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 ${
@@ -185,12 +175,13 @@ export default function ProfileLoginModal({
                            />
                         </div>
                         <button 
+                          id="sign-in-button-profile"
                           type="button"
                           onClick={handleSendOtpInline}
-                          disabled={authLoading || loginPhone.length !== 10 || !loginName.trim()}
+                          disabled={authLoading || loginPhone.length !== 10 || !loginName.trim() || resendTimer > 0}
                           className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
                         >
-                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
+                          {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
                         </button>
                      </div>
                   </div>
@@ -216,20 +207,20 @@ export default function ProfileLoginModal({
                            />
                         </div>
                         <button 
+                          id="sign-in-button-profile"
                           type="button"
                           onClick={handleSendOtpInline}
-                          disabled={authLoading || loginPhone.length !== 10}
+                          disabled={authLoading || loginPhone.length !== 10 || resendTimer > 0}
                           className="bg-stone-900 border border-stone-800 hover:bg-stone-850 active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider disabled:opacity-40 transition-all cursor-pointer shadow-xs inline-flex items-center justify-center min-w-[90px]"
                         >
-                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
+                          {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
                         </button>
                      </div>
                   </div>
                 </div>
               )}
 
-              {/* reCAPTCHA Container for visible web-based fallback */}
-              <div id="recaptcha-container" className="mt-2 w-full flex justify-center"></div>
+              {/* Removed recaptcha container */}
 
               {/* Password/OTP Field */}
               <div className="space-y-1 pt-1">

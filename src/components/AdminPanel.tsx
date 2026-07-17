@@ -77,9 +77,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const {
     shops, filteredShops, showAddShopModal, setShowAddShopModal,
     editingShop, setEditingShop, newShop, setNewShop,
-    isShopPhoneVerified, setIsShopPhoneVerified, shopOtpSent, setShopOtpSent,
-    shopOtpInput, setShopOtpInput, shopOtpLoading, shopOtpError,
-    confirmModal, setConfirmModal, handleSendShopOtp, handleSaveShop,
+    confirmModal, setConfirmModal, handleSaveShop,
     handleDeleteShop, handleToggleBlockShop, handleTogglePinShop
   } = useAdminShops(isAuthenticated, firebaseAuthReady, adminSelectedCityFilter, localTick);
 
@@ -309,9 +307,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         handleSaveCategory={handleSaveCategory} showAddShopModal={showAddShopModal}
         setShowAddShopModal={setShowAddShopModal} editingShop={editingShop}
         newShop={newShop} setNewShop={setNewShop} handleSaveShop={handleSaveShop}
-        isShopPhoneVerified={isShopPhoneVerified} setIsShopPhoneVerified={setIsShopPhoneVerified}
-        shopOtpSent={shopOtpSent} setShopOtpSent={setShopOtpSent} shopOtpLoading={shopOtpLoading}
-        handleSendShopOtp={handleSendShopOtp} shopOtpInput={shopOtpInput} setShopOtpInput={setShopOtpInput}
         confirmModal={confirmModal} setConfirmModal={setConfirmModal}
         handleDeleteShop={handleDeleteShop} handleToggleBlockShop={handleToggleBlockShop}
         showAdminProfileModal={showAdminProfileModal} setShowAdminProfileModal={setShowAdminProfileModal}

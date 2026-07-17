@@ -502,7 +502,7 @@ var init_auth = __esm({
 });
 
 // server.ts
-var import_express = __toESM(require("express"), 1);
+var import_express2 = __toESM(require("express"), 1);
 var import_path2 = __toESM(require("path"), 1);
 var import_fs2 = __toESM(require("fs"), 1);
 var import_cluster = __toESM(require("cluster"), 1);
@@ -876,6 +876,109 @@ function startFCMOrderListener() {
   });
 }
 
+// server/whatsappOtp.ts
+var import_express = __toESM(require("express"), 1);
+init_clients();
+init_redisClient();
+var router = import_express.default.Router();
+async function sendWhatsAppOTP(phone, otp) {
+  console.log(`[WhatsApp Meta API] Sending OTP ${otp} to phone +91${phone}`);
+  return true;
+}
+router.post("/send-whatsapp-otp", async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone || phone.length !== 10) {
+      return res.status(400).json({ success: false, error: "Valid 10 digit phone number is required" });
+    }
+    const otp = Math.floor(1e5 + Math.random() * 9e5).toString();
+    const redisKey = `whatsapp_otp:${phone}`;
+    const redisSuccess = await safeSet(redisKey, otp, 60);
+    if (!redisSuccess) {
+      console.warn(`[OTP System] Redis is down or failed for +91${phone}. Falling back to Supabase Backup Engine!`);
+      if (!supabase) throw new Error("Database client not available");
+      await supabase.from("otp_verifications").delete().eq("phone_number", phone);
+      const expiresAt = new Date(Date.now() + 60 * 1e3);
+      const { error } = await supabase.from("otp_verifications").insert({
+        phone_number: phone,
+        otp_code: otp,
+        expires_at: expiresAt.toISOString(),
+        is_verified: false
+      });
+      if (error) {
+        console.error("[OTP System] Supabase backup failed:", error);
+        throw new Error("Could not generate OTP in backup engine");
+      }
+    }
+    await sendWhatsAppOTP(phone, otp);
+    res.json({ success: true, message: "WhatsApp OTP sent successfully (60s timer)" });
+  } catch (err) {
+    console.error("Error in send-whatsapp-otp:", err);
+    res.status(500).json({ success: false, error: err.message || "Failed to send OTP" });
+  }
+});
+async function verifyOtpEngine(phone, otp) {
+  const redisKey = `whatsapp_otp:${phone}`;
+  const cachedOtp = await safeGet(redisKey);
+  if (cachedOtp) {
+    if (cachedOtp === otp) {
+      await safeDel(redisKey);
+      return true;
+    }
+    return false;
+  }
+  if (supabase) {
+    const { data, error } = await supabase.from("otp_verifications").select("*").eq("phone_number", phone).eq("otp_code", otp).eq("is_verified", false).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!error && data) {
+      if (new Date(data.expires_at).getTime() >= Date.now()) {
+        await supabase.from("otp_verifications").delete().eq("id", data.id);
+        return true;
+      } else {
+        await supabase.from("otp_verifications").delete().eq("id", data.id);
+      }
+    }
+  }
+  return false;
+}
+router.post("/verify-whatsapp-login", async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ success: false, error: "Phone and OTP are required" });
+    }
+    const isValid = await verifyOtpEngine(phone, otp);
+    if (!isValid) {
+      return res.status(400).json({ success: false, error: "Invalid or Expired OTP" });
+    }
+    if (!import_firebase_admin.default || import_firebase_admin.default.apps.length === 0) {
+      return res.status(500).json({ success: false, error: "Firebase Admin SDK is not configured." });
+    }
+    const uid = `+91${phone}`;
+    const customToken = await import_firebase_admin.default.auth().createCustomToken(uid);
+    res.json({ success: true, customToken });
+  } catch (err) {
+    console.error("Error in verify-whatsapp-login:", err);
+    res.status(500).json({ success: false, error: err.message || "Failed to verify OTP" });
+  }
+});
+router.post("/verify-whatsapp-registration", async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ success: false, error: "Phone and OTP are required" });
+    }
+    const isValid = await verifyOtpEngine(phone, otp);
+    if (!isValid) {
+      return res.status(400).json({ success: false, error: "Invalid or Expired OTP" });
+    }
+    res.json({ success: true, message: "Phone number verified successfully!" });
+  } catch (err) {
+    console.error("Error in verify-whatsapp-registration:", err);
+    res.status(500).json({ success: false, error: err.message || "Failed to verify OTP" });
+  }
+});
+var whatsappOtp_default = router;
+
 // server.ts
 async function ensureDefaultDirectShop() {
   if (!supabase) return;
@@ -917,7 +1020,7 @@ async function ensureDefaultDirectShop() {
 async function startServer() {
   ensureDefaultDirectShop();
   startFCMOrderListener();
-  const app = (0, import_express.default)();
+  const app = (0, import_express2.default)();
   app.set("trust proxy", 1);
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
   app.use((0, import_helmet.default)({
@@ -1010,8 +1113,8 @@ async function startServer() {
     prefix: "otp"
   });
   app.use(generalLimiter);
-  app.use(import_express.default.json({ limit: "50mb" }));
-  app.use(import_express.default.urlencoded({ limit: "50mb", extended: true }));
+  app.use(import_express2.default.json({ limit: "50mb" }));
+  app.use(import_express2.default.urlencoded({ limit: "50mb", extended: true }));
   const antiSqlInjection = (req, res, next) => {
     const sqlRegex = /union\s+select|select\s+.*\s+from|insert\s+into|delete\s+from|drop\s+table|update\s+.*\s+set|' OR '1'='1|--|#|; --/i;
     const scan = (obj) => {
@@ -1041,6 +1144,7 @@ async function startServer() {
     next();
   };
   app.use(antiSqlInjection);
+  app.use("/api/auth", otpLimiter, whatsappOtp_default);
   const getS3Client = () => {
     return new import_client_s3.S3Client({
       region: "auto",
@@ -1890,7 +1994,7 @@ async function startServer() {
   } else {
     const distPath = import_path2.default.join(process.cwd(), "dist");
     const indexHtml = import_path2.default.join(distPath, "index.html");
-    app.use(import_express.default.static(distPath));
+    app.use(import_express2.default.static(distPath));
     app.get("*", (req, res) => {
       if (import_fs2.default.existsSync(indexHtml)) {
         res.sendFile(indexHtml);

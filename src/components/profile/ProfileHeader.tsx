@@ -18,7 +18,6 @@ interface ProfileHeaderProps {
   setLoginPhone: (val: string) => void;
   setOtpCode: (val: string) => void;
   setIsOtpSent: (val: boolean) => void;
-  setServerOtp: (val: string) => void;
   setShowLoginModal: (val: boolean) => void;
   statsOrdersCount: number;
   statsDeliveredCount: number;
@@ -41,7 +40,6 @@ export default function ProfileHeader({
   setLoginPhone,
   setOtpCode,
   setIsOtpSent,
-  setServerOtp,
   setShowLoginModal,
   statsOrdersCount,
   statsDeliveredCount,
@@ -167,7 +165,6 @@ export default function ProfileHeader({
                         setLoginPhone('');
                         setOtpCode('');
                         setIsOtpSent(false);
-                        setServerOtp('');
                         setShowLoginModal(true);
                       }}
                       animate={{ scale: [1, 1.05, 1], boxShadow: ["0 0 0px rgba(255,255,255,0.2)", "0 0 10px rgba(255,255,255,0.6)", "0 0 0px rgba(255,255,255,0.2)"] }}

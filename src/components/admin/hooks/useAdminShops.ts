@@ -30,13 +30,7 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     pinned: false,
   });
 
-  const [isShopPhoneVerified, setIsShopPhoneVerified] = useState(false);
-  const [shopOtpSent, setShopOtpSent] = useState(false);
-  const [shopOtpInput, setShopOtpInput] = useState("");
-  const [shopOtpLoading, setShopOtpLoading] = useState(false);
-  const [shopSandboxOtp, setShopSandboxOtp] = useState<string | null>(null);
-  const [shopOtpError, setShopOtpError] = useState<string | null>(null);
-  const [shopConfirmationResult, setShopConfirmationResult] = useState<any>(null);
+  // Shop OTP logic removed as Admin creates shops directly
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -104,105 +98,7 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     });
   }, [shops, adminSelectedCityFilter]);
 
-  // Native handles popup naturally, web warmup happens inside sendOTP if needed
 
-  const handleSendShopOtp = async () => {
-    if (!newShop.ownerPhone || newShop.ownerPhone.length !== 10 || !/^[0-9]+$/.test(newShop.ownerPhone)) {
-      toast.error("Please enter a valid 10-digit mobile phone number!");
-      return;
-    }
-    setShopOtpLoading(true);
-    try {
-      const firebasePromise = new Promise<any>(async (resolve, reject) => {
-        const dispatchWebAuth = async () => {
-          try {
-            if (!document.getElementById("recaptcha-container-shop")) {
-              const newContainer = document.createElement("div");
-              newContainer.id = "recaptcha-container-shop";
-              newContainer.style.position = "fixed";
-              newContainer.style.bottom = "10px";
-              newContainer.style.right = "10px";
-              newContainer.style.width = "1px";
-              newContainer.style.height = "1px";
-              newContainer.style.opacity = "0.01";
-              newContainer.style.pointerEvents = "none";
-              document.body.appendChild(newContainer);
-            }
-            let verifier = (window as any).recaptchaVerifierShop;
-            if (!verifier) {
-              verifier = new RecaptchaVerifier(auth, "recaptcha-container-shop", { size: "invisible", callback: () => {} });
-              await verifier.render();
-              (window as any).recaptchaVerifierShop = verifier;
-            }
-            const confirmation = await signInWithPhoneNumber(auth, `+91${newShop.ownerPhone}`, verifier);
-            resolve(confirmation);
-          } catch (err) {
-            reject(err);
-          }
-        };
-
-        if (Capacitor.isNativePlatform()) {
-          try {
-            let codeSentListener: any = null;
-            let failCleanup: any = null;
-            let authStateListener: any = null;
-            const removeAllListeners = async () => {
-              try {
-                if (codeSentListener) await codeSentListener.remove().catch(() => {});
-                if (failCleanup) await failCleanup.remove().catch(() => {});
-                if (authStateListener) await authStateListener.remove().catch(() => {});
-              } catch (e) {}
-            };
-
-            authStateListener = await FirebaseAuthentication.addListener("authStateChange", async (event) => {
-              if (event.user) {
-                await removeAllListeners();
-                resolve({ isNativeAuth: true, autoVerified: true, verificationId: "auto", user: event.user });
-              }
-            });
-
-            codeSentListener = await FirebaseAuthentication.addListener("phoneCodeSent", async (event: any) => {
-              await removeAllListeners();
-              resolve({ isNativeAuth: true, verificationId: event.verificationId });
-            });
-
-            failCleanup = await FirebaseAuthentication.addListener("phoneVerificationFailed", async (event: any) => {
-              await removeAllListeners();
-              reject(event);
-            });
-
-            await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: `+91${newShop.ownerPhone}` });
-          } catch (nativeErr) {
-            console.warn("Native OTP dispatch failed, falling back to Web SDK:", nativeErr);
-            dispatchWebAuth();
-          }
-        } else {
-          dispatchWebAuth();
-        }
-      });
-
-      const confirmationResultData = await firebasePromise;
-      setShopConfirmationResult(confirmationResultData);
-      setShopOtpError(null);
-      setShopOtpSent(true);
-      if (confirmationResultData.autoVerified) {
-        toast.success("Phone number verified automatically! 🎉");
-      } else {
-        toast.success(`Secure OTP sent to +91 ${newShop.ownerPhone}! 📲`);
-      }
-    } catch (err: any) {
-      try {
-        if ((window as any).recaptchaVerifierShop) {
-          (window as any).recaptchaVerifierShop.clear();
-          (window as any).recaptchaVerifierShop = null;
-        }
-      } catch (e) {}
-      console.warn("Shop OTP dispatch failed:", err);
-      toast.error("Standard verification failed. Please try again later.");
-    } finally {
-      setShopOtpLoading(false);
-    }
-  };
 
   const handleSaveShop = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,72 +106,7 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
       toast.error("Name, owner phone and owner name are required!");
       return;
     }
-    if (!editingShop && !isShopPhoneVerified) {
-      if (!shopOtpSent) {
-        toast.error("Please verify phone number with OTP first.");
-        return;
-      }
-      setShopOtpLoading(true);
-      try {
-        let isVerified = false, clientUid = "", idToken = "";
-        if (shopConfirmationResult) {
-          try {
-            if (shopConfirmationResult.isNativeAuth) {
-              if (shopConfirmationResult.autoVerified) {
-                clientUid = shopConfirmationResult.user?.uid || "";
-              } else {
-                const userCredential = await FirebaseAuthentication.signInWithPhoneNumber({ verificationId: shopConfirmationResult.verificationId, smsCode: shopOtpInput });
-                clientUid = userCredential.user?.uid || "";
-              }
-            } else {
-              const userCredential = await shopConfirmationResult.confirm(shopOtpInput);
-              clientUid = userCredential.user.uid;
-            }
-            isVerified = true;
-          } catch (err) {
-            toast.error("Incorrect OTP! Please enter the correct 6-digit verification code. 🛑");
-            setShopOtpLoading(false);
-            return;
-          }
-        }
-        const response = await fetch(getApiUrl("/api/auth/verify-otp"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: newShop.ownerPhone,
-            otp: shopOtpInput,
-            verificationId: isVerified ? "client-verified" : (shopConfirmationResult?.verificationId || ""),
-            clientUid,
-            idToken
-          })
-        });
-        const resData = await response.json();
-        if (resData.fallbackToken) {
-          localStorage.setItem("grezto_fallback_token", resData.fallbackToken);
-          console.log("[Fallback Auth] Cryptographic fallback token stored securely (Admin shop verification).");
-        }
-        if (!response.ok || !resData.success) {
-          if (!isVerified) throw new Error(resData.error || "Invalid OTP");
-        }
-        if (resData.customToken && !isVerified) {
-          try {
-            if (Capacitor.isNativePlatform()) {
-              await FirebaseAuthentication.signInWithCustomToken({ token: resData.customToken });
-            } else {
-              await signInWithCustomToken(auth, resData.customToken);
-            }
-          } catch (e) {
-            console.warn("Fallback auth token bypass error:", e);
-          }
-        }
-        setIsShopPhoneVerified(true);
-        toast.success("Shop Phone verified securely! 🔐");
-      } catch (err: any) {
-        toast.error(err.message || "Invalid OTP Code entered! ❌");
-        setShopOtpLoading(false);
-        return;
-      }
-    }
+
 
     const targetId = editingShop ? editingShop.id : "s_" + Date.now();
     const shopData = {
@@ -307,9 +138,6 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     setShowAddShopModal(false);
     setEditingShop(null);
     setNewShop({ name: "", ownerPhone: "", ownerName: "", category: "", defaultCategory: "", address: "", status: "active", type: "grocery", imageUrl: "", rating: "1.0", ratingCount: 0, lat: 26.1522, lng: 91.7602, pinned: false });
-    setIsShopPhoneVerified(false);
-    setShopOtpSent(false);
-    setShopOtpInput("");
 
     try {
       if (supabase) {
@@ -453,17 +281,8 @@ export function useAdminShops(isAuthenticated: boolean, firebaseAuthReady: boole
     setEditingShop,
     newShop,
     setNewShop,
-    isShopPhoneVerified,
-    setIsShopPhoneVerified,
-    shopOtpSent,
-    setShopOtpSent,
-    shopOtpInput,
-    setShopOtpInput,
-    shopOtpLoading,
-    shopOtpError,
     confirmModal,
     setConfirmModal,
-    handleSendShopOtp,
     handleSaveShop,
     handleDeleteShop,
     handleToggleBlockShop,

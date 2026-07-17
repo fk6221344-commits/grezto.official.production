@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 
 // Advanced Environmental Injections (The Zero-Footprint Method)
 // Under production/release builds, tree-shaking completely erases development URLs.
-export const LOCAL_DEV_URL = import.meta.env.PROD ? "" : "http://10.0.2.2:3000";
+export const LOCAL_DEV_URL = import.meta.env.PROD ? "" : "http://127.0.0.1:3000";
 
 // Securely obfuscated base64 payload to prevent plain string scraping in release APKs
 const SECURE_OBFUSCATED_LIVE_URL = "aHR0cHM6Ly9hcGkuZ3JlenRvLmNvbQ=="; // Decodes to "https://api.grezto.com"
