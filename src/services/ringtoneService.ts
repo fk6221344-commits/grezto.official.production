@@ -5,6 +5,7 @@
  */
 
 import { startContinuousCallVibration, stopContinuousCallVibration } from './nativeService';
+import { clearAllNativeNotifications } from './notifications';
 
 interface RingtoneOptions {
   volume?: number;
@@ -17,6 +18,7 @@ let globalAudioCtx: AudioContext | null = null;
 let lastPlayTime = 0;
 let lastRiderPlayTime = 0;
 let activeOscillators: OscillatorNode[] = [];
+let isAcceptingOrderLock = false; // Lock to prevent race conditions during acceptance
 
 /**
  * Lazy initializer for AudioContext to conform to browser autoplay security policies.
@@ -179,6 +181,7 @@ export function unlockNotificationAudio() {
  * Starts a recurring loop for our high-priority order alarm sound.
  */
 export function startAlertAlarmLoop() {
+  if (isAcceptingOrderLock) return; // Prevent race conditions
   if (activeInterval) {
     // Alarm loop is already active, do not start another one
     return;
@@ -202,14 +205,22 @@ export function startAlertAlarmLoop() {
 /**
  * Stops any active order alarm sounds.
  */
-export function stopAlertAlarmLoop() {
+export function stopAlertAlarmLoop(permanentlyLockForAcceptance = false) {
+  if (permanentlyLockForAcceptance) {
+    isAcceptingOrderLock = true;
+    setTimeout(() => { isAcceptingOrderLock = false; }, 3000); // 3 seconds lock to swallow late real-time updates
+  }
+
   stopContinuousCallVibration();
+  clearAllNativeNotifications(); // 🧹 MAGIC: Clear push notification from tray instantly!
+
   if (activeInterval) {
     clearInterval(activeInterval);
     activeInterval = null;
   }
   
   // IMMEDIATELY kill all currently playing audio nodes so they don't finish their chime
+  // and prevent memory leaks and "heavy" app behavior.
   activeOscillators.forEach(osc => {
     try {
       osc.stop();
@@ -303,6 +314,7 @@ export function playRiderSirenSound(options: RingtoneOptions = {}) {
  * Starts a recurring loop for our high-priority RIDER alarm sound.
  */
 export function startRiderAlertAlarmLoop() {
+  if (isAcceptingOrderLock) return; // Prevent race conditions
   if (activeRiderInterval) {
     return;
   }
@@ -323,8 +335,15 @@ export function startRiderAlertAlarmLoop() {
 /**
  * Stops any active RIDER alarm sounds.
  */
-export function stopRiderAlertAlarmLoop() {
+export function stopRiderAlertAlarmLoop(permanentlyLockForAcceptance = false) {
+  if (permanentlyLockForAcceptance) {
+    isAcceptingOrderLock = true;
+    setTimeout(() => { isAcceptingOrderLock = false; }, 3000);
+  }
+
   stopContinuousCallVibration();
+  clearAllNativeNotifications(); // 🧹 Clear push notifications for rider too!
+
   if (activeRiderInterval) {
     clearInterval(activeRiderInterval);
     activeRiderInterval = null;

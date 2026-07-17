@@ -20,7 +20,8 @@ export {
   startAlertAlarmLoop,
   stopAlertAlarmLoop,
   startRiderAlertAlarmLoop,
-  stopRiderAlertAlarmLoop
+  stopRiderAlertAlarmLoop,
+  clearAllNativeNotifications
 };
 
 
@@ -117,6 +118,22 @@ export function sendNativePushNotification(title: string, body: string, onClick?
     } catch (e) {
       // Background worker failures safely ignored
       console.warn("Native Notification trigger skipped or unsupported:", e);
+    }
+  }
+}
+
+/**
+ * Instantly clears all active/delivered native notifications from the device's tray.
+ * Used when an order is accepted to clean up the screen.
+ */
+export async function clearAllNativeNotifications() {
+  if (isNativePlatform()) {
+    try {
+      // Remove all visible notifications from the OS tray
+      await LocalNotifications.removeAllDeliveredNotifications();
+      console.log("🧹 Native notifications cleared.");
+    } catch (e) {
+      console.warn("Failed to clear native notifications:", e);
     }
   }
 }

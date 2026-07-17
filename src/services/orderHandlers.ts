@@ -37,7 +37,7 @@ export const createOrderHandlers = ({
       }
 
       // Instantly stop the audio loop, dismiss active order, and close modal
-      stopAlertAlarmLoop();
+      stopAlertAlarmLoop(true); // lock to true prevents race conditions
       setIncomingOrderAlert(null);
       setShowOrderModal(false);
 
@@ -82,7 +82,7 @@ export const createOrderHandlers = ({
       }
 
       // Instantly stop the alert ringtone, dismiss active alert, and close modal
-      stopAlertAlarmLoop();
+      stopAlertAlarmLoop(true); // true prevents race conditions
       setIncomingOrderAlert(null);
       setShowOrderModal(false);
 

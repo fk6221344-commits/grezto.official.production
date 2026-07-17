@@ -154,6 +154,9 @@ export function useRiderOrders({
 
   // 4. Global Rider Acceptance Action handler
   const handleGlobalAcceptOrder = async (orderId: string, onAcceptSuccess?: () => void) => {
+    // 🧹 Instantly stop the siren ringtone and clear native OS push notifications
+    stopRiderAlertAlarmLoop(true);
+
     // Save locally instantly to hide from UI
     setRecentlyAcceptedIds(prev => [...prev, orderId]);
     setGlobalIncomingRiderOrders(prev => prev.filter(o => o.id !== orderId));

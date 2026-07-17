@@ -883,7 +883,45 @@ init_redisClient();
 var router = import_express.default.Router();
 async function sendWhatsAppOTP(phone, otp) {
   console.log(`[WhatsApp Meta API] Sending OTP ${otp} to phone +91${phone}`);
-  return true;
+  const token = process.env.WHATSAPP_CLOUD_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneId) {
+    console.warn("\u26A0\uFE0F WhatsApp tokens missing in .env! Simulating OTP send...");
+    return true;
+  }
+  const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`;
+  const body = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: `91${phone}`,
+    type: "text",
+    text: {
+      preview_url: false,
+      body: `Your Grezto verification code is: *${otp}*
+
+Please do not share this code with anyone.`
+    }
+  };
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("[WhatsApp Meta API] Error response:", data);
+      throw new Error(data.error?.message || "Failed to send WhatsApp message");
+    }
+    console.log("[WhatsApp Meta API] Message sent successfully!", data.messages?.[0]?.id);
+    return true;
+  } catch (err) {
+    console.error("[WhatsApp Meta API] Exception:", err);
+    throw err;
+  }
 }
 router.post("/send-whatsapp-otp", async (req, res) => {
   try {
@@ -1031,6 +1069,8 @@ async function startServer() {
   const allowedOrigins = [
     "http://localhost",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1",
     "http://localhost:5173",
     "https://localhost",
     "https://localhost:3000",
