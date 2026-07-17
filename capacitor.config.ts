@@ -10,7 +10,6 @@ const config: CapacitorConfig = {
   // We specify secure navigation rules to let the native Android app communicate seamlessly with
   // the live Railway Backend, Google Cloud Run endpoints, and secure Vercel microservices.
   server: {
-    url: 'http://127.0.0.1:3000',
     cleartext: true,
     androidScheme: 'https',
     allowNavigation: [
