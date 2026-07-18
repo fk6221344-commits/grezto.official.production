@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { SplashScreen } from '@capacitor/splash-screen';
-import logoImage from '../assets/grezto_logo.jpeg';
+import { logoBase64 } from '../assets/logo_base64';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function Splash({ onFinish }: { onFinish: () => void; key?: React
         className="w-32 h-32 bg-[#fffdfa] rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl shadow-red-950/20 border-2 border-red-900/10"
       >
         <img 
-          src={logoImage}
+          src={logoBase64}
           alt="Grezto Logo" 
           className="w-full h-full object-cover"
         />

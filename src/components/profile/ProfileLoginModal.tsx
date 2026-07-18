@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { logoBase64 } from '../../assets/logo_base64';
 
 interface ProfileLoginModalProps {
   showLoginModal: boolean;
@@ -86,8 +87,8 @@ export default function ProfileLoginModal({
               <div className="relative w-14 h-14 mb-2.5 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#0f9f6e] via-amber-400 via-orange-500 to-rose-600 animate-spin opacity-85" style={{ animationDuration: '4s' }} />
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#0f9f6e] to-rose-600 blur-md opacity-35 animate-pulse" />
-                <div className="absolute inset-[3px] bg-white rounded-full flex items-center justify-center z-10 shadow-inner">
-                  <span className="text-lg">🌿</span>
+                <div className="absolute inset-[3px] bg-white rounded-full flex items-center justify-center z-10 shadow-inner overflow-hidden">
+                   <img src={logoBase64} alt="Grezto Logo" className="w-full h-full object-cover" />
                 </div>
               </div>
 
