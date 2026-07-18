@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        registerPlugin(GreztoNativePlugin.class);
         
         // Turn screen on and show when locked
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

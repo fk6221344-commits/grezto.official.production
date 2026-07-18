@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FirebaseCrashlytics } from '@capacitor-firebase/crashlytics';
@@ -12,6 +12,11 @@ import { supabase } from './supabase';
 export const isNativePlatform = () => {
   return Capacitor.isNativePlatform();
 };
+
+export interface GreztoNativePlugin {
+  stopOrderRingService(): Promise<void>;
+}
+const GreztoNative = registerPlugin<GreztoNativePlugin>('GreztoNative');
 
 /**
  * -------------------
@@ -90,6 +95,16 @@ export const stopContinuousCallVibration = () => {
   if (longVibrationInterval) {
     clearInterval(longVibrationInterval);
     longVibrationInterval = null;
+  }
+
+  // FORCE STOP NATIVE BACKGROUND FOREGROUND SERVICE (OrderRingService)
+  if (isNativePlatform()) {
+    try {
+      GreztoNative.stopOrderRingService();
+      console.log("🛑 Native Bridge: OrderRingService completely stopped!");
+    } catch (e) {
+      console.warn("Failed to stop OrderRingService via Native Bridge", e);
+    }
   }
 };
 
