@@ -2,7 +2,7 @@ import React from 'react';
 import { supabase } from './supabase';
 
 interface OrderHandlerParams {
-  stopAlertAlarmLoop: () => void;
+  stopAlertAlarmLoop: (lock?: boolean) => void;
   setIncomingOrderAlert: (order: any) => void;
   setShowOrderModal: (show: boolean) => void;
   user: any;

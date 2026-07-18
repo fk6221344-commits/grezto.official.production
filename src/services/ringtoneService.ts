@@ -14,6 +14,7 @@ interface RingtoneOptions {
 
 let activeInterval: any = null;
 let activeRiderInterval: any = null;
+let isAcceptingOrderLock = false;
 // AudioContext and Web Audio synthesis have been removed to prioritize Native Push Notification sounds.
 
 /**
