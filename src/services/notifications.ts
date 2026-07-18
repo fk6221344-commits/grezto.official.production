@@ -84,7 +84,7 @@ export function sendNativePushNotification(title: string, body: string, onClick?
               clickAction: true
             },
             schedule: { at: new Date(Date.now() + 10) },
-            channelId: 'grezto_order_channel_v4' // Link to High Importance channel v4
+            channelId: 'grezto_order_channel_v5' // Updated to match v5 in nativeService
           }
         ]
       }).then(() => {
@@ -132,14 +132,27 @@ export function sendNativePushNotification(title: string, body: string, onClick?
 export async function clearAllNativeNotifications() {
   if (isNativePlatform()) {
     try {
+      // 1. Cancel known ones
       if (activeLocalNotificationIds.length > 0) {
         await LocalNotifications.cancel({ notifications: activeLocalNotificationIds.map(id => ({ id })) });
         activeLocalNotificationIds = [];
       }
-      // Remove all visible notifications from the OS tray
+      
+      // 2. Vigorously fetch all currently delivered (visible/ringing) notifications from the OS
+      // and explicitly cancel them by ID. This ensures that even if JS state was reset (e.g. app cold start),
+      // we still find the ringing notification and forcefully kill it so the sound stops.
+      const delivered = await LocalNotifications.getDeliveredNotifications();
+      if (delivered && delivered.notifications && delivered.notifications.length > 0) {
+        await LocalNotifications.cancel({ 
+          notifications: delivered.notifications.map(n => ({ id: n.id })) 
+        });
+        await LocalNotifications.removeDeliveredNotifications(delivered);
+      }
+
+      // 3. Fallback: ask OS to clear all from tray
       await LocalNotifications.removeAllDeliveredNotifications();
       await PushNotifications.removeAllDeliveredNotifications();
-      console.log("🧹 Native notifications cleared.");
+      console.log("🧹 Native notifications forcefully cleared & sound stopped.");
     } catch (e) {
       console.warn("Failed to clear native notifications:", e);
     }
