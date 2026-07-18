@@ -530,7 +530,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: "100%" }}
                       transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                      className="fixed inset-0 z-50 bg-white flex justify-center overflow-y-auto"
+                      className="fixed inset-0 z-[9999] bg-white flex justify-center overflow-y-auto"
                     >
                       <div className="w-full max-w-none lg:max-w-5xl bg-white min-h-screen">
                         <Checkout 
@@ -555,7 +555,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                      className="fixed inset-0 z-50 bg-white flex justify-center overflow-y-auto"
+                      className="fixed inset-0 z-[9999] bg-white flex justify-center overflow-y-auto"
                     >
                       <div className="w-full max-w-none lg:max-w-5xl bg-white min-h-screen">
                         <OrderSuccess 
@@ -580,7 +580,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.22 }}
-                      className="fixed inset-0 z-50 bg-[#f8fafc] flex justify-center"
+                      className="fixed inset-0 z-[9999] bg-[#f8fafc] flex justify-center"
                     >
                       <motion.div 
                         initial={{ opacity: 0, y: 24 }}
@@ -608,7 +608,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.22 }}
-                      className="fixed inset-0 z-50 bg-slate-50 flex justify-center"
+                      className="fixed inset-0 z-[9999] bg-slate-50 flex justify-center"
                     >
                       <motion.div 
                         initial={{ opacity: 0, y: 24 }}
@@ -640,7 +640,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.22 }}
-                      className="fixed inset-0 z-50 bg-slate-50 flex justify-center"
+                      className="fixed inset-0 z-[9999] bg-slate-50 flex justify-center"
                     >
                       <motion.div 
                         initial={{ opacity: 0, y: 24 }}
@@ -664,7 +664,7 @@ function MainAppLayout() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.22 }}
-                      className="fixed inset-0 z-50 bg-slate-50 flex justify-center overflow-hidden"
+                      className="fixed inset-0 z-[9999] bg-slate-50 flex justify-center overflow-hidden"
                     >
                       <motion.div 
                         initial={{ opacity: 0, y: 24 }}

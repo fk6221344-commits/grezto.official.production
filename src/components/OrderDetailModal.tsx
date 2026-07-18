@@ -109,7 +109,20 @@ export default function OrderDetailModal({ order, onClose, onUpdateStatus }: Ord
 
             <div className="bg-white rounded-3xl border border-gray-100/80 p-4 space-y-3.5 shadow-sm">
               {(() => {
-                const orderItemsList = order.items && typeof order.items[0] === 'object' ? order.items : (order.fullItems || []);
+                let parsedItems = order.items;
+                if (typeof parsedItems === 'string') {
+                  try { parsedItems = JSON.parse(parsedItems); } catch(e) { parsedItems = []; }
+                }
+                if (!Array.isArray(parsedItems)) parsedItems = [];
+
+                let parsedFullItems = order.fullItems;
+                if (typeof parsedFullItems === 'string') {
+                  try { parsedFullItems = JSON.parse(parsedFullItems); } catch(e) { parsedFullItems = []; }
+                }
+                if (!Array.isArray(parsedFullItems)) parsedFullItems = [];
+
+                const orderItemsList = parsedItems.length > 0 && typeof parsedItems[0] === 'object' ? parsedItems : parsedFullItems;
+                
                 return orderItemsList.length > 0 ? (
                 orderItemsList.map((item: any, idx: number) => (
                   <div key={idx} className="flex justify-between items-center text-xs">
@@ -128,7 +141,7 @@ export default function OrderDetailModal({ order, onClose, onUpdateStatus }: Ord
                   </div>
                 ))
               ) : (
-                order.items?.map((item: string, idx: number) => typeof item === 'string' && (
+                parsedItems.map((item: any, idx: number) => typeof item === 'string' && (
                   <div key={idx} className="flex justify-between items-center text-xs">
                     <div className="flex items-center space-x-2">
                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>

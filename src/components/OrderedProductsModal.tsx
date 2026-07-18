@@ -71,27 +71,35 @@ export default function OrderedProductsModal({ isOpen, onClose, items, totalAmou
                   }
                 `}</style>
                 <div className="no-scrollbar space-y-3">
-                  {items && items.length > 0 ? (
-                    items.map((item, idx) => (
-                      <div key={idx} className="border border-slate-200 rounded-2xl p-4 flex justify-between items-center bg-white shadow-xs">
-                        <div>
-                          <p className="text-[14px] font-black text-slate-950 leading-tight">
-                            {typeof item === 'object' ? item.name : item}
-                          </p>
-                          <div className="mt-2.5">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
-                              Quantity: {typeof item === 'object' ? (item.quantity || 1) : 1}
-                            </span>
+                  {(() => {
+                    let parsedItems = items;
+                    if (typeof parsedItems === 'string') {
+                      try { parsedItems = JSON.parse(parsedItems); } catch(e) { parsedItems = []; }
+                    }
+                    if (!Array.isArray(parsedItems)) parsedItems = [];
+                    
+                    return parsedItems.length > 0 ? (
+                      parsedItems.map((item, idx) => (
+                        <div key={idx} className="border border-slate-200 rounded-2xl p-4 flex justify-between items-center bg-white shadow-xs">
+                          <div>
+                            <p className="text-[14px] font-black text-slate-950 leading-tight">
+                              {typeof item === 'object' ? item.name : item}
+                            </p>
+                            <div className="mt-2.5">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
+                                Quantity: {typeof item === 'object' ? (item.quantity || 1) : 1}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-[14px] font-black text-slate-950">
+                            ₹{typeof item === 'object' ? ((item.price || 0) * (item.quantity || 1)) : 0}
                           </div>
                         </div>
-                        <div className="text-[14px] font-black text-slate-950">
-                          ₹{typeof item === 'object' ? ((item.price || 0) * (item.quantity || 1)) : 0}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center text-[11px] font-bold text-slate-400 py-4 uppercase tracking-wider">No items found.</p>
-                  )}
+                      ))
+                    ) : (
+                      <p className="text-center text-[11px] font-bold text-slate-400 py-4 uppercase tracking-wider">No items found.</p>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex justify-between items-center border-t border-slate-200 pt-5 mt-1">

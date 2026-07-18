@@ -55,10 +55,7 @@ export function getBaseApiUrl(): string {
   }
 
   // Web Browser environment
-  // We MUST return an empty string for web browsers (like AI Studio previews or Vercel hosting)
-  // so that fetches are made relative to the current active origin, preventing Mixed Content blocks
-  // and ensuring the reverse proxy routes them correctly.
-  return "";
+  return "https://api.grezto.com";
 }
 
 /**

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useUser } from './UserContext';
-import { supabase } from '../services/supabase';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, ShoppingBag, X, Lock } from 'lucide-react';
@@ -161,7 +161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Real-time Supabase postgres change subscription to handle out-of-stock and deletion instantly
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !isSupabaseConfigured()) return;
 
     const channel = supabase.channel('realtime_products_cart_sync')
       .on(
@@ -250,14 +250,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     fetchShops();
 
-    const sub = supabase.channel('cart_shops_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shops' }, () => {
-        fetchShops();
-      })
-      .subscribe();
+    let sub: any;
+    if (isSupabaseConfigured()) {
+      sub = supabase.channel('cart_shops_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'shops' }, () => {
+          fetchShops();
+        })
+        .subscribe();
+    }
 
     return () => {
-      sub.unsubscribe();
+      if (sub) sub.unsubscribe();
     };
   }, []);
 

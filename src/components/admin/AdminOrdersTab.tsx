@@ -142,24 +142,54 @@ export default function AdminOrdersTab({
            {isHistory ? "No history found" : "No orders yet"}
         </div>
       ) : (
-        displayedOrders.map((order) => (
-          <OrderAdminCard 
-            key={order.id}
-            id={order.id}
-            name={order.customerName} 
-            amount={order.totalAmount || order.amount} 
-            status={order.status} 
-            items={order.items && typeof order.items[0] === 'object' ? order.items.map((i: any) => `${i.quantity || 1}x ${i.name} [${i.shopName || 'Grezto Shop'}]`) : (order.fullItems ? order.fullItems.map((i: any) => `${i.quantity || 1}x ${i.name} [${i.shopName || 'Grezto Shop'}]`) : (order.items?.map((i: any) => typeof i === 'string' ? i : i.name) || []))} 
-            phone={order.phone}
-            address={order.address}
-            partnerPhone={order.partnerPhone}
-            partnerName={order.partnerName}
-            riders={riders}
-            busyRiders={busyRiders}
-            onUpdateStatus={(status: string, riderDetail?: any) => updateOrderStatus(order.id, status, riderDetail)}
-            rawOrder={order}
-          />
-        ))
+        displayedOrders.map((order) => {
+          let parsedItems = order.items;
+          if (typeof parsedItems === 'string') {
+            try {
+              parsedItems = JSON.parse(parsedItems);
+            } catch (e) {
+              parsedItems = [];
+            }
+          }
+          if (!Array.isArray(parsedItems)) parsedItems = [];
+          
+          let parsedFullItems = order.fullItems;
+          if (typeof parsedFullItems === 'string') {
+            try {
+              parsedFullItems = JSON.parse(parsedFullItems);
+            } catch (e) {
+              parsedFullItems = [];
+            }
+          }
+          
+          let itemsList: string[] = [];
+          if (parsedItems.length > 0 && typeof parsedItems[0] === 'object') {
+            itemsList = parsedItems.map((i: any) => `${i.quantity || 1}x ${i.name} [${i.shopName || 'Grezto Shop'}]`);
+          } else if (Array.isArray(parsedFullItems) && parsedFullItems.length > 0) {
+            itemsList = parsedFullItems.map((i: any) => `${i.quantity || 1}x ${i.name} [${i.shopName || 'Grezto Shop'}]`);
+          } else {
+            itemsList = parsedItems.map((i: any) => typeof i === 'string' ? i : i.name);
+          }
+
+          return (
+            <OrderAdminCard 
+              key={order.id}
+              id={order.id}
+              name={order.customerName} 
+              amount={order.totalAmount || order.amount} 
+              status={order.status} 
+              items={itemsList} 
+              phone={order.phone}
+              address={order.address}
+              partnerPhone={order.partnerPhone}
+              partnerName={order.partnerName}
+              riders={riders}
+              busyRiders={busyRiders}
+              onUpdateStatus={(status: string, riderDetail?: any) => updateOrderStatus(order.id, status, riderDetail)}
+              rawOrder={order}
+            />
+          );
+        })
       )}
 
       {hasMoreHistory && (

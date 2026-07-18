@@ -140,7 +140,7 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
               riderProfile?.status === 'Online'
                 ? 'bg-[#0f5132] text-white border-[#0a3622] shadow-md shadow-[#0f5132]/20'
                 : 'bg-white text-slate-600 border-slate-300'
-            }`}
+            } ${updatingDuty ? 'opacity-80' : ''}`}
           >
             <div className="flex items-center justify-between w-full">
               <span className={`text-[7px] font-black uppercase tracking-widest ${
@@ -159,17 +159,24 @@ export const RiderHeader: React.FC<RiderHeaderProps> = ({
                 />
               </div>
             </div>
-            <div className="mt-2">
-              <p className={`text-[12px] font-black leading-none transition-colors duration-200 metric-box-text ${
-                riderProfile?.status === 'Online' ? 'text-white' : 'text-slate-700'
-              }`}>
-                {updatingDuty ? '...' : riderProfile?.status === 'Online' ? 'Online' : 'Offline'}
-              </p>
-              <p className={`text-[5px] font-bold uppercase tracking-widest mt-1.5 leading-none ${
-                riderProfile?.status === 'Online' ? 'text-[#86b7fe]' : 'text-slate-400'
-              }`}>
-                Tap to Toggle
-              </p>
+            <div className="mt-2 flex items-center justify-between">
+              <div>
+                <p className={`text-[12px] font-black leading-none transition-colors duration-200 metric-box-text ${
+                  riderProfile?.status === 'Online' ? 'text-white' : 'text-slate-700'
+                }`}>
+                  {updatingDuty ? 'Updating...' : riderProfile?.status === 'Online' ? 'Online' : 'Offline'}
+                </p>
+                <p className={`text-[5px] font-bold uppercase tracking-widest mt-1.5 leading-none ${
+                  riderProfile?.status === 'Online' ? 'text-[#86b7fe]' : 'text-slate-400'
+                }`}>
+                  Tap to Toggle
+                </p>
+              </div>
+              {updatingDuty && (
+                <div className={`w-3 h-3 border-2 border-t-transparent rounded-full animate-spin shrink-0 ${
+                  riderProfile?.status === 'Online' ? 'border-white/80' : 'border-slate-400'
+                }`}></div>
+              )}
             </div>
           </button>
 

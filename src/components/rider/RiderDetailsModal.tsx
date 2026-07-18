@@ -48,7 +48,14 @@ export const RiderDetailsModal: React.FC<RiderDetailsModalProps> = ({
                     <div className="flex items-start gap-2.5 bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl text-slate-700 mx-2">
                       <span className="text-sm mt-0.5">📦</span>
                       <p className="text-[11px] font-bold leading-normal font-sans">
-                        {selectedOrder.items?.map((i: any) => typeof i === 'string' ? i : i.name).join(', ') || 'Standard Package Item'}
+                        {(() => {
+                          let parsedItems = selectedOrder.items;
+                          if (typeof parsedItems === 'string') {
+                            try { parsedItems = JSON.parse(parsedItems); } catch(e) { parsedItems = []; }
+                          }
+                          if (!Array.isArray(parsedItems)) parsedItems = [];
+                          return parsedItems.map((i: any) => typeof i === 'string' ? i : i.name).join(', ') || 'Standard Package Item';
+                        })()}
                       </p>
                     </div>
                   );

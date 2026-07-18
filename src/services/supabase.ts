@@ -73,7 +73,7 @@ const supabaseProxyHandler: ProxyHandler<any> = {
         };
       };
     }
-    
+
     const value = Reflect.get(activeSupabaseClient, prop, receiver);
     if (typeof value === 'function') {
       return value.bind(activeSupabaseClient);

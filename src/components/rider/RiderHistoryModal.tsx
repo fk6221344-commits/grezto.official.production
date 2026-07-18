@@ -333,7 +333,14 @@ export default function RiderHistoryModal({
                                           <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-650 bg-slate-50 p-3 rounded-xl border border-slate-100">
                                             <span className="text-sm">🍲</span>
                                             <span className="line-clamp-2">
-                                              {order.items?.map((i: any) => typeof i === 'string' ? i : i.name).join(', ') || 'Standard Package'}
+                                              {(() => {
+                                                let parsedItems = order.items;
+                                                if (typeof parsedItems === 'string') {
+                                                  try { parsedItems = JSON.parse(parsedItems); } catch(e) { parsedItems = []; }
+                                                }
+                                                if (!Array.isArray(parsedItems)) parsedItems = [];
+                                                return parsedItems.map((i: any) => typeof i === 'string' ? i : i.name).join(', ') || 'Standard Package';
+                                              })()}
                                             </span>
                                           </div>
                                         );

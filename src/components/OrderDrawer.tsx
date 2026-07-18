@@ -101,7 +101,14 @@ export default function OrderTrackingDrawer({ onClose }: { onClose: () => void }
                 
                 <div className="space-y-1">
                   <p className="text-[11px] text-gray-500 line-clamp-1 italic">
-                    {order.items?.map((i: any) => typeof i === 'string' ? i : i.name).join(', ')}
+                    {(() => {
+                      let parsedItems = order.items;
+                      if (typeof parsedItems === 'string') {
+                        try { parsedItems = JSON.parse(parsedItems); } catch(e) { parsedItems = []; }
+                      }
+                      if (!Array.isArray(parsedItems)) parsedItems = [];
+                      return parsedItems.map((i: any) => typeof i === 'string' ? i : i.name).join(', ') || 'Standard Package';
+                    })()}
                   </p>
                   <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Ordered recently</p>
                 </div>

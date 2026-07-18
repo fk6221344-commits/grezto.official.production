@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { auth } from '../services/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 
@@ -102,10 +102,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     checkRole();
     
-    sub = supabase.channel('user_role_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team', filter: `phone=eq.${cleaned}` }, () => {
-        checkRole();
-      }).subscribe();
+    if (isSupabaseConfigured()) {
+      sub = supabase.channel('user_role_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'team', filter: `phone=eq.${cleaned}` }, () => {
+          checkRole();
+        }).subscribe();
+    }
 
     return () => {
       if (sub) sub.unsubscribe();
@@ -285,15 +287,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     fetchShopRole();
 
-    subShops = supabase.channel('shop_role_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shops' }, () => {
-        fetchShopRole();
-      }).subscribe();
-      
-    subTeam = supabase.channel('team_role_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team', filter: `phone=eq.${cleaned}` }, () => {
-        fetchShopRole();
-      }).subscribe();
+    if (isSupabaseConfigured()) {
+      subShops = supabase.channel('shop_role_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'shops' }, () => {
+          fetchShopRole();
+        }).subscribe();
+        
+      subTeam = supabase.channel('team_role_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'team', filter: `phone=eq.${cleaned}` }, () => {
+          fetchShopRole();
+        }).subscribe();
+    }
 
     return () => {
       if (subShops) subShops.unsubscribe();
@@ -468,11 +472,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     fetchCities();
     
-    sub = supabase.channel('cities_sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cities' }, async () => {
-         const { data } = await supabase.from('cities').select('*');
-         if (data) setCities(data);
-      }).subscribe();
+    if (isSupabaseConfigured()) {
+      sub = supabase.channel('cities_sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'cities' }, async () => {
+           const { data } = await supabase.from('cities').select('*');
+           if (data) setCities(data);
+        }).subscribe();
+    }
 
     return () => {
       if (sub) sub.unsubscribe();
