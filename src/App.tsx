@@ -22,12 +22,12 @@ import OrdersView from './components/OrdersView';
 import Profile from './components/Profile';
 import Checkout from './components/Checkout';
 import OrderSuccess from './components/OrderSuccess';
-import AdminPanel from './components/AdminPanel';
-import MerchantPanel from './components/MerchantPanel';
-import AdminAnalytics from './components/AdminAnalytics';
-import MerchantCalculation from './components/MerchantCalculation';
-import RiderConsole from './components/RiderConsole';
-import RiderManagement from './components/RiderManagement';
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const MerchantPanel = React.lazy(() => import('./components/MerchantPanel'));
+const AdminAnalytics = React.lazy(() => import('./components/AdminAnalytics'));
+const MerchantCalculation = React.lazy(() => import('./components/MerchantCalculation'));
+const RiderConsole = React.lazy(() => import('./components/RiderConsole'));
+const RiderManagement = React.lazy(() => import('./components/RiderManagement'));
 import BottomNav from './components/BottomNav';
 import OrderDetailModal from './components/OrderDetailModal';
 import AdminOrderOverlay from './components/admin/AdminOrderOverlay';
@@ -588,7 +588,7 @@ function MainAppLayout() {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                         className="w-full max-w-none lg:max-w-5xl bg-[#f8fafc] h-full overflow-y-auto flex flex-col relative"
                       >
-                        <AdminPanel onClose={() => setShowAdmin(false)} />
+                        <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><AdminPanel onClose={() => setShowAdmin(false)} /></React.Suspense>
                       </motion.div>
                     </motion.div>
                   )}
@@ -612,13 +612,15 @@ function MainAppLayout() {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                         className="w-full max-w-none lg:max-w-5xl bg-slate-50 h-full overflow-y-auto flex flex-col relative"
                       >
-                        <MerchantPanel 
-                          shop={activeMerchantShop} 
-                          onClose={() => {
-                            setShowMerchant(false);
-                            setActiveMerchantShop(null);
-                          }} 
-                        />
+                        <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}>
+                          <MerchantPanel 
+                            shop={activeMerchantShop} 
+                            onClose={() => {
+                              setShowMerchant(false);
+                              setActiveMerchantShop(null);
+                            }} 
+                          />
+                        </React.Suspense>
                       </motion.div>
                     </motion.div>
                   )}
@@ -642,7 +644,7 @@ function MainAppLayout() {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                         className="w-full max-w-none lg:max-w-5xl bg-slate-50 h-full flex flex-col relative overflow-hidden"
                       >
-                        <RiderConsole onClose={() => setShowRider(false)} initialProfile={globalRiderProfile} />
+                        <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><RiderConsole onClose={() => setShowRider(false)} initialProfile={globalRiderProfile} /></React.Suspense>
                       </motion.div>
                     </motion.div>
                   )}
@@ -666,7 +668,7 @@ function MainAppLayout() {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                         className="w-full max-w-none lg:max-w-5xl bg-slate-50 h-full flex flex-col relative"
                       >
-                        <RiderManagement onClose={() => setShowRiderManagement(false)} />
+                        <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><RiderManagement onClose={() => setShowRiderManagement(false)} /></React.Suspense>
                       </motion.div>
                     </motion.div>
                   )}
@@ -695,14 +697,14 @@ function MainAppLayout() {
                 {/* Admin Analytics Modal overlay */}
                 <AnimatePresence>
                   {showAnalyticsModal && (
-                    <AdminAnalytics onClose={() => setShowAnalyticsModal(false)} />
+                    <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><AdminAnalytics onClose={() => setShowAnalyticsModal(false)} /></React.Suspense>
                   )}
                 </AnimatePresence>
 
                 {/* Merchant Ledger calculator overlay */}
                 <AnimatePresence>
                   {showMerchantCalculationModal && userShop && (
-                    <MerchantCalculation shop={userShop} onClose={() => setShowMerchantCalculationModal(false)} />
+                    <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><MerchantCalculation shop={userShop} onClose={() => setShowMerchantCalculationModal(false)} /></React.Suspense>
                   )}
                 </AnimatePresence>
 
