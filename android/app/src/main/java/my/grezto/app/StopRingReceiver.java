@@ -18,5 +18,10 @@ public class StopRingReceiver extends BroadcastReceiver {
         if (notificationManager != null) {
             notificationManager.cancel(1001);
         }
+
+        // Launch the app
+        Intent activityIntent = new Intent(context, MainActivity.class);
+        activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity(activityIntent);
     }
 }

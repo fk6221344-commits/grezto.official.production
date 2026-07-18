@@ -80,6 +80,7 @@ public class OrderRingService extends Service {
         // The intent that fires when tapping the notification banner OR the Accept button
         Intent fullScreenIntent = new Intent(this, MainActivity.class);
         fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        fullScreenIntent.putExtra("stop_ring", true);
         PendingIntent pendingIntentFlags = PendingIntent.getActivity(
             this,
             0,

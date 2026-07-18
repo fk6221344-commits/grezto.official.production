@@ -59,6 +59,12 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // Check if launched from notification tap
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("stop_ring", false)) {
+            stopOrderRingService();
+        }
     }
 
     @Override
@@ -70,6 +76,9 @@ public class MainActivity extends BridgeActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (intent != null && intent.getBooleanExtra("stop_ring", false)) {
+            stopOrderRingService();
+        }
     }
 
     private void stopOrderRingService() {
