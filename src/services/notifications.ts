@@ -20,12 +20,12 @@ export {
   startAlertAlarmLoop,
   stopAlertAlarmLoop,
   startRiderAlertAlarmLoop,
-  stopRiderAlertAlarmLoop,
-  clearAllNativeNotifications
+  stopRiderAlertAlarmLoop
 };
 
 
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { isNativePlatform, triggerNativeImpactVibration } from './nativeService';
 
 /**
@@ -131,6 +131,7 @@ export async function clearAllNativeNotifications() {
     try {
       // Remove all visible notifications from the OS tray
       await LocalNotifications.removeAllDeliveredNotifications();
+      await PushNotifications.removeAllDeliveredNotifications();
       console.log("🧹 Native notifications cleared.");
     } catch (e) {
       console.warn("Failed to clear native notifications:", e);

@@ -69,9 +69,11 @@ export const startContinuousCallVibration = () => {
 
 export const stopContinuousCallVibration = () => {
   // Cancel Web/WebView vibrating state and clear its intervals
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(0);
-  }
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(0);
+    }
+  } catch (e) {}
   if (webVibrationInterval) {
     clearInterval(webVibrationInterval);
     webVibrationInterval = null;
