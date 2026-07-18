@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { SplashScreen } from '@capacitor/splash-screen';
-import logoImage from '/grezto_organics_logo_1779291155265.png';
+import logoImage from '../assets/grezto_logo.png';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
   useEffect(() => {
