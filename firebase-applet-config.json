@@ -1,10 +1,9 @@
 {
-  "projectId": "auth-grezto-application",
-  "appId": "1:420548363465:android:6974809fc80649afe93918",
-  "apiKey": "AIzaSyDwTgFsyyKKcTnC5k9y8DUoH40J3yydT3A",
-  "authDomain": "auth-grezto-application.firebaseapp.com",
-  "firestoreDatabaseId": "",
-  "storageBucket": "auth-grezto-application.firebasestorage.app",
-  "messagingSenderId": "420548363465",
-  "measurementId": ""
+  "apiKey": "AIzaSyDUMMY_PLACEHOLDER_REPLACE_ME",
+  "authDomain": "grezto.firebaseapp.com",
+  "projectId": "grezto",
+  "storageBucket": "grezto.appspot.com",
+  "messagingSenderId": "000000000000",
+  "appId": "1:000000000000:web:0000000000000000000000",
+  "measurementId": "G-0000000000"
 }

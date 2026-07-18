@@ -99,12 +99,18 @@
 
 /* Smooth Scrolling & Hardware Acceleration optimization for native/web */
 html, body, #root {
-  background-color: #fffcf9 !important;
+  background-color: #fffdfa !important;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   scroll-behavior: auto !important; /* Fast, non-laggy, direct natural momentum scroll instead of smooth-forcing */
   overscroll-behavior: none !important; /* Disables web-view pull-to-refresh and rubber-band bounce scroll */
   -webkit-overflow-scrolling: touch !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent !important;
   
   /* Disable accidental double-tap-to-zoom gestures globally across the container */
   touch-action: manipulation !important;
