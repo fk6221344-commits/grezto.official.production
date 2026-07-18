@@ -92,21 +92,6 @@ export function useRiderOrders({
                  currentOrders.forEach((order: any) => {
                    if (order && order.id && !knownRiderIds.has(order.id)) {
                      knownRiderIds.add(order.id);
-                     
-                     // Check if it's a recent assignment
-                     let isRecent = false;
-                     if (order.assignedAt) {
-                       const timeMs = typeof order.assignedAt === 'string' ? Date.parse(order.assignedAt) : order.assignedAt;
-                       isRecent = (Date.now() - timeMs) < 90000; // 90 seconds
-                     }
-                     
-                     if (isRecent) {
-                       const shortId = String(order.id).slice(-5).toUpperCase();
-                       sendNativePushNotification(
-                         "🛵 NEW DELIVERY ASSIGNED!",
-                         `Order #${shortId} is ready for pickup. Please accept quickly.`
-                       );
-                     }
                    }
                  });
 

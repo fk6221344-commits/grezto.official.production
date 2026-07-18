@@ -14,7 +14,7 @@ export default function RiderAssignmentOverlay({
   globalRiderProfile,
   onAccept
 }: RiderAssignmentOverlayProps) {
-  const hasIncoming = globalIncomingRiderOrders.length > 0 && globalRiderProfile?.status === 'Online';
+  const hasIncoming = globalIncomingRiderOrders.length > 0;
   const currentIncoming = globalIncomingRiderOrders[0];
 
   const [secondsLeft, setSecondsLeft] = React.useState(60);
