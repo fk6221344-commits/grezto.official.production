@@ -464,14 +464,17 @@ export default function NewGpsMap({
         </div>
 
         {/* Pincode input */}
-        <div className="border border-stone-200 rounded-[18px] px-4 py-2.5 flex flex-col justify-center bg-stone-50/50">
+        <div className={`border rounded-[18px] px-4 py-2.5 flex flex-col justify-center bg-white transition-all ${
+          pincodeVal.length === 0 ? 'border-stone-200' : (pincodeVal.length === 6 ? 'border-green-500' : 'border-red-500')
+        }`}>
           <label className="text-[8px] font-black uppercase text-stone-400 font-sans tracking-widest mb-0.5">
             Pincode
           </label>
           <input
-            type="text"
+            type="number"
+            pattern="[0-9]*"
             value={pincodeVal}
-            onChange={(e) => setPincodeVal(e.target.value)}
+            onChange={(e) => setPincodeVal(e.target.value.replace(/\D/g, '').slice(0, 6))}
             className="w-full text-xs font-bold text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text font-mono"
             placeholder="Pincode"
           />

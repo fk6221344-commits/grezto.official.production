@@ -87,8 +87,8 @@ export async function getUnifiedHighSpeedLocation(): Promise<{ latitude: number;
       console.log("[LocationService] [Native] Requesting high accuracy GPS (using GPS+WiFi+Cell)...");
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 3500, // Quick lock for best accuracy
-        maximumAge: 5000 // Allow up to 5 seconds old
+        timeout: 10000, // Give GPS hardware up to 10s to lock onto satellites for EXACT location
+        maximumAge: 0 // Force a fresh location reading, no stale cache
       });
       
       console.log("[LocationService] [Native] Exact GPS Success! Accuracy:", pos.coords.accuracy);

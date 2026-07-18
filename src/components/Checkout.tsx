@@ -381,6 +381,10 @@ export default function Checkout({
       toast.error("Please enter Pincode first.");
       return;
     }
+    if (pincodeInput.trim().length !== 6) {
+      toast.error("Pincode must be exactly 6 digits.");
+      return;
+    }
     if (!houseNoInput.trim()) {
       toast.error("Please enter House No / Name first.");
       return;
@@ -969,7 +973,9 @@ export default function Checkout({
               </div>
 
               {/* 3. PINCODE */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
+              <div className={`border-[1.5px] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all ${
+                pincodeInput.length === 0 ? 'border-stone-200 focus-within:border-[#0b7a2d]' : (pincodeInput.length === 6 ? 'border-green-500' : 'border-red-500')
+              }`}>
                 <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
                   PINCODE
                 </label>
@@ -977,7 +983,7 @@ export default function Checkout({
                   type="number"
                   pattern="[0-9]*"
                   value={pincodeInput}
-                  onChange={(e) => setPincodeInput(e.target.value)}
+                  onChange={(e) => setPincodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
                 />
               </div>
