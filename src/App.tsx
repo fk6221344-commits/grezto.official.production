@@ -28,6 +28,7 @@ const AdminAnalytics = React.lazy(() => import('./components/AdminAnalytics'));
 const MerchantCalculation = React.lazy(() => import('./components/MerchantCalculation'));
 const RiderConsole = React.lazy(() => import('./components/RiderConsole'));
 const RiderManagement = React.lazy(() => import('./components/RiderManagement'));
+import { AdminErrorBoundary } from './components/admin/AdminErrorBoundary';
 import BottomNav from './components/BottomNav';
 import OrderDetailModal from './components/OrderDetailModal';
 import AdminOrderOverlay from './components/admin/AdminOrderOverlay';
@@ -588,7 +589,11 @@ function MainAppLayout() {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                         className="w-full max-w-none lg:max-w-5xl bg-[#f8fafc] h-full overflow-y-auto flex flex-col relative"
                       >
-                        <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}><AdminPanel onClose={() => setShowAdmin(false)} /></React.Suspense>
+                        <AdminErrorBoundary onClose={() => setShowAdmin(false)}>
+                          <React.Suspense fallback={<div className="fixed inset-0 bg-white flex items-center justify-center z-[999]"><div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div></div>}>
+                            <AdminPanel onClose={() => setShowAdmin(false)} />
+                          </React.Suspense>
+                        </AdminErrorBoundary>
                       </motion.div>
                     </motion.div>
                   )}

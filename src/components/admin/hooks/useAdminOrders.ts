@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "../../../services/supabase";
 import toast from "react-hot-toast";
+import { safeArray } from "../../../utils/safeArray";
 
 export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: boolean, adminSelectedCityFilter: string) {
   const [orders, setOrders] = useState<any[]>([]);
@@ -120,15 +121,8 @@ export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: bool
 
   const adminActiveOrders = useMemo(() => {
     return orders.filter((o: any) => {
-      let orderItems = o.items || o.fullItems || [];
-      if (typeof orderItems === "string") {
-        try {
-          orderItems = JSON.parse(orderItems);
-        } catch (e) {
-          orderItems = [];
-        }
-      }
-      if (!Array.isArray(orderItems)) orderItems = [];
+      // safeArray handles: Array, stringified JSON, plain object {}, null, undefined — ALL cases
+      const orderItems = safeArray(o.items ?? o.fullItems);
       if (orderItems.length === 0) return true;
       const hasAdminItems = orderItems.some((item: any) => {
         const sId = item.shopId || item.productShopId;
