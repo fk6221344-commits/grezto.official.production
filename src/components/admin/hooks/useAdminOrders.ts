@@ -120,7 +120,15 @@ export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: bool
 
   const adminActiveOrders = useMemo(() => {
     return orders.filter((o: any) => {
-      const orderItems = o.items || o.fullItems || [];
+      let orderItems = o.items || o.fullItems || [];
+      if (typeof orderItems === "string") {
+        try {
+          orderItems = JSON.parse(orderItems);
+        } catch (e) {
+          orderItems = [];
+        }
+      }
+      if (!Array.isArray(orderItems)) orderItems = [];
       if (orderItems.length === 0) return true;
       const hasAdminItems = orderItems.some((item: any) => {
         const sId = item.shopId || item.productShopId;
