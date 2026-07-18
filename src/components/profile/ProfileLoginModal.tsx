@@ -261,7 +261,7 @@ export default function ProfileLoginModal({
               <button 
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-[#0f9f6e] hover:bg-[#0d8c60] text-white py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-md shadow-emerald-700/10 hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer mt-3 flex items-center justify-center gap-2 border-0"
+                className="w-full bg-stone-900 hover:bg-stone-800 text-white py-4 rounded-xl font-bold text-[13px] tracking-wide shadow-lg shadow-stone-900/20 active:scale-[0.98] transition-all cursor-pointer mt-4 flex items-center justify-center gap-2 border border-stone-800 disabled:opacity-50"
               >
                 {authLoading ? 'Verifying...' : (authMode === 'signup' ? 'Complete Create Account' : 'Complete Login')}
               </button>
