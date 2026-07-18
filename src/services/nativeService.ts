@@ -19,11 +19,12 @@ export const isNativePlatform = () => {
  * -------------------
  */
 let longVibrationInterval: any = null;
+let longVibrationTimeout: any = null;
 let webVibrationInterval: any = null;
 
 export const startContinuousCallVibration = () => {
   // Prevent duplicate vibration engines
-  if (longVibrationInterval || webVibrationInterval) {
+  if (longVibrationInterval || webVibrationInterval || longVibrationTimeout) {
     return;
   }
 
@@ -51,7 +52,8 @@ export const startContinuousCallVibration = () => {
 
     // High-frequency, intense vibration loop mimicking an incoming emergency/delivery call
     // We run a 1800ms vibration block followed by a 200ms safety gap before the next loop
-    setTimeout(() => {
+    longVibrationTimeout = setTimeout(() => {
+      longVibrationTimeout = null;
       Haptics.vibrate({ duration: 1800 }).catch(() => {});
       // Also trigger webview native vibration as a robust dual-engine fallback on Android
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -77,6 +79,11 @@ export const stopContinuousCallVibration = () => {
   if (webVibrationInterval) {
     clearInterval(webVibrationInterval);
     webVibrationInterval = null;
+  }
+
+  if (longVibrationTimeout) {
+    clearTimeout(longVibrationTimeout);
+    longVibrationTimeout = null;
   }
 
   // Cancel Native physical vibration and clear its intervals

@@ -60,6 +60,8 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
+let activeLocalNotificationIds: number[] = [];
+
 /**
  * Sends a native system notification that displays even when app is minimized, backgrounded, or screen is off.
  */
@@ -68,6 +70,7 @@ export function sendNativePushNotification(title: string, body: string, onClick?
   if (isNativePlatform()) {
     try {
       const notificationId = Math.floor(Math.random() * 1000000);
+      activeLocalNotificationIds.push(notificationId);
       LocalNotifications.schedule({
         notifications: [
           {
@@ -129,6 +132,10 @@ export function sendNativePushNotification(title: string, body: string, onClick?
 export async function clearAllNativeNotifications() {
   if (isNativePlatform()) {
     try {
+      if (activeLocalNotificationIds.length > 0) {
+        await LocalNotifications.cancel({ notifications: activeLocalNotificationIds.map(id => ({ id })) });
+        activeLocalNotificationIds = [];
+      }
       // Remove all visible notifications from the OS tray
       await LocalNotifications.removeAllDeliveredNotifications();
       await PushNotifications.removeAllDeliveredNotifications();
