@@ -128,10 +128,11 @@ export function startFCMOrderListener() {
           }
 
           // 2. Query FCM Token for this rider's phone
+          const possiblePhones = [rider.phone, `+91${String(rider.phone).slice(-10)}`, String(rider.phone).slice(-10)];
           const { data: tokensData, error: tokensErr } = await supabase
             .from('fcm_tokens')
             .select('token')
-            .eq('phone', rider.phone);
+            .in('phone', possiblePhones);
 
           if (tokensErr || !tokensData || tokensData.length === 0) {
             console.log('[FCM Listener] No FCM tokens found for rider phone:', rider.phone);
