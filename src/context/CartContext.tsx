@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, ShoppingBag, X, Lock } from 'lucide-react';
 import { triggerNativeImpactVibration, setSecureItem, getSecureItem, triggerMediumHapticVibration } from '../services/nativeService';
+import { preFetchGPSBackground } from '../lib/geocoder';
 
 export interface CartItem {
   id: string;
@@ -269,6 +270,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (product: any) => {
     if (!product || !product.id) return;
+
+    // 🚀 BACKGROUND PRE-WARM: Instantly fetch GPS in background so Checkout is 0-seconds fast!
+    preFetchGPSBackground();
 
     let targetShops = shops;
     if (!targetShops || targetShops.length === 0) {
