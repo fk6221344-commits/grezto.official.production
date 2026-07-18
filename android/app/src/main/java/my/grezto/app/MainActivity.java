@@ -1,6 +1,7 @@
 package my.grezto.app;
 
 import android.os.Bundle;
+import android.os.Build;
 import android.content.res.Resources;
 import android.content.res.Configuration;
 import com.getcapacitor.BridgeActivity;
@@ -8,7 +9,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import androidx.core.splashscreen.SplashScreen;
 import android.content.Intent;
-import android.os.Build;
 
 public class MainActivity extends BridgeActivity {
     @Override

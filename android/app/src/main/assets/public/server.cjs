@@ -847,7 +847,8 @@ function startFCMOrderListener() {
           console.log("[FCM Listener] Could not find phone for assigned rider:", newOrder.assignedRiderId);
           return;
         }
-        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").eq("phone", rider.phone);
+        const possiblePhones = [rider.phone, `+91${String(rider.phone).slice(-10)}`, String(rider.phone).slice(-10)];
+        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").in("phone", possiblePhones);
         if (tokensErr || !tokensData || tokensData.length === 0) {
           console.log("[FCM Listener] No FCM tokens found for rider phone:", rider.phone);
           return;
