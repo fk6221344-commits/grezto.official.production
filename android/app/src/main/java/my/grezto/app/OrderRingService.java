@@ -104,6 +104,14 @@ public class OrderRingService extends Service {
     }
 
     private void startRinging(String type) {
+        if (mediaPlayer != null) {
+            try {
+                if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+                mediaPlayer.release();
+            } catch (Exception e) {}
+            mediaPlayer = null;
+        }
+
         // Vibrate
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null) {
@@ -126,23 +134,46 @@ public class OrderRingService extends Service {
             if (soundResId == 0) {
                 soundResId = getResources().getIdentifier("spaceship_alarm", "raw", getPackageName());
             }
-            if (soundResId == 0) return;
+            if (soundResId == 0) {
+                Log.e(TAG, "Ringtone resource not found!");
+                return;
+            }
 
             Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/" + soundResId);
             
+            // Request Audio Focus to pause background music (e.g. Spotify)
+            android.media.AudioManager audioManager = (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    android.media.AudioFocusRequest focusRequest = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                            .setAudioAttributes(
+                                new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                    .build()
+                            )
+                            .setAcceptsDelayedFocusGain(false)
+                            .build();
+                    audioManager.requestAudioFocus(focusRequest);
+                } else {
+                    audioManager.requestAudioFocus(null, android.media.AudioManager.STREAM_RING, android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                }
+            }
+
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setAudioAttributes(
                 new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                     .build()
             );
             mediaPlayer.setDataSource(this, soundUri);
             mediaPlayer.setLooping(true);
             mediaPlayer.prepare();
             mediaPlayer.start();
-            Log.d(TAG, "Ringtone started.");
+            Log.d(TAG, "Ringtone started successfully with USAGE_NOTIFICATION_RINGTONE and AudioFocus.");
         } catch (Exception e) {
+            Log.e(TAG, "Error playing ringtone", e);
             e.printStackTrace();
         }
     }

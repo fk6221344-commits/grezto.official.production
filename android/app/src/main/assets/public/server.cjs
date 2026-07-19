@@ -801,19 +801,22 @@ function startFCMOrderListener() {
           console.log("[FCM Listener] No target phones found for order", order.id);
           return;
         }
-        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").in("phone", phonesArray);
+        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token, phone, updated_at").in("phone", phonesArray);
         if (tokensErr || !tokensData || tokensData.length === 0) {
           console.log("[FCM Listener] No FCM tokens found for target phones.");
           return;
         }
-        const tokens = tokensData.map((t) => t.token);
+        const latestTokensMap = /* @__PURE__ */ new Map();
+        tokensData.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+        tokensData.forEach((t) => {
+          if (t.phone && t.token && !latestTokensMap.has(t.phone)) {
+            latestTokensMap.set(t.phone, t.token);
+          }
+        });
+        const tokens = Array.from(new Set(latestTokensMap.values()));
         const message = {
           android: {
             priority: "high"
-          },
-          notification: {
-            title: "\u{1F6A8} New Order Received! \u{1F6A8}",
-            body: `A new order has been placed. Amount: \u20B9${order.finalAmount || 0}`
           },
           data: {
             title: "\u{1F6A8} New Order Received! \u{1F6A8}",
@@ -848,19 +851,22 @@ function startFCMOrderListener() {
         console.log(`[FCM Listener] Order ${newOrder.id} assigned to rider phone: ${newOrder.partnerPhone}`);
         const riderPhone = newOrder.partnerPhone;
         const possiblePhones = [riderPhone, `+91${String(riderPhone).slice(-10)}`, String(riderPhone).slice(-10)];
-        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token").in("phone", possiblePhones);
+        const { data: tokensData, error: tokensErr } = await supabase.from("fcm_tokens").select("token, phone, updated_at").in("phone", possiblePhones);
         if (tokensErr || !tokensData || tokensData.length === 0) {
           console.log("[FCM Listener] No FCM tokens found for rider phone:", riderPhone);
           return;
         }
-        const tokens = tokensData.map((t) => t.token);
+        const latestTokensMap = /* @__PURE__ */ new Map();
+        tokensData.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+        tokensData.forEach((t) => {
+          if (t.phone && t.token && !latestTokensMap.has(t.phone)) {
+            latestTokensMap.set(t.phone, t.token);
+          }
+        });
+        const tokens = Array.from(new Set(latestTokensMap.values()));
         const message = {
           android: {
             priority: "high"
-          },
-          notification: {
-            title: "\u{1F6F5} New Delivery Assigned! \u{1F6F5}",
-            body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`
           },
           data: {
             title: "\u{1F6F5} New Delivery Assigned! \u{1F6F5}",
