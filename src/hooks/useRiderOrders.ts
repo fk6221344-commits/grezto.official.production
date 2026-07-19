@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { startRiderAlertAlarmLoop, stopRiderAlertAlarmLoop } from '../services/ringtoneService';
 import { sendNativePushNotification } from '../services/notifications';
@@ -148,17 +148,24 @@ export function useRiderOrders({
     return elapsedMs < 60000;
   });
 
+  const prevShouldRiderAlarmRingRef = useRef(false);
+
   // 3. Global Rider Call Sound Loop & Physical Vibe
   useEffect(() => {
-    if (activeIncomingOrders.length === 0 || !globalRiderProfile || globalRiderProfile.status !== 'Online') {
+    const shouldRing = activeIncomingOrders.length > 0 && !!globalRiderProfile && globalRiderProfile.status === 'Online';
+
+    if (shouldRing) {
+      startRiderAlertAlarmLoop();
+    } else if (prevShouldRiderAlarmRingRef.current === true) {
+      // ONLY stop if it was actively ringing in this session and transitioned to false
+      // This prevents the React app from accidentally killing the native ringtone when waking up in the background
       stopRiderAlertAlarmLoop();
-      return;
     }
 
-    startRiderAlertAlarmLoop();
+    prevShouldRiderAlarmRingRef.current = shouldRing;
 
     return () => {
-      stopRiderAlertAlarmLoop();
+      // Do NOT call stopRiderAlertAlarmLoop() on unmount, otherwise backgrounding the app kills the native alarm
     };
   }, [activeIncomingOrders.length, globalRiderProfile?.status]);
 

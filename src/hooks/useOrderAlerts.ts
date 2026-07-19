@@ -75,18 +75,24 @@ export function useOrderAlerts({
   const isStoreUser = !!user?.isLoggedIn && (user?.isAdmin === true || user?.role === 'Admin' || user?.role === 'Merchant' || !!userShop || !!getListenerShopId());
   const shouldAlarmRing = !alarmMuted && activeRingCount > 0 && isStoreUser && !showRider;
 
+  const prevShouldAlarmRingRef = useRef(false);
+
   // Sound toggle reaction effect
   useEffect(() => {
     if (shouldAlarmRing) {
       startAlertAlarmLoop();
       requestWakeLock();
-    } else {
+    } else if (prevShouldAlarmRingRef.current === true) {
+      // ONLY stop if it was actively ringing in this session and transitioned to false
+      // This prevents the React app from accidentally killing the native ringtone when waking up in the background
       stopAlertAlarmLoop();
       releaseWakeLock();
     }
 
+    prevShouldAlarmRingRef.current = shouldAlarmRing;
+
     return () => {
-      stopAlertAlarmLoop();
+      // Do NOT call stopAlertAlarmLoop() on unmount, otherwise backgrounding the app kills the native alarm
       releaseWakeLock();
     };
   }, [shouldAlarmRing]);
