@@ -77,10 +77,6 @@ export function startFCMOrderListener() {
             android: {
               priority: 'high' as const,
             },
-            notification: {
-              title: '🚨 New Order Received! 🚨',
-              body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`
-            },
             data: {
               title: '🚨 New Order Received! 🚨',
               body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`,
@@ -140,10 +136,6 @@ export function startFCMOrderListener() {
           const message = {
             android: {
               priority: 'high' as const,
-            },
-            notification: {
-              title: '🛵 New Delivery Assigned! 🛵',
-              body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`
             },
             data: {
               title: '🛵 New Delivery Assigned! 🛵',
