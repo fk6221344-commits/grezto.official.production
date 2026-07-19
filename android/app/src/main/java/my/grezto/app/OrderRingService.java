@@ -148,7 +148,7 @@ public class OrderRingService extends Service {
                     android.media.AudioFocusRequest focusRequest = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                             .setAudioAttributes(
                                 new AudioAttributes.Builder()
-                                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                                    .setUsage(AudioAttributes.USAGE_ALARM)
                                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                                     .build()
                             )
@@ -164,7 +164,7 @@ public class OrderRingService extends Service {
             mediaPlayer.setAudioAttributes(
                 new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
                     .build()
             );
             mediaPlayer.setDataSource(this, soundUri);
