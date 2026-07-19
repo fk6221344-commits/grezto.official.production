@@ -4,6 +4,12 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { logoBase64 } from '../assets/logo_base64';
 
 export default function Splash({ onFinish }: { onFinish: () => void; key?: React.Key }) {
+  const onFinishRef = React.useRef(onFinish);
+
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
+
   useEffect(() => {
     // Wait for 150ms to ensure the WebView has painted the React Splash UI on the screen, preventing the blank/white flash gap!
     const hideNativeTimer = setTimeout(() => {
@@ -13,13 +19,17 @@ export default function Splash({ onFinish }: { onFinish: () => void; key?: React
     }, 150);
 
     // Exact 800ms duration to guarantee it fits safely within the 2.5 second total strict time limit
-    const timer = setTimeout(onFinish, 800);
+    const timer = setTimeout(() => {
+      if (onFinishRef.current) {
+        onFinishRef.current();
+      }
+    }, 800);
     
     return () => {
       clearTimeout(hideNativeTimer);
       clearTimeout(timer);
     };
-  }, [onFinish]);
+  }, []);
 
   return (
     <motion.div 
