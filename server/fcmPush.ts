@@ -62,7 +62,7 @@ export function startFCMOrderListener() {
           // 2. Query FCM Tokens for these phones
           const { data: tokensData, error: tokensErr } = await supabase
             .from('fcm_tokens')
-            .select('token')
+            .select('token, phone, updated_at')
             .in('phone', phonesArray);
 
           if (tokensErr || !tokensData || tokensData.length === 0) {
@@ -70,8 +70,18 @@ export function startFCMOrderListener() {
             return;
           }
 
+          // Group by phone and keep only the latest token per phone
+          const latestTokensMap = new Map<string, string>();
+          tokensData.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+          
+          tokensData.forEach((t: any) => {
+             if (t.phone && t.token && !latestTokensMap.has(t.phone)) {
+                 latestTokensMap.set(t.phone, t.token);
+             }
+          });
+
           // 3. Send Push Notifications
-          const tokens = tokensData.map((t: any) => t.token);
+          const tokens = Array.from(new Set(latestTokensMap.values()));
           
           const message = {
             android: {
@@ -122,7 +132,7 @@ export function startFCMOrderListener() {
           const possiblePhones = [riderPhone, `+91${String(riderPhone).slice(-10)}`, String(riderPhone).slice(-10)];
           const { data: tokensData, error: tokensErr } = await supabase
             .from('fcm_tokens')
-            .select('token')
+            .select('token, phone, updated_at')
             .in('phone', possiblePhones);
 
           if (tokensErr || !tokensData || tokensData.length === 0) {
@@ -130,8 +140,16 @@ export function startFCMOrderListener() {
             return;
           }
 
+          const latestTokensMap = new Map<string, string>();
+          tokensData.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+          tokensData.forEach((t: any) => {
+             if (t.phone && t.token && !latestTokensMap.has(t.phone)) {
+                 latestTokensMap.set(t.phone, t.token);
+             }
+          });
+
           // 3. Send Push Notification to Rider
-          const tokens = tokensData.map((t: any) => t.token);
+          const tokens = Array.from(new Set(latestTokensMap.values()));
           
           const message = {
             android: {

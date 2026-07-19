@@ -14,6 +14,10 @@ import java.util.Random;
 
 public class CustomMessagingService extends MessagingService {
 
+    private static String lastProcessedOrderId = null;
+    private static long lastProcessedTime = 0;
+    private static final long DEDUPE_WINDOW_MS = 60000; // 1 minute
+
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
@@ -21,7 +25,18 @@ public class CustomMessagingService extends MessagingService {
         Map<String, String> data = remoteMessage.getData();
         if (data.size() > 0) {
             String type = data.get("type");
+            String orderId = data.get("orderId");
+
             if ("new_order".equals(type) || "rider_assigned".equals(type)) {
+                long now = System.currentTimeMillis();
+                // Prevent double popups (e.g., from multiple tokens or server instances)
+                if (orderId != null && orderId.equals(lastProcessedOrderId) && (now - lastProcessedTime) < DEDUPE_WINDOW_MS) {
+                    android.util.Log.d("CustomMessagingService", "Duplicate push ignored for order: " + orderId);
+                    return;
+                }
+                lastProcessedOrderId = orderId;
+                lastProcessedTime = now;
+
                 String title = data.get("title") != null ? data.get("title") : "New Order!";
                 String body = data.get("body") != null ? data.get("body") : "Tap to open";
                 startFullScreenIntent(title, body, type);
