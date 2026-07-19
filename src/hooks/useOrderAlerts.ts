@@ -137,7 +137,17 @@ export function useOrderAlerts({
     let sub: any;
 
     const processOrders = (rawCurrentOrders: any[], hasNew: boolean = false) => {
-      const currentOrders = rawCurrentOrders.map(data => {
+      // Fix for background wake-up replication lag:
+      // If we have an active modal but the database query missed it, append it manually so it doesn't vanish!
+      let modifiedRawOrders = [...rawCurrentOrders];
+      if (incomingOrderAlert) {
+        const found = modifiedRawOrders.find(o => o.id === incomingOrderAlert.id);
+        if (!found) {
+          modifiedRawOrders.push(incomingOrderAlert);
+        }
+      }
+
+      const currentOrders = modifiedRawOrders.map(data => {
         const createdAtStr = new Date(data.createdAt || Date.now()).toISOString();
         return { ...data, parsedCreatedAt: createdAtStr } as any;
       });
