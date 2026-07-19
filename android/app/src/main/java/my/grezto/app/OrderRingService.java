@@ -96,7 +96,7 @@ public class OrderRingService extends Service {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setOngoing(true) // Can't swipe away
             .setAutoCancel(false)
-            .setFullScreenIntent(pendingIntentFlags, true) // Critical for showing over lock screen
+            .setContentIntent(pendingIntentFlags)
             .addAction(0, "✅ ACCEPT", pendingIntentFlags); // The explicit Accept button
 
         Notification notification = builder.build();

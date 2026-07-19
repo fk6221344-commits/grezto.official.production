@@ -17,17 +17,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         registerPlugin(GreztoNativePlugin.class);
         
-        // Turn screen on and show when locked
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true);
-            setTurnScreenOn(true);
-        } else {
-            getWindow().addFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-                android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            );
-        }
+        // (Removed setShowWhenLocked and setTurnScreenOn based on user feedback)
 
         // Battery optimization prompt removed intentionally to improve user experience on launch
         // Match the WebView background to our Splash Screen color to prevent any white flash during boot!
