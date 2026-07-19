@@ -12,8 +12,8 @@ export default function Splash({ onFinish }: { onFinish: () => void; key?: React
       });
     }, 150);
 
-    // Exact 1200ms duration (1.2 seconds) to give a smooth, beautifully animated entry and exit transitions
-    const timer = setTimeout(onFinish, 1200);
+    // Exact 800ms duration to guarantee it fits safely within the 2.5 second total strict time limit
+    const timer = setTimeout(onFinish, 800);
     
     return () => {
       clearTimeout(hideNativeTimer);
