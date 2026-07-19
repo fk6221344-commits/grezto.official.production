@@ -77,6 +77,10 @@ export function startFCMOrderListener() {
             android: {
               priority: 'high' as const,
             },
+            notification: {
+              title: '🚨 New Order Received! 🚨',
+              body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`
+            },
             data: {
               title: '🚨 New Order Received! 🚨',
               body: `A new order has been placed. Amount: ₹${order.finalAmount || 0}`,
@@ -110,32 +114,23 @@ export function startFCMOrderListener() {
           const oldOrder = payload.old;
           
           // Check if rider assignment happened
-          if (!newOrder || !newOrder.assignedRiderId) return;
-          if (oldOrder && oldOrder.assignedRiderId === newOrder.assignedRiderId) return;
+          if (!newOrder || newOrder.status !== 'Out for Delivery' || !newOrder.partnerPhone) return;
+          if (oldOrder && oldOrder.partnerPhone === newOrder.partnerPhone) return;
 
-          console.log(`[FCM Listener] Order ${newOrder.id} assigned to rider: ${newOrder.assignedRiderId}`);
+          console.log(`[FCM Listener] Order ${newOrder.id} assigned to rider phone: ${newOrder.partnerPhone}`);
 
-          // 1. Get Rider's phone number
-          const { data: rider, error: riderErr } = await supabase
-            .from('team')
-            .select('phone')
-            .eq('id', newOrder.assignedRiderId)
-            .single();
-
-          if (riderErr || !rider || !rider.phone) {
-            console.log('[FCM Listener] Could not find phone for assigned rider:', newOrder.assignedRiderId);
-            return;
-          }
+          // 1. Get Rider's phone number directly from the order
+          const riderPhone = newOrder.partnerPhone;
 
           // 2. Query FCM Token for this rider's phone
-          const possiblePhones = [rider.phone, `+91${String(rider.phone).slice(-10)}`, String(rider.phone).slice(-10)];
+          const possiblePhones = [riderPhone, `+91${String(riderPhone).slice(-10)}`, String(riderPhone).slice(-10)];
           const { data: tokensData, error: tokensErr } = await supabase
             .from('fcm_tokens')
             .select('token')
             .in('phone', possiblePhones);
 
           if (tokensErr || !tokensData || tokensData.length === 0) {
-            console.log('[FCM Listener] No FCM tokens found for rider phone:', rider.phone);
+            console.log('[FCM Listener] No FCM tokens found for rider phone:', riderPhone);
             return;
           }
 
@@ -145,6 +140,10 @@ export function startFCMOrderListener() {
           const message = {
             android: {
               priority: 'high' as const,
+            },
+            notification: {
+              title: '🛵 New Delivery Assigned! 🛵',
+              body: `You have been assigned a new order. ID: #${String(newOrder.id).slice(-5).toUpperCase()}`
             },
             data: {
               title: '🛵 New Delivery Assigned! 🛵',

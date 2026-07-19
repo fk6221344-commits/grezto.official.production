@@ -84,7 +84,7 @@ export function sendNativePushNotification(title: string, body: string, onClick?
               clickAction: true
             },
             schedule: { at: new Date(Date.now() + 10) },
-            channelId: 'grezto_order_channel_v5' // Updated to match v5 in nativeService
+            channelId: 'grezto_order_channel_v6' // Updated to match v6 in nativeService
           }
         ]
       }).then(() => {
