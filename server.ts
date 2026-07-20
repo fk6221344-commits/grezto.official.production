@@ -137,7 +137,7 @@ async function startServer() {
   // Protects the server in production by verifying requests are signed by our official Android client
   app.use((req, res, next) => {
     // Skip verification for static assets, public files, and server health check
-    if (!req.path.startsWith('/api/') || req.path === '/api/health' || req.path === '/api/maps/config' || req.path === '/api/config') {
+    if (!req.path.startsWith('/api/') || req.path === '/api/health' || req.path === '/api/maps/config' || req.path === '/api/config' || req.path === '/api/app-update-info') {
       return next();
     }
 
