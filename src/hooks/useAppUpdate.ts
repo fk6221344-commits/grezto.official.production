@@ -10,6 +10,8 @@ export interface AppUpdateInfo {
   message: string;
 }
 
+import { getBaseApiUrl } from '../services/apiConfig';
+
 export const useAppUpdate = () => {
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -24,7 +26,7 @@ export const useAppUpdate = () => {
         }
 
         // Fetch latest version info from the server
-        const API_URL = import.meta.env.VITE_API_URL || '';
+        const API_URL = getBaseApiUrl();
         const response = await fetch(`${API_URL}/api/app-update-info`);
         
         if (response.ok) {
