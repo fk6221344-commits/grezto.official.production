@@ -26,58 +26,43 @@ const GlobalAppUpdateModal: React.FC<Props> = ({ show, updateInfo, onDismiss }) 
   return (
     <AnimatePresence>
       {show && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-sans">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="relative w-full max-w-[340px] bg-white rounded-[2rem] shadow-2xl overflow-hidden p-6 text-center border border-gray-100"
-          >
-            {/* Close Button (only if not forced) */}
-            {!updateInfo.forceUpdate && (
-              <button 
-                onClick={onDismiss}
-                className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors border-0 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Icon */}
-            <div className="mx-auto w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-5 mt-2 relative">
-              <div className="absolute inset-0 bg-green-400 opacity-20 rounded-full animate-ping" />
-              <DownloadCloud className="w-10 h-10 text-green-600 relative z-10" />
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-lg font-sans"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 max-w-5xl mx-auto w-full">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <DownloadCloud className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white font-black text-[13px] tracking-wide">{updateInfo.title || "New Update"}</span>
+                <span className="text-white/80 font-semibold text-[9.5px] uppercase tracking-wider">{updateInfo.message || "Tap to update"}</span>
+              </div>
             </div>
-
-            {/* Title & Message */}
-            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-2">
-              {updateInfo.title || "Update Available"}
-            </h2>
-            <p className="text-[13px] font-medium text-gray-500 leading-relaxed mb-6 px-2">
-              {updateInfo.message || "A new version of the app is available. Please update to enjoy the latest features."}
-            </p>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={handleUpdate}
-                className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-extrabold text-[13px] tracking-widest uppercase py-4 rounded-2xl shadow-[0_4px_14px_rgba(22,163,74,0.4)] transition-all border-0 cursor-pointer"
-              >
-                Download Update Now
-              </button>
-
+            
+            <div className="flex items-center gap-3">
               {!updateInfo.forceUpdate && (
-                <button
+                <button 
                   onClick={onDismiss}
-                  className="w-full bg-transparent text-gray-400 hover:text-gray-600 font-bold text-[12px] uppercase py-2 transition-colors border-0 cursor-pointer"
+                  className="p-1.5 rounded-full text-emerald-100 hover:bg-white/10 hover:text-white transition-colors border-0 bg-transparent cursor-pointer"
                 >
-                  I'll do it later
+                  <X className="w-4 h-4" />
                 </button>
               )}
+              <button
+                onClick={handleUpdate}
+                className="bg-white text-emerald-700 hover:bg-stone-50 active:scale-95 font-black text-[10px] uppercase tracking-wider px-4 py-2 rounded-xl shadow-sm transition-all border-0 cursor-pointer"
+              >
+                Update
+              </button>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

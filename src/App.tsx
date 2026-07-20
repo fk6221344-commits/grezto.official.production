@@ -763,6 +763,7 @@ function MainAppLayout() {
                 )}
 
                 <ReferralInstaller />
+                <GlobalAppUpdateModal show={showUpdateModal} updateInfo={updateInfo} onDismiss={dismissUpdate} />
 
                 {!user.isLoggedIn && activeTab !== 'profile' && (
                   <Profile 
