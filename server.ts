@@ -473,6 +473,17 @@ async function startServer() {
           }
         }
 
+        // MAGIC AUTO-REGISTRATION FIX: Ensure user profile exists before placing order
+        try {
+          await supabase.rpc("upsert_user_profile", {
+            p_phone: payload.p_customer_phone,
+            p_name: payload.p_customer_name || 'Grezto Member',
+            p_id: payload.p_user_id || decodedToken.uid
+          });
+        } catch (autoRegError) {
+          console.warn("[GATEWAY] Auto-registration warning (safe to ignore):", autoRegError);
+        }
+
         const { data, error } = await supabase.rpc("place_order", payload);
         if (error) throw error;
         dbResult = data;
