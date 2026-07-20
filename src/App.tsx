@@ -38,6 +38,7 @@ import ReferralInstaller from './components/ReferralInstaller';
 import RiderAssignmentOverlay from './components/RiderAssignmentOverlay';
 import GpsPressingActivator from './components/GpsPressingActivator';
 import AssamOfflineBanner from './components/AssamOfflineBanner';
+import GlobalAppUpdateModal from './components/GlobalAppUpdateModal';
 
 import { DesktopBillboard } from './components/DesktopBillboard';
 
@@ -53,12 +54,14 @@ import { useHardwareBack } from './hooks/useHardwareBack';
 import { useRegisterBackHandler } from './hooks/useRegisterBackHandler';
 import { useOrderAlerts } from './hooks/useOrderAlerts';
 import { useRiderOrders } from './hooks/useRiderOrders';
+import { useAppUpdate } from './hooks/useAppUpdate';
 
 const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || (import.meta.env && import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY) || '';
 
 function MainAppLayout() {
   const { user, firebaseAuthReady, userShop, logout, updateProfile } = useUser();
   const { clearCart } = useCart();
+  const { showUpdateModal, updateInfo, dismissUpdate } = useAppUpdate();
 
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
 

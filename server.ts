@@ -1361,6 +1361,17 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // App Version Info API for In-App Updates
+  app.get("/api/app-update-info", (req, res) => {
+    res.json({
+      latestVersionCode: 1, // Change this when releasing a new version
+      forceUpdate: false, // If true, user cannot close the popup
+      downloadUrl: "https://grezto.com",
+      title: "New Update Available! 🚀",
+      message: "A new and faster version of Grezto is available. Please update the app to continue enjoying seamless deliveries."
+    });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
