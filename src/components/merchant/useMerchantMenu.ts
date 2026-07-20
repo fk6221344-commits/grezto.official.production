@@ -60,10 +60,10 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
           if (data) {
             mergeProducts(data);
           } else {
-            mergeProducts([]);
+            console.warn("API returned ok, but data.products is undefined");
           }
         } else {
-          mergeProducts([]);
+          console.warn(`Failed fetching shop products via cache API: Status ${res.status}`);
         }
       } catch (e) {
         console.warn("Failed fetching shop products via cache API:", e);
@@ -89,8 +89,13 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
           } : null;
 
           if (eventType === "INSERT") {
-            if (sanitizedRecord && sanitizedRecord.shopId === shop.id && !sanitizedRecord.deleted && !updatedList.some(p => p.id === sanitizedRecord.id)) {
-              updatedList = [sanitizedRecord, ...updatedList];
+            if (sanitizedRecord && sanitizedRecord.shopId === shop.id && !sanitizedRecord.deleted) {
+              const existingIdx = updatedList.findIndex(p => p.id === sanitizedRecord.id);
+              if (existingIdx !== -1) {
+                updatedList[existingIdx] = sanitizedRecord;
+              } else {
+                updatedList = [sanitizedRecord, ...updatedList];
+              }
             }
           } else if (eventType === "UPDATE") {
             if (sanitizedRecord) {
@@ -99,7 +104,7 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
               } else {
                 const idx = updatedList.findIndex(p => p.id === sanitizedRecord.id);
                 if (idx !== -1) {
-                  updatedList[idx] = { ...updatedList[idx], ...sanitizedRecord };
+                  updatedList[idx] = { ...updatedList[idx], ...sanitizedRecord, isSyncing: false };
                 } else {
                   updatedList = [sanitizedRecord, ...updatedList];
                 }
@@ -257,7 +262,8 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
       rating: 5.0,
       isBestSeller: false,
       status: 'Active',
-      deleted: false
+      deleted: false,
+      isSyncing: true
     };
 
     // Optimistic Update: Instantly update local state products so it appears on screen without delay
@@ -292,8 +298,13 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
       if (!response.ok) {
         throw new Error('Server returned error status');
       }
+      
+      // Clear syncing status when request succeeds
+      setProducts(prev => prev.map(p => p.id === targetId ? { ...p, isSyncing: false } : p));
     } catch (err: any) {
       console.warn("Could not sync product data to database:", err);
+      // Even if it fails, clear syncing so it doesn't spin forever, user can retry
+      setProducts(prev => prev.map(p => p.id === targetId ? { ...p, isSyncing: false } : p));
     } finally {
       setIsSaving(false);
     }

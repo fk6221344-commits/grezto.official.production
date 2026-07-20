@@ -10,7 +10,7 @@ import rateLimit from "express-rate-limit";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import redis, { safeGet, safeSet, safeDel, safeGetOrSet } from "./server/redisClient";
 
@@ -246,6 +246,35 @@ async function startServer() {
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
       },
     });
+  };
+
+  // Helper to delete an image from Cloudflare R2
+  const deleteImageFromR2 = async (fileUrl: string | undefined | null) => {
+    if (!fileUrl) return;
+    try {
+      const bucketName = process.env.R2_BUCKET_NAME || 'grezto-assets';
+      
+      let key = "";
+      try {
+        const parsedUrl = new URL(fileUrl);
+        key = parsedUrl.pathname.substring(1); 
+      } catch(e) {
+        key = fileUrl;
+      }
+      
+      if (!key || key.trim() === "") return;
+
+      const s3Client = getS3Client();
+      const command = new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      await s3Client.send(command);
+      console.log(`[R2 CLEANUP] Successfully deleted orphaned image from R2: ${key}`);
+    } catch (err: any) {
+      console.warn(`[R2 CLEANUP] Failed to delete image from R2 (${fileUrl}):`, err.message || err);
+    }
   };
 
   // Setup multer for memory storage
@@ -788,9 +817,19 @@ async function startServer() {
 
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${shopId}`);
           warmShopProductsCache(shopId);
+
+          try {
+            const { data: targetShop } = await supabase.from('shops').select('city').eq('id', shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (category) {
@@ -837,7 +876,7 @@ async function startServer() {
       // 1. If editing an existing product, verify they own the original product's shop
       const { data: existingProd } = await supabase
         .from('products')
-        .select('shopId')
+        .select('shopId, image, imageUrl')
         .eq('id', productData.id)
         .maybeSingle();
 
@@ -855,6 +894,16 @@ async function startServer() {
       }
 
       console.log(`[WRITE API] Upserting product ${productData.id}`);
+
+      // [R2 CLEANUP] If image is updated or removed, delete the old image from Cloudflare R2
+      if (existingProd) {
+        const oldImage = existingProd.image || existingProd.imageUrl;
+        const newImage = productData.image || productData.imageUrl;
+        if (oldImage && oldImage !== newImage) {
+          deleteImageFromR2(oldImage); // Fire and forget background deletion
+        }
+      }
+
       const { error } = await supabase.from('products').upsert(productData);
       if (error) throw error;
 
@@ -867,9 +916,19 @@ async function startServer() {
 
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${productData.shopId}`);
           warmShopProductsCache(productData.shopId);
+
+          try {
+            const { data: targetShop } = await supabase.from('shops').select('city').eq('id', productData.shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (productData.category) {
@@ -915,9 +974,20 @@ async function startServer() {
         return res.status(403).json({ success: false, error: "Access Denied: You are not authorized to delete this product." });
       }
 
+      // [R2 CLEANUP] Fetch product image URL before deleting from database
+      const { data: prodToDelete } = await supabase.from('products').select('image, imageUrl').eq('id', productId).maybeSingle();
+
       console.log(`[WRITE API] Deleting product ${productId}`);
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
+
+      // If delete was successful, delete the image from Cloudflare R2
+      if (prodToDelete) {
+        const imageToDelete = prodToDelete.image || prodToDelete.imageUrl;
+        if (imageToDelete) {
+          deleteImageFromR2(imageToDelete); // Fire and forget background deletion
+        }
+      }
 
       // [PILLAR 2: WRITE-THROUGH & INVALIDATION FLOW]
       // 1. Database Write was successful at this point.
@@ -928,9 +998,19 @@ async function startServer() {
 
         // 3. Background Pre-Warming: Run query in background and warm the cache
         // Use setImmediate to ensure it runs completely asynchronously without delaying the client response
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${shopId}`);
           warmShopProductsCache(shopId);
+
+          try {
+            const { data: targetShop } = await supabase.from('shops').select('city').eq('id', shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (category) {

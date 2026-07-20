@@ -55,59 +55,68 @@ export const MerchantProductRow = React.memo(({
       </div>
 
       <div className="flex items-center space-x-1.5 shrink-0">
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleToggleStock(item.id, numStock); }}
-          className={`p-2 rounded-lg border transition-all cursor-pointer shadow-xs active:scale-95 flex items-center justify-center shrink-0 ${
-            numStock > 0 
-              ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-100' 
-              : 'bg-red-600 border-red-600 text-white hover:bg-red-700 shadow-rose-100'
-          }`}
-          title={numStock > 0 ? "Mark Out of Stock" : "Mark In Stock"}
-        >
-          {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
-        </button>
-
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditingItem(item);
-            setNewItem({
-              name: item.name,
-              price: String(item.price),
-              category: item.category || 'Fast Food',
-              imageUrl: item.image || item.imageUrl || '',
-              description: item.description || '',
-              unit: item.unit || '1 serving',
-              stock: numStock
-            });
-            setShowAddMenuModal(true);
-          }}
-          className="p-2 bg-slate-50 text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 transition flex items-center justify-center shrink-0 active:scale-95"
-          title="Edit Product"
-        >
-          <Edit className="w-3.5 h-3.5" />
-        </button>
-
-        {deleteStep === 0 ? (
-          <button 
-            onClick={(e) => { e.stopPropagation(); setDeleteStep(1); }}
-            className="p-2 bg-slate-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition flex items-center justify-center shrink-0 active:scale-95"
-            title="Delete product"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+        {item.isSyncing ? (
+          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg shrink-0 shadow-sm animate-pulse">
+            <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+            <span className="text-[8.5px] font-black text-amber-700 uppercase tracking-widest leading-none mt-0.5">In Progress</span>
+          </div>
         ) : (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteItem(item.id);
-              setDeleteStep(0);
-            }}
-            className="px-2 bg-red-600 border border-red-700 text-white font-black text-[9px] uppercase tracking-wider rounded-lg hover:bg-red-700 transition-all cursor-pointer h-8 shrink-0 flex items-center justify-center animate-pulse font-sans"
-            title="Confirm deletion"
-          >
-            Confirm? 🚨
-          </button>
+          <>
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleToggleStock(item.id, numStock); }}
+              className={`p-2 rounded-lg border transition-all cursor-pointer shadow-xs active:scale-95 flex items-center justify-center shrink-0 ${
+                numStock > 0 
+                  ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-100' 
+                  : 'bg-red-600 border-red-600 text-white hover:bg-red-700 shadow-rose-100'
+              }`}
+              title={numStock > 0 ? "Mark Out of Stock" : "Mark In Stock"}
+            >
+              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+            </button>
+
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingItem(item);
+                setNewItem({
+                  name: item.name,
+                  price: String(item.price),
+                  category: item.category || 'Fast Food',
+                  imageUrl: item.image || item.imageUrl || '',
+                  description: item.description || '',
+                  unit: item.unit || '1 serving',
+                  stock: numStock
+                });
+                setShowAddMenuModal(true);
+              }}
+              className="p-2 bg-slate-50 text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100 transition flex items-center justify-center shrink-0 active:scale-95"
+              title="Edit Product"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+
+            {deleteStep === 0 ? (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setDeleteStep(1); }}
+                className="p-2 bg-slate-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition flex items-center justify-center shrink-0 active:scale-95"
+                title="Delete product"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteItem(item.id);
+                  setDeleteStep(0);
+                }}
+                className="px-2 bg-red-600 border border-red-700 text-white font-black text-[9px] uppercase tracking-wider rounded-lg hover:bg-red-700 transition-all cursor-pointer h-8 shrink-0 flex items-center justify-center animate-pulse font-sans"
+                title="Confirm deletion"
+              >
+                Confirm? 🚨
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

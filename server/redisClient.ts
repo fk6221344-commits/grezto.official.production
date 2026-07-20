@@ -94,7 +94,7 @@ export async function safeGet(key: string): Promise<string | null> {
       // Rehydrate L1 cache with value fetched from L2
       l1Cache.set(key, {
         value: val,
-        expiresAt: Date.now() + 60000 // Cache locally for 1 minute to reduce Redis roundtrips
+        expiresAt: Date.now() + 1000 // Cache locally for 1 second ONLY to deduplicate simultaneous requests, preventing stale data across instances
       });
       console.log(`[CACHE HIT - L2 REDIS] Retreived and populated L1 for key: ${key}`);
     }
