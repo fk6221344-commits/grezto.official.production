@@ -253,15 +253,15 @@ async function startServer() {
     if (!fileUrl) return;
     try {
       const bucketName = process.env.R2_BUCKET_NAME || 'grezto-assets';
-      
+
       let key = "";
       try {
         const parsedUrl = new URL(fileUrl);
-        key = parsedUrl.pathname.substring(1); 
-      } catch(e) {
+        key = parsedUrl.pathname.substring(1);
+      } catch (e) {
         key = fileUrl;
       }
-      
+
       if (!key || key.trim() === "") return;
 
       const s3Client = getS3Client();
@@ -1364,7 +1364,7 @@ async function startServer() {
   // App Version Info API for In-App Updates
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 1, // Change this when releasing a new version
+      latestVersionCode: 2, // Change this when releasing a new version
       forceUpdate: false, // If true, user cannot close the popup
       downloadUrl: "https://grezto.com",
       title: "New Update Available! 🚀",
