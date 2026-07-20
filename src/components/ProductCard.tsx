@@ -100,7 +100,7 @@ const ProductCardBody = React.memo(({
             <h4 className="text-xs font-bold text-gray-800 leading-tight h-8 overflow-hidden line-clamp-2 transition-colors">
               {product.name}
             </h4>
-            <p className="text-[10px] text-gray-400 mt-0.5 font-bold tracking-tight h-3 line-clamp-1 uppercase">{product.unit || '1 Kg / Pkt'}</p>
+            <p className="text-[9.5px] text-slate-500 mt-0.5 font-black tracking-[0.1em] h-3 line-clamp-1 uppercase">{product.unit || '1 Kg / Pkt'}</p>
           </div>
           
           <div className="mt-0.5 mb-1 flex items-center justify-between">

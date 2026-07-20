@@ -48,8 +48,8 @@ async function safeGet(key) {
     if (val) {
       l1Cache.set(key, {
         value: val,
-        expiresAt: Date.now() + 6e4
-        // Cache locally for 1 minute to reduce Redis roundtrips
+        expiresAt: Date.now() + 1e3
+        // Cache locally for 1 second ONLY to deduplicate simultaneous requests, preventing stale data across instances
       });
       console.log(`[CACHE HIT - L2 REDIS] Retreived and populated L1 for key: ${key}`);
     }
@@ -1206,6 +1206,29 @@ async function startServer() {
       }
     });
   };
+  const deleteImageFromR2 = async (fileUrl) => {
+    if (!fileUrl) return;
+    try {
+      const bucketName = process.env.R2_BUCKET_NAME || "grezto-assets";
+      let key = "";
+      try {
+        const parsedUrl = new URL(fileUrl);
+        key = parsedUrl.pathname.substring(1);
+      } catch (e) {
+        key = fileUrl;
+      }
+      if (!key || key.trim() === "") return;
+      const s3Client = getS3Client();
+      const command = new import_client_s3.DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: key
+      });
+      await s3Client.send(command);
+      console.log(`[R2 CLEANUP] Successfully deleted orphaned image from R2: ${key}`);
+    } catch (err) {
+      console.warn(`[R2 CLEANUP] Failed to delete image from R2 (${fileUrl}):`, err.message || err);
+    }
+  };
   const upload = (0, import_multer.default)({
     storage: import_multer.default.memoryStorage(),
     limits: { fileSize: 20 * 1024 * 1024 }
@@ -1628,9 +1651,18 @@ async function startServer() {
       if (shopId) {
         await safeDel(`grezto:shop:${shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${shopId}`);
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${shopId}`);
           warmShopProductsCache(shopId);
+          try {
+            const { data: targetShop } = await supabase.from("shops").select("city").eq("id", shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (category) {
@@ -1664,7 +1696,7 @@ async function startServer() {
       if (!shopId) {
         return res.status(400).json({ error: "shopId is required inside productData." });
       }
-      const { data: existingProd } = await supabase.from("products").select("shopId").eq("id", productData.id).maybeSingle();
+      const { data: existingProd } = await supabase.from("products").select("shopId, image, imageUrl").eq("id", productData.id).maybeSingle();
       if (existingProd) {
         const isAuthorizedExisting = await verifyShopOwnershipOrTeam(userPhone, existingProd.shopId);
         if (!isAuthorizedExisting) {
@@ -1676,14 +1708,30 @@ async function startServer() {
         return res.status(403).json({ success: false, error: "Access Denied: You are not authorized to add/modify products for this shop." });
       }
       console.log(`[WRITE API] Upserting product ${productData.id}`);
+      if (existingProd) {
+        const oldImage = existingProd.image || existingProd.imageUrl;
+        const newImage = productData.image || productData.imageUrl;
+        if (oldImage && oldImage !== newImage) {
+          deleteImageFromR2(oldImage);
+        }
+      }
       const { error } = await supabase.from("products").upsert(productData);
       if (error) throw error;
       if (productData.shopId) {
         await safeDel(`grezto:shop:${productData.shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${productData.shopId}`);
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${productData.shopId}`);
           warmShopProductsCache(productData.shopId);
+          try {
+            const { data: targetShop } = await supabase.from("shops").select("city").eq("id", productData.shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (productData.category) {
@@ -1720,15 +1768,31 @@ async function startServer() {
       if (!isAuthorized) {
         return res.status(403).json({ success: false, error: "Access Denied: You are not authorized to delete this product." });
       }
+      const { data: prodToDelete } = await supabase.from("products").select("image, imageUrl").eq("id", productId).maybeSingle();
       console.log(`[WRITE API] Deleting product ${productId}`);
       const { error } = await supabase.from("products").delete().eq("id", productId);
       if (error) throw error;
+      if (prodToDelete) {
+        const imageToDelete = prodToDelete.image || prodToDelete.imageUrl;
+        if (imageToDelete) {
+          deleteImageFromR2(imageToDelete);
+        }
+      }
       if (shopId) {
         await safeDel(`grezto:shop:${shopId}:products`);
         console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for shop: ${shopId}`);
-        setImmediate(() => {
+        setImmediate(async () => {
           console.log(`[PILLAR 2 - BACKGROUND PRE-WARMING] Pre-warming started for shop: ${shopId}`);
           warmShopProductsCache(shopId);
+          try {
+            const { data: targetShop } = await supabase.from("shops").select("city").eq("id", shopId).maybeSingle();
+            const shopCity = targetShop?.city ? targetShop.city.toLowerCase() : "kawarhagi";
+            await safeDel(`grezto:shops:city:${shopCity}`);
+            console.log(`[PILLAR 2 - REDIS EVICTION] Selective eviction complete for home page city: ${shopCity}`);
+            warmCityShopsCache(shopCity);
+          } catch (err) {
+            console.warn("Could not invalidate home page cache", err);
+          }
         });
       }
       if (category) {

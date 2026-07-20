@@ -256,6 +256,7 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
       category: newItem.category,
       image: finalImageUrl,
       description: newItem.description,
+      unit: newItem.unit || '1 serving',
       inStock: Number(newItem.stock) > 0,
       shopId: shop.id,
       shopName: shopName,

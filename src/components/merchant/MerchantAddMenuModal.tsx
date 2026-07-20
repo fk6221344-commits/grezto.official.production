@@ -126,7 +126,7 @@ export function MerchantAddMenuModal({
                 <input 
                   type="number" 
                   value={newItem.stock === undefined ? '' : newItem.stock}
-                  onChange={e => setNewItem({...newItem, stock: Number(e.target.value)})}
+                  onChange={e => setNewItem({...newItem, stock: e.target.value === '' ? '' : Number(e.target.value)})}
                   placeholder="Available stock"
                   className="w-full bg-slate-50 border rounded-xl p-3 font-semibold focus:outline-none"
                 />
