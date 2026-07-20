@@ -180,15 +180,16 @@ export default function ProfileLoginModal({
                           type="button"
                           onClick={handleSendOtpInline}
                           disabled={authLoading || loginPhone.length !== 10 || !loginName.trim() || resendTimer > 0}
-                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] ${
-                            resendTimer > 0
-                              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 border border-emerald-400 shadow-md shadow-emerald-600/30"
-                              : "bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40"
-                          }`}
+                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed`}
                         >
-                          {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
+                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
                         </button>
                      </div>
+                     {resendTimer > 0 && (
+                        <p className="text-[9.5px] text-emerald-600 font-bold mt-1.5 ml-1 tracking-wide animate-pulse">
+                          Wait {resendTimer} seconds before resending
+                        </p>
+                     )}
                   </div>
                 </div>
               ) : (
@@ -216,15 +217,16 @@ export default function ProfileLoginModal({
                           type="button"
                           onClick={handleSendOtpInline}
                           disabled={authLoading || loginPhone.length !== 10 || resendTimer > 0}
-                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] ${
-                            resendTimer > 0
-                              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 border border-emerald-400 shadow-md shadow-emerald-600/30"
-                              : "bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40"
-                          }`}
+                          className={`active:scale-95 text-white px-3.5 rounded-xl font-black text-[8px] uppercase tracking-wider transition-all shadow-xs inline-flex items-center justify-center min-w-[90px] bg-stone-900 border border-stone-800 hover:bg-stone-850 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed`}
                         >
-                          {authLoading ? '...' : (resendTimer > 0 ? `Resend in ${resendTimer}s` : (isOtpSent ? 'Resend' : 'Send OTP'))}
+                          {authLoading ? '...' : (isOtpSent ? 'Resend' : 'Send OTP')}
                         </button>
                      </div>
+                     {resendTimer > 0 && (
+                        <p className="text-[9.5px] text-emerald-600 font-bold mt-1.5 ml-1 tracking-wide animate-pulse">
+                          Wait {resendTimer} seconds before resending
+                        </p>
+                     )}
                   </div>
                 </div>
               )}

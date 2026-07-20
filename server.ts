@@ -1364,7 +1364,7 @@ async function startServer() {
   // App Version Info API for In-App Updates
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 2, // Change this when releasing a new version
+      latestVersionCode: 3, // Change this when releasing a new version
       forceUpdate: false, // If true, user cannot close the popup
       downloadUrl: "https://grezto.com",
       title: "New Update Available! 🚀",
