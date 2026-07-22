@@ -295,7 +295,7 @@ export default function RiderCoPilotAssist({ order, shopDetails, onClose, onComp
         onComplete();
       }
 
-      toast.success("🎉 Order Delivered Successfully! ₹25 added directly to Rider Wallet.");
+      toast.success("🎉 Order Delivered Successfully! ₹20 added directly to Rider Wallet.");
       setTimeout(() => {
         setIsSubmitting(false);
         onClose();

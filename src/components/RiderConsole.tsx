@@ -447,7 +447,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
     try {
       if (!supabase) throw new Error("Supabase is not initialized");
 
-      const earnedFee = 25;
+      const earnedFee = 20;
       
       const idsToUpdate = [orderToConfirm.id];
       if (orderToConfirm.id.startsWith('c_') && !orderToConfirm.id.includes('_')) {
@@ -497,7 +497,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
       // Trigger grand patakha confetti explosions
       triggerCelebrateBurst();
 
-      // Show congratulations popup with ₹25 incentive
+      // Show congratulations popup with ₹20 incentive
       setCelebrationData({
         orderId: orderToConfirm.id?.slice(-5).toUpperCase(),
         customerName: orderToConfirm.customerName || 'Loyal Client',
@@ -546,7 +546,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
   };
 
   // Earnings calculations - Lifetime Sync with Rider Management
-  const calculatedEarnings = historyOrders.reduce((acc, order) => acc + Number(order.riderFee || 25), 0);
+  const calculatedEarnings = historyOrders.reduce((acc, order) => acc + Number(order.riderFee || 20), 0);
   const totalCompletedJobs = historyOrders.length;
   const totalDeliveryCharges = historyOrders.reduce((acc, order) => acc + Number(order.deliveryCharge || 0), 0);
   const remainingDeliveryCharges = totalDeliveryCharges - calculatedEarnings;
@@ -696,7 +696,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
                 setCelebrationData({
                   orderId: coPilotOrder.order.id?.slice(-5).toUpperCase(),
                   customerName: coPilotOrder.order.customerName || 'Loyal Client',
-                  amount: 25
+                  amount: 20
                 });
               }}
             />

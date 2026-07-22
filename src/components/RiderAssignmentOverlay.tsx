@@ -137,7 +137,7 @@ export default function RiderAssignmentOverlay({
                   </div>
                   <div className="text-right font-sans">
                     <span className="text-[8.5px] block font-black uppercase text-white/40">PAYOUT FEE</span>
-                    <span className="text-base font-black text-emerald-400 font-mono">₹25.00</span>
+                    <span className="text-base font-black text-emerald-400 font-mono">₹20.00</span>
                   </div>
                 </div>
 

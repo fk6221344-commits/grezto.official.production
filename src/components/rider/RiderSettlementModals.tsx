@@ -76,7 +76,7 @@ export default function RiderSettlementModals({
 
               <div className="p-5.5 space-y-4">
                 <div className="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100">
-                  <p className="text-[8px] font-black uppercase text-indigo-400 tracking-wider">Calculated Earnings (₹25 per delivery)</p>
+                  <p className="text-[8px] font-black uppercase text-indigo-400 tracking-wider">Calculated Earnings (₹20 per delivery)</p>
                   <p className="text-lg font-black text-indigo-950 font-mono mt-1">₹{getRiderMetrics(showSettleModal).liveEarnings}</p>
                 </div>
 
