@@ -13,6 +13,7 @@ dependencies {
     implementation project(':capacitor-firebase-authentication')
     implementation project(':capacitor-firebase-crashlytics')
     implementation project(':capacitor-app')
+    implementation project(':capacitor-browser')
     implementation project(':capacitor-dialog')
     implementation project(':capacitor-geolocation')
     implementation project(':capacitor-google-maps')

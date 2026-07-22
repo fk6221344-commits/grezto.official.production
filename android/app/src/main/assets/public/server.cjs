@@ -454,7 +454,7 @@ async function validateFirebaseToken(req, res, next) {
 }
 function isMasterAdmin(phone) {
   const clean = phone.replace(/\D/g, "").slice(-10);
-  return clean === "9864975438" || clean === "8638089161" || clean === "8486087096";
+  return clean === "9864975438" || clean === "8638089161" || clean === "9101022803";
 }
 async function verifyShopOwnershipOrTeam(phone, shopId) {
   if (!supabase) return false;
@@ -539,13 +539,14 @@ function sanitizeProductPayload(rawProduct) {
     "rating",
     "isBestSeller",
     "status",
-    "deleted"
+    "deleted",
+    "unit"
   ];
   const sanitized = {};
   for (const key of allowedKeys) {
     if (rawProduct[key] !== void 0 && rawProduct[key] !== null) {
       const val = rawProduct[key];
-      if (key === "id" || key === "name" || key === "category" || key === "image" || key === "description" || key === "stockStatus" || key === "shopId" || key === "shopName" || key === "status") {
+      if (key === "id" || key === "name" || key === "category" || key === "image" || key === "description" || key === "stockStatus" || key === "shopId" || key === "shopName" || key === "status" || key === "unit") {
         sanitized[key] = String(val).trim();
       } else if (key === "price" || key === "originalPrice" || key === "discount" || key === "rating") {
         const numVal = Number(val);
@@ -1113,7 +1114,7 @@ async function startServer() {
   };
   app.use((0, import_cors.default)(corsOptions));
   app.use((req, res, next) => {
-    if (!req.path.startsWith("/api/") || req.path === "/api/health" || req.path === "/api/maps/config" || req.path === "/api/config") {
+    if (!req.path.startsWith("/api/") || req.path === "/api/health" || req.path === "/api/maps/config" || req.path === "/api/config" || req.path === "/api/app-update-info") {
       return next();
     }
     const serverExpectedSignature = process.env.APP_CLIENT_SIGNATURE || "grezto_secure_app_signature_2026_unicorn";
@@ -1382,6 +1383,15 @@ async function startServer() {
           if (tokPhoneClean !== payPhoneClean) {
             return res.status(403).json({ success: false, error: "Hacker Alert: Apne account ke alawa kisi dusre number se order nahi daal sakte! \u{1F6D1}" });
           }
+        }
+        try {
+          await supabase.rpc("upsert_user_profile", {
+            p_phone: payload.p_customer_phone,
+            p_name: payload.p_customer_name || "Grezto Member",
+            p_id: payload.p_user_id || decodedToken.uid
+          });
+        } catch (autoRegError) {
+          console.warn("[GATEWAY] Auto-registration warning (safe to ignore):", autoRegError);
         }
         const { data, error } = await supabase.rpc("place_order", payload);
         if (error) throw error;
@@ -2099,6 +2109,17 @@ async function startServer() {
       console.warn("Failed to send push notification:", e.message);
     }
     res.json({ success: true });
+  });
+  app.get("/api/app-update-info", (req, res) => {
+    res.json({
+      latestVersionCode: 1,
+      // Change this when releasing a new version
+      forceUpdate: false,
+      // If true, user cannot close the popup
+      downloadUrl: "https://grezto.com",
+      title: "New Update Available! \u{1F680}",
+      message: "A new and faster version of Grezto is available. Please update the app to continue enjoying seamless deliveries."
+    });
   });
   if (process.env.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
