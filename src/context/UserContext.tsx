@@ -208,7 +208,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const cleaned = user.phone.replace(/\D/g, '').slice(-10);
-    const predefinedAdmins = ['9864975438', '8638089161', '8486087096'];
+    const predefinedAdmins = ['9864975438', '8638089161', '9101022803'];
     
     if (predefinedAdmins.includes(cleaned)) {
       if (!user.isAdmin) {
@@ -365,7 +365,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = (name: string, phone: string, avatar: string = '', address: string = '', isAdmin: boolean = false) => {
-    const isOwnerNumber = phone === '9864975438' || phone === '8638089161' || phone === '8486087096';
+    const isOwnerNumber = phone === '9864975438' || phone === '8638089161' || phone === '9101022803';
     
     // Automatically trigger anonymous fallback session if main credential session is not active
     if (!auth.currentUser) {
@@ -412,7 +412,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         next.isLoggedIn = false;
       }
       
-      const isKnown = next.phone === '9864975438' || next.phone === '8638089161' || next.phone === '8486087096';
+      const isKnown = next.phone === '9864975438' || next.phone === '8638089161' || next.phone === '9101022803';
       next.isAdmin = isKnown || prev.isAdmin || data.isAdmin || false;
       nextUser = next;
       return next;

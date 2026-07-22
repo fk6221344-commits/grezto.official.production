@@ -242,7 +242,7 @@ export function useProfileAuth() {
       setIsOtpSent(false);
       setResendTimer(0);
 
-      const isOwner = loginPhone === "9864975438" || loginPhone === "8638089161" || loginPhone === "8486087096";
+      const isOwner = loginPhone === "9864975438" || loginPhone === "8638089161" || loginPhone === "9101022803";
       if (isOwner) {
         toast.success("Welcome Back Master Owner! 👑🌿");
       } else {

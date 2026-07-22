@@ -254,7 +254,7 @@ export async function validateFirebaseToken(req: any, res: express.Response, nex
  */
 export function isMasterAdmin(phone: string): boolean {
   const clean = phone.replace(/\D/g, '').slice(-10);
-  return clean === '9864975438' || clean === '8638089161' || clean === '8486087096';
+  return clean === '9864975438' || clean === '8638089161' || clean === '9101022803';
 }
 
 /**
