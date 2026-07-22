@@ -24,7 +24,8 @@ export function sanitizeProductPayload(rawProduct: any): any {
     'rating',
     'isBestSeller',
     'status',
-    'deleted'
+    'deleted',
+    'unit'
   ];
 
   const sanitized: any = {};
@@ -34,7 +35,7 @@ export function sanitizeProductPayload(rawProduct: any): any {
       const val = rawProduct[key];
 
       // Safe Type-Casting & Anti-Injection Sanitization
-      if (key === 'id' || key === 'name' || key === 'category' || key === 'image' || key === 'description' || key === 'stockStatus' || key === 'shopId' || key === 'shopName' || key === 'status') {
+      if (key === 'id' || key === 'name' || key === 'category' || key === 'image' || key === 'description' || key === 'stockStatus' || key === 'shopId' || key === 'shopName' || key === 'status' || key === 'unit') {
         sanitized[key] = String(val).trim();
       } else if (key === 'price' || key === 'originalPrice' || key === 'discount' || key === 'rating') {
         const numVal = Number(val);
