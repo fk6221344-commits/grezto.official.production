@@ -711,7 +711,7 @@ export function useRiderOperations() {
             ? bill
             : 0;
         totalGeneratedCod += codAmt;
-        liveEarnings += Number(order.riderFee || 25);
+        liveEarnings += Number(order.riderFee || 20);
         totalDeliveryCharges += Number(order.deliveryCharge || 0);
       }
     });
