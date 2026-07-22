@@ -186,9 +186,11 @@ export default function ProfileLoginModal({
                         </button>
                      </div>
                      {resendTimer > 0 && (
-                        <p className="text-[9.5px] text-emerald-600 font-bold mt-1.5 ml-1 tracking-wide animate-pulse">
-                          Wait {resendTimer} seconds before resending
-                        </p>
+                        <div className="flex justify-end mt-2 mr-1">
+                           <span className="text-sm font-black text-emerald-650 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-xl shadow-sm tracking-widest">
+                             {Math.floor(resendTimer / 60).toString().padStart(2, '0')}:{(resendTimer % 60).toString().padStart(2, '0')}
+                           </span>
+                        </div>
                      )}
                   </div>
                 </div>
@@ -223,9 +225,11 @@ export default function ProfileLoginModal({
                         </button>
                      </div>
                      {resendTimer > 0 && (
-                        <p className="text-[9.5px] text-emerald-600 font-bold mt-1.5 ml-1 tracking-wide animate-pulse">
-                          Wait {resendTimer} seconds before resending
-                        </p>
+                        <div className="flex justify-end mt-2 mr-1">
+                           <span className="text-sm font-black text-emerald-650 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-xl shadow-sm tracking-widest">
+                             {Math.floor(resendTimer / 60).toString().padStart(2, '0')}:{(resendTimer % 60).toString().padStart(2, '0')}
+                           </span>
+                        </div>
                      )}
                   </div>
                 </div>
