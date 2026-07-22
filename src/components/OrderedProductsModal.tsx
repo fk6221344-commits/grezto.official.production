@@ -114,6 +114,7 @@ export default function OrderedProductsModal({ isOpen, onClose, items, totalAmou
                   <span className="text-[16px] font-black text-slate-900 drop-shadow-sm">₹{totalAmount}</span>
                 </div>
               </div>
+              </div>
             </div>
           </motion.div>
         </>
