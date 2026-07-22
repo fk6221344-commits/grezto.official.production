@@ -862,6 +862,7 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                 onClose={() => setShowItemsList(false)}
                 items={order.items || []}
                 totalAmount={order.finalAmount || order.amount || (Number(order.totalAmount || 0) + Number(order.deliveryCharge || 0))}
+                deliveryCharge={Number(order.deliveryCharge || 0)}
             />
 
             {/* Grezto style Delivery partner information & dialing */}

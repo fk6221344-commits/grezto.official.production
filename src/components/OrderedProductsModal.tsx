@@ -9,9 +9,10 @@ interface OrderedProductsModalProps {
   onClose: () => void;
   items: any[];
   totalAmount: number;
+  deliveryCharge?: number;
 }
 
-export default function OrderedProductsModal({ isOpen, onClose, items, totalAmount }: OrderedProductsModalProps) {
+export default function OrderedProductsModal({ isOpen, onClose, items, totalAmount, deliveryCharge }: OrderedProductsModalProps) {
   // Catch native back button to close the Ordered Products modal/dialog cleanly
   useRegisterBackHandler(() => {
     if (isOpen) {
@@ -101,10 +102,17 @@ export default function OrderedProductsModal({ isOpen, onClose, items, totalAmou
                     );
                   })()}
                 </div>
-              </div>
-              <div className="flex justify-between items-center border-t border-slate-200 pt-5 mt-1">
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Bill:</span>
-                <span className="text-[16px] font-black text-slate-900 drop-shadow-sm">₹{totalAmount}</span>
+              <div className="pt-2 mt-2">
+                {deliveryCharge !== undefined && deliveryCharge > 0 && (
+                  <div className="flex justify-between items-center px-1 mb-2">
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Delivery Charge</span>
+                    <span className="text-[14px] font-black text-slate-700">₹{deliveryCharge}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center border-t border-slate-200 pt-3 px-1 mt-1">
+                  <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Total Bill:</span>
+                  <span className="text-[16px] font-black text-slate-900 drop-shadow-sm">₹{totalAmount}</span>
+                </div>
               </div>
             </div>
           </motion.div>
