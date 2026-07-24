@@ -59,14 +59,11 @@ export default function HomeHeader({
         {/* Animated Light Beam Sweep */}
         <div className="absolute inset-y-0 w-44 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent animate-ad-beam filter blur-[2px]" />
 
-        {/* Dynamic Delivery Vehicle Driving across top line of header */}
-        <div className="absolute top-1 left-0 right-0 h-6 overflow-hidden pointer-events-none z-10">
-          <div className="animate-drive-van-header flex items-center gap-1 text-amber-300 drop-shadow-md">
-            <span className="text-sm">🚚</span>
-            <span className="bg-amber-400 text-slate-950 text-[8px] font-black px-1 py-0.2 rounded uppercase tracking-tighter shadow-sm">
-              EXPRESS
-            </span>
-            <span className="text-[10px] animate-ping">💨</span>
+        {/* Dynamic Forward-Facing Delivery Vehicle Driving smoothly across Header Background Canvas */}
+        <div className="absolute top-7 left-0 right-0 h-8 overflow-hidden pointer-events-none z-10">
+          <div className="animate-drive-van-header flex items-center gap-1 text-amber-300 drop-shadow-lg">
+            <span className="text-xs animate-ping">💨</span>
+            <span className="text-xl sm:text-2xl filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">🚚</span>
           </div>
         </div>
 
@@ -247,6 +244,14 @@ export default function HomeHeader({
             <span className="text-white/40">Search 'Milk' or 'Veggies'</span>
           )}
         </div>
+      </div>
+
+      {/* 10 to 45 mins (under 6KM) Express Delivery Info Strip */}
+      <div className="mt-2.5 flex items-center justify-center space-x-1.5 px-3 py-1 bg-[#021d0a] rounded-xl border border-emerald-800 text-white shadow-inner relative z-10">
+        <span className="text-amber-400 text-xs animate-bounce font-sans">⚡</span>
+        <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-100 font-display">
+          10 to 45 minutes (under 6KM) 🚀
+        </span>
       </div>
 
       {/* Elegant Manual Address Form Modal Layout */}
