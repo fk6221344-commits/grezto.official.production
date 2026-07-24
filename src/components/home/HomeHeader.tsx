@@ -59,11 +59,11 @@ export default function HomeHeader({
         {/* Animated Light Beam Sweep */}
         <div className="absolute inset-y-0 w-44 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent animate-ad-beam filter blur-[2px]" />
 
-        {/* Dynamic Forward-Facing Delivery Vehicle Driving smoothly across Header Background Canvas */}
-        <div className="absolute top-7 left-0 right-0 h-8 overflow-hidden pointer-events-none z-10">
+        {/* Dynamic Left-Facing Delivery Vehicle Driving smoothly from Right to Left */}
+        <div className="absolute top-11 left-0 right-0 h-8 overflow-hidden pointer-events-none z-10">
           <div className="animate-drive-van-header flex items-center gap-1 text-amber-300 drop-shadow-lg">
+            <span className="text-xl sm:text-2xl filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] inline-block scale-x-[-1]">🚚</span>
             <span className="text-xs animate-ping">💨</span>
-            <span className="text-xl sm:text-2xl filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">🚚</span>
           </div>
         </div>
 

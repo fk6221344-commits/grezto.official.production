@@ -179,17 +179,17 @@
 
 @keyframes driveVanFullHeader {
   0% {
-    transform: translateX(-120px);
+    transform: translateX(100vw);
     opacity: 0;
   }
   5% {
-    opacity: 0.9;
+    opacity: 0.95;
   }
   95% {
-    opacity: 0.9;
+    opacity: 0.95;
   }
   100% {
-    transform: translateX(100vw);
+    transform: translateX(-120px);
     opacity: 0;
   }
 }
