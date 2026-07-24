@@ -247,17 +247,24 @@ export function useMerchantMenu(shop: ShopProps, firebaseAuthReady: boolean, sho
       }
     }
 
+    const parsedDiscount = newItem.discount !== undefined && newItem.discount !== ''
+      ? Number(newItem.discount)
+      : (newItem.discount_percentage !== undefined && newItem.discount_percentage !== '' ? Number(newItem.discount_percentage) : 10);
+    const discountVal = isNaN(parsedDiscount) ? 10 : parsedDiscount;
+
     const productData = {
       id: targetId,
       name: newItem.name,
       price: Number(newItem.price),
-      originalPrice: Number(newItem.price) * 1.1,
-      discount: 10,
+      originalPrice: Number(newItem.price) * (1 + (discountVal > 0 ? discountVal : 10) / 100),
+      discount: discountVal,
+      discount_percentage: discountVal,
       category: newItem.category,
       image: finalImageUrl,
       description: newItem.description,
       unit: newItem.unit || '1 serving',
       inStock: Number(newItem.stock) > 0,
+      stock: newItem.stock !== undefined && newItem.stock !== '' ? Number(newItem.stock) : 15,
       shopId: shop.id,
       shopName: shopName,
       rating: 5.0,

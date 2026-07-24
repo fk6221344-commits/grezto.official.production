@@ -14,6 +14,7 @@ export function sanitizeProductPayload(rawProduct: any): any {
     'price',
     'originalPrice',
     'discount',
+    'discount_percentage',
     'category',
     'image',
     'description',
@@ -37,7 +38,7 @@ export function sanitizeProductPayload(rawProduct: any): any {
       // Safe Type-Casting & Anti-Injection Sanitization
       if (key === 'id' || key === 'name' || key === 'category' || key === 'image' || key === 'description' || key === 'stockStatus' || key === 'shopId' || key === 'shopName' || key === 'status' || key === 'unit') {
         sanitized[key] = String(val).trim();
-      } else if (key === 'price' || key === 'originalPrice' || key === 'discount' || key === 'rating') {
+      } else if (key === 'price' || key === 'originalPrice' || key === 'discount' || key === 'discount_percentage' || key === 'rating') {
         const numVal = Number(val);
         sanitized[key] = isNaN(numVal) ? 0 : numVal;
       } else if (key === 'inStock' || key === 'isBestSeller' || key === 'deleted') {
