@@ -246,8 +246,13 @@ export default function HomeHeader({
         </div>
       </div>
 
-      {/* Dynamic Category List Portal Target */}
-      <div id="category-portal-target" className="mt-1 relative z-10 w-full" />
+      {/* 10 to 45 mins (under 6KM) Express Delivery Info Strip */}
+      <div className="mt-2.5 flex items-center justify-center space-x-1.5 px-3 py-1 bg-[#021d0a] rounded-xl border border-emerald-800 text-white shadow-inner relative z-10">
+        <span className="text-amber-400 text-xs animate-bounce font-sans">⚡</span>
+        <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-100 font-display">
+          10 to 45 minutes (under 6KM) 🚀
+        </span>
+      </div>
 
       {/* Elegant Manual Address Form Modal Layout */}
       {showAddressModal && (
