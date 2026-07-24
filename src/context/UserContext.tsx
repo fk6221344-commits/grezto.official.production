@@ -244,6 +244,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (supabase) {
           const { data: profileData } = await supabase.from('profiles').select('*').eq('phone', user.phone).maybeSingle();
           if (profileData) {
+             let hasFirstOrder = profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false;
+             
+             // Dynamic Fallback Check for Old Users Migration
+             if (!hasFirstOrder && user.phone) {
+                try {
+                  const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('customerPhone', user.phone);
+                  if (count && count > 0) {
+                     hasFirstOrder = true;
+                     supabase.from('profiles').update({ has_placed_first_order: true }).eq('phone', user.phone).then(() => {});
+                  }
+                } catch (e) {
+                  console.warn("Failed to verify old user order history", e);
+                }
+             }
+
              setUser(prev => {
                 return { 
                    ...prev, 
@@ -251,7 +266,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                    address: profileData.address !== null ? profileData.address : prev.address,
                    avatar: profileData.avatar !== null ? profileData.avatar : prev.avatar,
                    points: profileData.points !== undefined ? profileData.points : prev.points,
-                   hasPlacedFirstOrder: profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false
+                   hasPlacedFirstOrder: hasFirstOrder
                 };
              });
           }

@@ -292,7 +292,7 @@ export default function Checkout({
   const recipientName = nameVal || user.name || "Jjbuu";
   const recipientPhone = user.phone || "7577950272";
 
-  const isFirstOrderFreeDelivery = user.hasPlacedFirstOrder === false;
+  const isFirstOrderFreeDelivery = user.isLoggedIn && user.hasPlacedFirstOrder === false;
   const finalDeliveryFee =
     selectedVoucher?.type === "freedelivery" || isFirstOrderFreeDelivery ? 0 : calcDeliveryFee;
   const voucherDiscount =
