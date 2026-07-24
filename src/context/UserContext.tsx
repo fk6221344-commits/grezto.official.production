@@ -24,6 +24,7 @@ interface UserProfile {
     description: string;
     minSubtotal?: number;
   }>;
+  hasPlacedFirstOrder?: boolean;
 }
 
 interface UserContextType {
@@ -56,7 +57,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           activeCity: parsed.activeCity || 'Kawarhagi',
           points: parsed.points !== undefined ? parsed.points : 150,
           isLoggedIn: hasValidPhone ? (parsed.isLoggedIn ?? false) : false,
-          redeemedVouchers: parsed.redeemedVouchers || []
+          redeemedVouchers: parsed.redeemedVouchers || [],
+          hasPlacedFirstOrder: parsed.hasPlacedFirstOrder ?? false
         };
       } catch (e) {
         // Fallback below
@@ -74,7 +76,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lng: 92.1306235,
       activeCity: '', 
       points: 150,
-      redeemedVouchers: []
+      redeemedVouchers: [],
+      hasPlacedFirstOrder: false
     };
   });
 
@@ -247,7 +250,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                    name: profileData.name || prev.name, 
                    address: profileData.address !== null ? profileData.address : prev.address,
                    avatar: profileData.avatar !== null ? profileData.avatar : prev.avatar,
-                   points: profileData.points !== undefined ? profileData.points : prev.points 
+                   points: profileData.points !== undefined ? profileData.points : prev.points,
+                   hasPlacedFirstOrder: profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false
                 };
              });
           }

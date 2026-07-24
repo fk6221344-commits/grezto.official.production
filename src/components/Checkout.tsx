@@ -292,8 +292,9 @@ export default function Checkout({
   const recipientName = nameVal || user.name || "Jjbuu";
   const recipientPhone = user.phone || "7577950272";
 
+  const isFirstOrderFreeDelivery = user.hasPlacedFirstOrder === false;
   const finalDeliveryFee =
-    selectedVoucher?.type === "freedelivery" ? 0 : calcDeliveryFee;
+    selectedVoucher?.type === "freedelivery" || isFirstOrderFreeDelivery ? 0 : calcDeliveryFee;
   const voucherDiscount =
     selectedVoucher?.type === "amount" ? selectedVoucher.value : 0;
   const finalTotal = Math.max(0, subtotal + finalDeliveryFee - voucherDiscount);
@@ -811,6 +812,20 @@ export default function Checkout({
       });
       triggerSuccessHapticVibration();
       clearCart();
+      
+      // Post-Checkout First Order Update
+      if (user.hasPlacedFirstOrder === false) {
+        try {
+          const { supabase } = await import('../services/supabase');
+          if (supabase) {
+            supabase.from('profiles').update({ has_placed_first_order: true }).eq('phone', user.phone).then(() => {});
+          }
+          updateProfile({ hasPlacedFirstOrder: true });
+        } catch (updateErr) {
+          console.warn("Could not update first order flag", updateErr);
+        }
+      }
+
     } catch (err: any) {
       console.warn("Database offline cache used:", err);
       toast.error(`Error: ${err.message || 'Unknown error during order setup'}`);
@@ -1164,6 +1179,7 @@ export default function Checkout({
             subtotal={subtotal}
             deliveryFee={finalDeliveryFee}
             total={finalTotal}
+            isFirstOrder={isFirstOrderFreeDelivery}
             isMultiShop={items.reduce((acc, item) => {
               const rawId = (item as any).shopId || (item as any).productShopId || "admin";
               acc.add(rawId);
