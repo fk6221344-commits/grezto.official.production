@@ -256,6 +256,10 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
       });
     }
 
+    // Volume-based Promotional Discounts
+    if (subtotal >= 999) return 0;
+    if (subtotal >= 499) return 15;
+
     // Single shop or admin = 30. Multi-shop = 35 (capped)
     if (uniqueShops.size > 1) {
       return 35;
