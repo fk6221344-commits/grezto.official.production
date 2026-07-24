@@ -373,7 +373,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.map(i => {
       if (i.id === id) {
         const newQty = i.quantity + delta;
-        return newQty > 0 ? { ...i, quantity: newQty } : i;
+        return { ...i, quantity: newQty };
       }
       return i;
     }).filter(i => i.quantity > 0));
