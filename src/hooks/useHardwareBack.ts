@@ -157,10 +157,7 @@ export function useHardwareBack(states: {
           
           const handled = performBack();
           
-          if (handled) {
-            // Keep web history in sync if we handled it via native back button
-            window.history.back();
-          } else {
+          if (!handled) {
             console.log("[Native Back Hook] Root reached. Minimizing app.");
             CapApp.minimizeApp().catch((e) => {
               console.error("Error minimizing native app from backbutton hook:", e);

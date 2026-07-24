@@ -17,6 +17,7 @@ import { useCart } from '../../context/CartContext';
 import toast from 'react-hot-toast';
 import { getApiUrl, getAuthHeaders } from '../../utils/api';
 import AestheticImage from '../AestheticImage';
+import { useRegisterBackHandler } from '../../hooks/useRegisterBackHandler';
 
 interface HotelDetailsDrawerProps {
   hotel: any;
@@ -43,6 +44,15 @@ export default function HotelDetailsDrawer({
   const [currentHotelState, setCurrentHotelState] = useState(hotel);
   const [dishes, setDishes] = useState<any[]>(() => getDishesForHotel(hotel.id));
   const [dishesLoading, setDishesLoading] = useState(true);
+
+  // Register hardware back button handler to close hotel menu instead of exiting app
+  useRegisterBackHandler(() => {
+    if (hotel) {
+      onClose();
+      return true; // consumed
+    }
+    return false;
+  }, 100, [hotel, onClose]);
 
   useEffect(() => {
     setCurrentHotelState(hotel);
