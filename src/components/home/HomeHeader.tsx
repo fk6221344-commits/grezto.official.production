@@ -54,9 +54,19 @@ export default function HomeHeader({
 
   return (
     <div className="px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100">
-      {/* Dynamic green gradient header background */}
+      {/* Dynamic green gradient header background with Live Advertisement Motion Layer */}
       <div className="absolute inset-0 animated-green-gradient overflow-hidden z-0 pointer-events-none">
-        <div className="absolute inset-y-0 w-36 bg-gradient-to-r from-transparent via-rose-500/20 to-transparent skew-x-[-20deg] filter blur-[3px] animate-red-scan" style={{ animationDuration: '6.5s' }} />
+        {/* Animated Light Beam Sweep */}
+        <div className="absolute inset-y-0 w-44 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent animate-ad-beam filter blur-[2px]" />
+
+        {/* Floating Glowing Animated Promo Icons & Watermarks (Advertisement Feel) */}
+        <div className="absolute inset-0 flex justify-between items-center px-6 opacity-15 pointer-events-none select-none animate-promo-float">
+          <span className="text-3xl filter blur-[0.5px]">🚚</span>
+          <span className="text-2xl filter blur-[0.5px]">🎁</span>
+          <span className="text-3xl filter blur-[0.5px]">✨</span>
+          <span className="text-2xl filter blur-[0.5px]">🎉</span>
+          <span className="text-3xl filter blur-[0.5px]">🛵</span>
+        </div>
       </div>
       <div className="flex items-center justify-between relative z-50">
         <div className="flex items-center space-x-1">
