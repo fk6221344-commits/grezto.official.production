@@ -41,6 +41,10 @@
 				"phone"
 			],
 			"skipNativeAuth": false
+		},
+		"CapacitorUpdater": {
+			"autoUpdate": true,
+			"statsUrl": "https://api.grezto.com/api/ota-stats"
 		}
 	}
 }

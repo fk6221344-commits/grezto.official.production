@@ -2112,7 +2112,7 @@ async function startServer() {
   });
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 1,
+      latestVersionCode: 2,
       // Change this when releasing a new version
       forceUpdate: false,
       // If true, user cannot close the popup
