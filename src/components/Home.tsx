@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Fuse from 'fuse.js';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search } from 'lucide-react';
@@ -103,6 +104,14 @@ export default function Home({
   const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<any | null>(null);
 
   // Lazy loading state for products rendering (Blinkit/JioMart style 6-item batching)
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const target = document.getElementById('category-portal-target');
+    if (target) {
+      setPortalTarget(target);
+    }
+  }, []);
   const [visibleCount, setVisibleCount] = useState(6);
   const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(null);
 
@@ -572,12 +581,24 @@ export default function Home({
                     window.dispatchEvent(new CustomEvent('grezto-search', { detail: q }));
                   }} />
 
-                  <CategoryList
-                    categories={activeDisplayCategories}
-                    activeCategory={activeCategory}
-                    onSelectCategory={setActiveCategory}
-                    isLoading={isHomeLoading}
-                  />
+                  {portalTarget 
+                    ? createPortal(
+                        <CategoryList
+                          categories={activeDisplayCategories}
+                          activeCategory={activeCategory}
+                          onSelectCategory={setActiveCategory}
+                          isLoading={isHomeLoading}
+                        />,
+                        portalTarget
+                      )
+                    : (
+                        <CategoryList
+                          categories={activeDisplayCategories}
+                          activeCategory={activeCategory}
+                          onSelectCategory={setActiveCategory}
+                          isLoading={isHomeLoading}
+                        />
+                      )}
                 </motion.div>
               )}
             </AnimatePresence>

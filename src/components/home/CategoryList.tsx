@@ -64,16 +64,7 @@ export default function CategoryList({
   }, [onSelectCategory]);
 
   return (
-    <div className="mt-0.5 mx-2.5 p-4 bg-gradient-to-b from-[#fffaf9] to-[#fef5f3] rounded-3xl border border-[#ffeae7] shadow-[0_8px_30px_rgba(239,35,60,0.015)]" id="quick-categories-card">
-      <div className="flex items-center justify-between mb-4 px-1" id="quick-categories-header">
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-1.5" id="quick-categories-title">
-          <span className="w-1.5 h-3.5 bg-[#ef233c] rounded-full inline-block" id="quick-categories-badge-dot"></span>
-          <span>Quick Categories</span>
-        </h3>
-        <div className="flex items-center gap-2" id="quick-categories-action-wrap">
-           <p className="text-[#ef233c] text-[10px] font-black uppercase tracking-widest cursor-pointer hover:opacity-80 active:scale-95 transition-all" id="quick-categories-view-all">View All</p>
-        </div>
-      </div>
+    <div className="mx-2 mb-1" id="quick-categories-card">
       <div className="flex gap-4 overflow-x-auto pt-3 pb-3 px-1.5 no-scrollbar justify-start items-center category-scroll-container" id="category-scroll-inner">
         {categories.filter(Boolean).map((cat) => {
           return (
@@ -102,14 +93,14 @@ export default function CategoryList({
               </div>
               <div className="flex flex-col items-center min-h-[22px] justify-start" id={`category-label-wrap-${cat.id}`}>
                 <span className={`text-[9.5px] font-black tracking-wider uppercase text-center max-w-[62px] truncate block transition-colors duration-200 ${
-                  activeCategory === cat.id ? "text-[#ef233c]" : "text-slate-500 font-extrabold"
+                  activeCategory === cat.id ? "text-amber-300" : "text-emerald-50/90 font-extrabold"
                 }`} id={`category-label-${cat.id}`}>
                   {cat.id === 'Cake' ? t('cake') : (cat.displayName || t(cat.name as any) || cat.name || cat.id)}
                 </span>
                 {activeCategory === cat.id && (
                   <motion.div 
                     layoutId="activeCategoryIndicator"
-                    className="w-1.5 h-1.5 bg-[#ef233c] rounded-full mt-1 shrink-0" 
+                    className="w-1.5 h-1.5 bg-amber-400 rounded-full mt-1 shrink-0" 
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   />
                 )}
