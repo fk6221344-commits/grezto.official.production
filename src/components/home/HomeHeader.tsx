@@ -59,22 +59,28 @@ export default function HomeHeader({
         {/* Animated Light Beam Sweep */}
         <div className="absolute inset-y-0 w-44 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent animate-ad-beam filter blur-[2px]" />
 
-        {/* Large Glowing Advertisement Watermark Billboard Headline */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-25 animate-billboard-pulse select-none pointer-events-none px-4">
-          <span className="text-[15px] sm:text-[18px] font-black uppercase tracking-widest text-transparent bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-200 bg-clip-text text-center font-display drop-shadow-md">
-            🎉 FIRST ORDER FREE DELIVERY 🚚
-          </span>
+        {/* Dynamic Delivery Vehicle Driving across top line of header */}
+        <div className="absolute top-1 left-0 right-0 h-6 overflow-hidden pointer-events-none z-10">
+          <div className="animate-drive-van-header flex items-center gap-1 text-amber-300 drop-shadow-md">
+            <span className="text-sm">🚚</span>
+            <span className="bg-amber-400 text-slate-950 text-[8px] font-black px-1 py-0.2 rounded uppercase tracking-tighter shadow-sm">
+              EXPRESS
+            </span>
+            <span className="text-[10px] animate-ping">💨</span>
+          </div>
         </div>
 
-        {/* Dynamic Delivery Truck / Scooter Driving across the Whole Header Canvas */}
-        <div className="absolute bottom-2 left-0 right-0 h-8 overflow-hidden pointer-events-none">
-          <div className="animate-drive-van-header flex items-center gap-1.5 text-amber-300 drop-shadow-lg">
-            <span className="text-base">🚚</span>
-            <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-md">
-              GREZTO EXPRESS
-            </span>
-            <span className="text-xs animate-ping">💨</span>
-          </div>
+        {/* Ultra-Sharp 3-Line Glowing Commercial Headline Billboard */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 py-2">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] animate-pulse">
+            🎉 FIRST ORDER 🎉
+          </span>
+          <span className="text-base sm:text-lg font-black uppercase tracking-widest bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(251,191,36,0.8)] font-display my-0.5">
+            100% FREE
+          </span>
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] border-b border-amber-400/60 pb-0.5">
+            DELIVERY 🚚
+          </span>
         </div>
 
         {/* Fireworks & Sparkles bursting in background corners */}
@@ -240,36 +246,6 @@ export default function HomeHeader({
           ) : (
             <span className="text-white/40">Search 'Milk' or 'Veggies'</span>
           )}
-        </div>
-      </div>
-      
-      {/* Animated Flying Font & Driving Delivery Car Commercial Banner Strip */}
-      <div className="mt-2.5 flex items-center justify-between space-x-1 px-3 py-1.5 bg-gradient-to-r from-[#011e13] via-[#033b28] to-[#011e13] rounded-xl border border-amber-400/40 text-white shadow-lg relative z-10 overflow-hidden">
-        {/* Driving Delivery Car animation across left to right */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="animate-drive-car flex items-center gap-0.5 text-xs text-amber-300 drop-shadow-md">
-            <span>🛵</span>
-            <span className="text-[8px] font-black text-amber-200 uppercase tracking-tighter">GREZTO</span>
-            <span className="text-[10px] animate-pulse">💨</span>
-          </div>
-        </div>
-
-        {/* Flying Words Animation (FIRST ORDER flying from left, FREE DELIVERY flying from right) */}
-        <div className="flex items-center gap-1.5 relative z-10">
-          <span className="text-amber-300 text-xs animate-spin">✨</span>
-          <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider font-display">
-            <span className="animate-fly-left bg-gradient-to-r from-yellow-300 via-amber-200 to-orange-300 bg-clip-text text-transparent">
-              FIRST ORDER
-            </span>
-            <span className="animate-fly-right bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 bg-clip-text text-transparent border-b border-amber-400/50">
-              FREE DELIVERY 🎉
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 bg-emerald-950/90 px-2 py-0.5 rounded-lg border border-amber-500/30 relative z-10 shadow-sm">
-          <span className="text-amber-400 text-[10px] animate-bounce">⚡</span>
-          <span className="text-[9px] font-black uppercase text-amber-300 tracking-tight">10-45 MINS</span>
         </div>
       </div>
 
