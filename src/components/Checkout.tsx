@@ -1190,13 +1190,13 @@ export default function Checkout({
 
         {/* Promotional Delivery Offers Banner */}
         <div className="mt-5 mb-1 px-3.5 flex items-center justify-between gap-3">
-          <div className="flex-1 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-2.5 rounded-2xl flex flex-col items-center justify-center relative shadow-sm">
-            <span className="text-[9.5px] font-black uppercase tracking-widest text-amber-800">Order &gt; ₹499</span>
-            <span className="text-[11px] font-black text-amber-600 mt-1">🛵 ₹15 Delivery</span>
+          <div className="flex-1 bg-amber-50 border-2 border-amber-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(251,191,36,0.15)]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 leading-tight">ORDER ABOVE ₹499</span>
+            <span className="text-[12px] font-black text-amber-700 mt-1.5 flex items-center gap-1.5">🛵 ₹15 Delivery</span>
           </div>
-          <div className="flex-1 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 p-2.5 rounded-2xl flex flex-col items-center justify-center relative shadow-sm">
-            <span className="text-[9.5px] font-black uppercase tracking-widest text-emerald-800">Order &gt; ₹999</span>
-            <span className="text-[11px] font-black text-emerald-600 mt-1">🎉 100% FREE</span>
+          <div className="flex-1 bg-emerald-50 border-2 border-emerald-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(16,185,129,0.15)]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">ORDER ABOVE ₹999</span>
+            <span className="text-[12px] font-black text-emerald-700 mt-1.5 flex items-center gap-1.5">🎉 100% FREE</span>
           </div>
         </div>
       </div>
@@ -1252,7 +1252,7 @@ export default function Checkout({
               className={`w-full py-4 px-3.5 rounded-xl text-white font-black text-[10.5px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all ${
                 isOutOfRange || loading || gpsLoading || ((isCreatingNewAddress || editingAddressId) && !isFormValid)
                   ? "bg-stone-400 cursor-not-allowed opacity-80"
-                  : "bg-[#0e9f6e] hover:bg-[#0b8058] shadow-emerald-700/10 hover:shadow-emerald-700/20 cursor-pointer"
+                  : "bg-stone-900 hover:bg-stone-800 shadow-stone-900/20 hover:shadow-stone-900/30 cursor-pointer"
               }`}
             >
               {loading ? (

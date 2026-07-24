@@ -232,13 +232,13 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
 
         {/* Promotional Delivery Offers Banner */}
         <div className="mt-5 mb-1 flex items-center justify-between gap-3">
-          <div className="flex-1 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 p-2.5 rounded-2xl flex flex-col items-center justify-center relative shadow-sm">
-            <span className="text-[9.5px] font-black uppercase tracking-widest text-amber-800">Order &gt; ₹499</span>
-            <span className="text-[11px] font-black text-amber-600 mt-1">🛵 ₹15 Delivery</span>
+          <div className="flex-1 bg-amber-50 border-2 border-amber-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(251,191,36,0.15)]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 leading-tight">ORDER ABOVE ₹499</span>
+            <span className="text-[12px] font-black text-amber-700 mt-1.5 flex items-center gap-1.5">🛵 ₹15 Delivery</span>
           </div>
-          <div className="flex-1 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 p-2.5 rounded-2xl flex flex-col items-center justify-center relative shadow-sm">
-            <span className="text-[9.5px] font-black uppercase tracking-widest text-emerald-800">Order &gt; ₹999</span>
-            <span className="text-[11px] font-black text-emerald-600 mt-1">🎉 100% FREE</span>
+          <div className="flex-1 bg-emerald-50 border-2 border-emerald-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(16,185,129,0.15)]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">ORDER ABOVE ₹999</span>
+            <span className="text-[12px] font-black text-emerald-700 mt-1.5 flex items-center gap-1.5">🎉 100% FREE</span>
           </div>
         </div>
 
@@ -253,10 +253,10 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
             onCheckout();
           }}
           className={`w-full mt-8 py-4.5 rounded-2xl text-white text-sm font-bold uppercase tracking-[0.2em] relative overflow-hidden ${
-            subtotal >= 35 ? "bg-emerald-600 shadow-xl shadow-emerald-100" : "bg-gray-400 cursor-not-allowed"
+            subtotal >= 35 ? "bg-stone-900 shadow-xl shadow-stone-900/20 hover:bg-stone-800" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          {subtotal >= 35 && <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 opacity-50 blur-xl animate-pulse"></div>}
+          {subtotal >= 35 && <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 opacity-50 blur-xl"></div>}
           <span className="relative z-10 flex items-center justify-center space-x-3">
             <Zap className="w-4 h-4 text-emerald-200 fill-emerald-200" />
             <span>{t('checkout')}</span>

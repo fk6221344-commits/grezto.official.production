@@ -38,19 +38,19 @@ export function CartItemRow({ item, onUpdateQuantity, onRemove }: CartItemRowPro
 
       {/* Compact Inline Actions */}
       <div className="flex items-center space-x-3 flex-shrink-0">
-        <div className="flex items-center bg-gray-50/80 rounded-lg p-0.5 border border-gray-100">
+        <div className="flex items-center bg-white border-2 border-emerald-500/20 rounded-xl shadow-sm overflow-hidden">
           <button 
             onClick={() => onUpdateQuantity(item.id, -1)} 
-            className="p-1 px-1.5 text-gray-400 hover:text-emerald-500 transition-colors bg-transparent border-0 cursor-pointer focus:outline-none"
+            className="p-2 text-emerald-600 hover:bg-emerald-50 transition-colors bg-transparent border-0 cursor-pointer focus:outline-none active:bg-emerald-100"
           >
-            <Minus className="w-2.5 h-2.5" />
+            <Minus className="w-3.5 h-3.5 stroke-[3]" />
           </button>
-          <span className="text-[10px] font-black text-gray-800 px-1 min-w-[12px] text-center select-none">{item.quantity}</span>
+          <span className="text-xs font-black text-emerald-900 w-6 text-center select-none">{item.quantity}</span>
           <button 
             onClick={() => onUpdateQuantity(item.id, 1)} 
-            className="p-1 px-1.5 text-gray-400 hover:text-emerald-500 transition-colors bg-transparent border-0 cursor-pointer focus:outline-none"
+            className="p-2 text-emerald-600 hover:bg-emerald-50 transition-colors bg-transparent border-0 cursor-pointer focus:outline-none active:bg-emerald-100"
           >
-            <Plus className="w-2.5 h-2.5" />
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
           </button>
         </div>
         <button 
