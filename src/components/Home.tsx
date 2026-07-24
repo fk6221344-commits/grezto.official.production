@@ -102,12 +102,12 @@ export default function Home({
   // Interactive profile details drawer
   const [selectedHotelForDetails, setSelectedHotelForDetails] = useState<any | null>(null);
 
-  // Lazy loading state for products rendering
-  const [visibleCount, setVisibleCount] = useState(20);
+  // Lazy loading state for products rendering (Blinkit/JioMart style 6-item batching)
+  const [visibleCount, setVisibleCount] = useState(6);
   const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setVisibleCount(20); // Reset when filters change
+    setVisibleCount(6); // Reset to 6 items when filters change
   }, [activeCategory, searchQuery, selectedShopId]);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function Home({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => prev + 20);
+          setVisibleCount((prev) => prev + 6);
         }
       },
       { threshold: 0.1 }

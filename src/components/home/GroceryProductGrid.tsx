@@ -123,11 +123,10 @@ export const GroceryProductGrid: React.FC<GroceryProductGridProps> = ({
                   <ProductCard key={product.id} product={product} />
                 ))}
                 {visibleCount < filteredProducts.length && (
-                  <div ref={setObserverTarget} className="col-span-2 h-20 flex items-center justify-center">
-                    <div className="animate-pulse flex space-x-2">
-                      <div className="w-2 h-2 bg-emerald-300 rounded-full"></div>
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <div ref={setObserverTarget} className="col-span-2 py-6 flex flex-col items-center justify-center space-y-2">
+                    <div className="flex items-center gap-2 bg-stone-900/90 text-amber-300 px-4 py-1.5 rounded-full border border-amber-500/20 text-[10px] font-black uppercase tracking-wider shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                      <span>Loading fresh items... 🚚</span>
                     </div>
                   </div>
                 )}
