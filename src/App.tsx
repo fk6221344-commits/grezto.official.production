@@ -38,6 +38,8 @@ import ReferralInstaller from './components/ReferralInstaller';
 import RiderAssignmentOverlay from './components/RiderAssignmentOverlay';
 import GpsPressingActivator from './components/GpsPressingActivator';
 import AssamOfflineBanner from './components/AssamOfflineBanner';
+import PromoAnnouncementModal from './components/PromoAnnouncementModal';
+import { initOTAUpdater } from './utils/otaUpdater';
 import GlobalAppUpdateModal from './components/GlobalAppUpdateModal';
 
 import { DesktopBillboard } from './components/DesktopBillboard';
@@ -121,6 +123,10 @@ function MainAppLayout() {
       return null;
     }
   });
+
+  useEffect(() => {
+    initOTAUpdater();
+  }, []);
 
   const changeActiveMerchantShop = (shop: any | null) => {
     setActiveMerchantShop(shop);
@@ -764,6 +770,7 @@ function MainAppLayout() {
 
                 <ReferralInstaller />
                 <GlobalAppUpdateModal show={showUpdateModal} updateInfo={updateInfo} onDismiss={dismissUpdate} />
+                <PromoAnnouncementModal />
 
                 {!user.isLoggedIn && activeTab !== 'profile' && (
                   <Profile 
