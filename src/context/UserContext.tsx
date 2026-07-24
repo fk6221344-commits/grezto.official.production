@@ -243,22 +243,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch cloud profile
         if (supabase) {
           const { data: profileData } = await supabase.from('profiles').select('*').eq('phone', user.phone).maybeSingle();
-          if (profileData) {
-             let hasFirstOrder = profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false;
-             
-             // Dynamic Fallback Check for Old Users Migration
-             if (!hasFirstOrder && user.phone) {
-                try {
-                  const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('customerPhone', user.phone);
-                  if (count && count > 0) {
-                     hasFirstOrder = true;
-                     supabase.from('profiles').update({ has_placed_first_order: true }).eq('phone', user.phone).then(() => {});
-                  }
-                } catch (e) {
-                  console.warn("Failed to verify old user order history", e);
-                }
-             }
+          let hasFirstOrder = false;
 
+          if (profileData) {
+             hasFirstOrder = profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false;
              setUser(prev => {
                 return { 
                    ...prev, 
@@ -269,6 +257,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                    hasPlacedFirstOrder: hasFirstOrder
                 };
              });
+          } else {
+             hasFirstOrder = prev.hasPlacedFirstOrder ?? false;
+          }
+
+          // Dynamic Fallback Check for Old Users Migration (runs even if profile is missing)
+          if (!hasFirstOrder && user.phone) {
+             try {
+               const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('customerPhone', user.phone);
+               if (count && count > 0) {
+                  supabase.from('profiles').update({ has_placed_first_order: true }).eq('phone', user.phone).then(() => {});
+                  setUser(prev => ({ ...prev, hasPlacedFirstOrder: true }));
+               }
+             } catch (e) {
+               console.warn("Failed to verify old user order history", e);
+             }
           }
         }
 
