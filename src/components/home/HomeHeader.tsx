@@ -54,19 +54,32 @@ export default function HomeHeader({
 
   return (
     <div className="px-3 pt-[max(env(safe-area-inset-top),42px)] pb-5 sticky top-0 z-[100] border-b border-emerald-950/20 shadow-lg shadow-emerald-950/10 transition-colors duration-100">
-      {/* Dynamic green gradient header background with Live Advertisement Motion Layer */}
+      {/* Dynamic dark green gradient header background with Full Live Commercial Motion Billboard Canvas */}
       <div className="absolute inset-0 animated-green-gradient overflow-hidden z-0 pointer-events-none">
         {/* Animated Light Beam Sweep */}
         <div className="absolute inset-y-0 w-44 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent animate-ad-beam filter blur-[2px]" />
 
-        {/* Floating Glowing Animated Promo Icons & Watermarks (Advertisement Feel) */}
-        <div className="absolute inset-0 flex justify-between items-center px-6 opacity-15 pointer-events-none select-none animate-promo-float">
-          <span className="text-3xl filter blur-[0.5px]">🚚</span>
-          <span className="text-2xl filter blur-[0.5px]">🎁</span>
-          <span className="text-3xl filter blur-[0.5px]">✨</span>
-          <span className="text-2xl filter blur-[0.5px]">🎉</span>
-          <span className="text-3xl filter blur-[0.5px]">🛵</span>
+        {/* Large Glowing Advertisement Watermark Billboard Headline */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-25 animate-billboard-pulse select-none pointer-events-none px-4">
+          <span className="text-[15px] sm:text-[18px] font-black uppercase tracking-widest text-transparent bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-200 bg-clip-text text-center font-display drop-shadow-md">
+            🎉 FIRST ORDER FREE DELIVERY 🚚
+          </span>
         </div>
+
+        {/* Dynamic Delivery Truck / Scooter Driving across the Whole Header Canvas */}
+        <div className="absolute bottom-2 left-0 right-0 h-8 overflow-hidden pointer-events-none">
+          <div className="animate-drive-van-header flex items-center gap-1.5 text-amber-300 drop-shadow-lg">
+            <span className="text-base">🚚</span>
+            <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-md">
+              GREZTO EXPRESS
+            </span>
+            <span className="text-xs animate-ping">💨</span>
+          </div>
+        </div>
+
+        {/* Fireworks & Sparkles bursting in background corners */}
+        <div className="absolute top-2 left-4 animate-firework-burst text-amber-300 text-sm">✨</div>
+        <div className="absolute bottom-3 right-6 animate-firework-burst text-amber-400 text-xs" style={{ animationDelay: '1.2s' }}>🎆</div>
       </div>
       <div className="flex items-center justify-between relative z-50">
         <div className="flex items-center space-x-1">

@@ -177,6 +177,57 @@
   animation: flyInRight 3.5s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
 }
 
+@keyframes driveVanFullHeader {
+  0% {
+    transform: translateX(-120px);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.9;
+  }
+  95% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(100vw);
+    opacity: 0;
+  }
+}
+
+@keyframes billboardGlowPulse {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fireworkBurst {
+  0%, 100% {
+    transform: scale(0.6) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.25) rotate(180deg);
+    opacity: 0.9;
+  }
+}
+
+.animate-drive-van-header {
+  animation: driveVanFullHeader 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-billboard-pulse {
+  animation: billboardGlowPulse 4s ease-in-out infinite;
+}
+
+.animate-firework-burst {
+  animation: fireworkBurst 2.5s ease-in-out infinite;
+}
+
 /* Smooth Scrolling & Hardware Acceleration optimization for native/web */
 html, body, #root {
   background-color: #fffdfa !important;
