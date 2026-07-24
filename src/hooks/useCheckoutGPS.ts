@@ -256,15 +256,14 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
       });
     }
 
+    // Calculate base fee: Single shop or admin = 30. Multi-shop = 35 (capped)
+    let baseFee = uniqueShops.size > 1 ? 35 : 30;
+
     // Volume-based Promotional Discounts
     if (subtotal >= 999) return 0;
-    if (subtotal >= 499) return 15;
+    if (subtotal >= 499) return Math.floor(baseFee / 2); // 50% discount
 
-    // Single shop or admin = 30. Multi-shop = 35 (capped)
-    if (uniqueShops.size > 1) {
-      return 35;
-    }
-    return 30;
+    return baseFee;
   }, [subtotal, items]);
 
   const adjustedTotal = useMemo(() => {
