@@ -116,23 +116,23 @@ const ProductCardBody = React.memo(({
             <span className="text-xs font-black text-gray-900 tracking-tight">₹{product.price}</span>
             
             {cartItem ? (
-              <div className="flex items-center bg-gray-100 rounded-xl p-0.5 border border-gray-200 shadow-sm">
+              <div className="flex items-center bg-emerald-600 rounded-xl p-0.5 border border-emerald-700 shadow-sm">
                 <button 
                   onClick={(e) => { e.stopPropagation(); updateQuantity(product.id, -1); }}
-                  className="p-1 hover:bg-white rounded-lg text-gray-600 transition-colors border-0 cursor-pointer"
+                  className="p-1 hover:bg-emerald-500 active:bg-emerald-700 rounded-lg text-white transition-colors border-0 cursor-pointer"
                   disabled={isDisabled}
                 >
-                  <Minus className="w-2.5 h-2.5" />
+                  <Minus className="w-3 h-3 stroke-[3]" />
                 </button>
-                <span className="text-[9px] font-black text-gray-900 px-1.5 min-w-[16px] text-center">
+                <span className="text-[10.5px] font-black text-white px-2 min-w-[22px] text-center">
                   {cartItem.quantity}
                 </span>
                 <button 
                   onClick={(e) => { e.stopPropagation(); updateQuantity(product.id, 1); }}
-                  className="p-1 hover:bg-white rounded-lg text-gray-600 transition-colors border-0 cursor-pointer"
+                  className="p-1 hover:bg-emerald-500 active:bg-emerald-700 rounded-lg text-white transition-colors border-0 cursor-pointer"
                   disabled={isDisabled}
                 >
-                  <Plus className="w-2.5 h-2.5" />
+                  <Plus className="w-3 h-3 stroke-[3]" />
                 </button>
               </div>
             ) : (
@@ -140,7 +140,7 @@ const ProductCardBody = React.memo(({
                 whileTap={{ scale: 0.9 }}
                 onClick={(e) => { e.stopPropagation(); if (!isDisabled) addToCart(product); }}
                 disabled={isDisabled}
-                className={`px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all cursor-pointer ${
+                className={`px-4 py-1.5 rounded-lg text-[9.5px] font-black uppercase tracking-widest transition-all cursor-pointer ${
                   isDisabled 
                   ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" 
                   : "bg-red-600 text-white border border-red-700 hover:bg-red-700 hover:scale-105 shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse"
@@ -274,23 +274,23 @@ const ProductCardBody = React.memo(({
                   </div>
 
                   {cartItem ? (
-                    <div className="flex items-center bg-gray-100 rounded-2xl p-1 border border-gray-200 shadow-inner">
+                    <div className="flex items-center bg-emerald-600 rounded-2xl p-1 border border-emerald-700 shadow-sm">
                       <button 
                         onClick={() => updateQuantity(product.id, -1)}
-                        className="p-1.5 hover:bg-white rounded-xl text-gray-600 transition-colors shadow-xs border-0 cursor-pointer"
+                        className="p-1.5 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl text-white transition-colors shadow-xs border-0 cursor-pointer"
                         disabled={isOutOfStock}
                       >
-                        <Minus className="w-4 h-4" />
+                        <Minus className="w-4 h-4 stroke-[3]" />
                       </button>
-                      <span className="text-xs font-black text-gray-900 px-3 min-w-[32px] text-center">
+                      <span className="text-[13px] font-black text-white px-3 min-w-[32px] text-center">
                         {cartItem.quantity}
                       </span>
                       <button 
                         onClick={() => updateQuantity(product.id, 1)}
-                        className="p-1.5 hover:bg-white rounded-xl text-gray-600 transition-colors shadow-xs border-0 cursor-pointer"
+                        className="p-1.5 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl text-white transition-colors shadow-xs border-0 cursor-pointer"
                         disabled={isOutOfStock}
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 stroke-[3]" />
                       </button>
                     </div>
                   ) : (
