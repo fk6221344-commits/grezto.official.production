@@ -1,4 +1,5 @@
 import { supabase } from '../services/supabase';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
 export interface OTAUpdateInfo {
   latestVersionCode: number;
@@ -27,6 +28,8 @@ const CURRENT_OTA_VERSION = '1.0.0';
  */
 export async function initOTAUpdater(): Promise<OTAUpdateInfo | null> {
   try {
+    // Notify native Capgo updater plugin that current bundle is healthy
+    CapacitorUpdater.notifyAppReady().catch(() => {});
     console.log('[OTA UPDATER] Checking for live OTA code updates and promotions...');
 
     // 1. Primary Railway API Endpoint check

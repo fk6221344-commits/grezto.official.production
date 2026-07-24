@@ -41,6 +41,10 @@ const config: CapacitorConfig = {
     FirebaseAuthentication: {
       providers: ["phone"],
       skipNativeAuth: false
+    },
+    CapacitorUpdater: {
+      autoUpdate: true,
+      statsUrl: "https://api.grezto.com/api/ota-stats"
     }
   }
 };
