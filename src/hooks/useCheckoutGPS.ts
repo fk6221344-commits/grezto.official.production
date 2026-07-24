@@ -256,11 +256,11 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
       });
     }
 
-    // Single shop or admin = 35. Multi-shop = 40 (capped)
+    // Single shop or admin = 30. Multi-shop = 35 (capped)
     if (uniqueShops.size > 1) {
-      return 40;
+      return 35;
     }
-    return 35;
+    return 30;
   }, [subtotal, items]);
 
   const adjustedTotal = useMemo(() => {

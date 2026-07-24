@@ -107,7 +107,7 @@ export function CartCalculationOverlay({
         {deliveryFee > 0 && isMultiShop && (
           <div className="flex justify-between items-center text-[8.5px] font-black text-rose-600 uppercase tracking-widest pl-5.5 animate-pulse">
             <span>✨ Multi-Shop Surcharge Added</span>
-            <span>Capped at ₹40</span>
+            <span>Capped at ₹35</span>
           </div>
         )}
       </div>
