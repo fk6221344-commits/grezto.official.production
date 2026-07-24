@@ -220,12 +220,19 @@ export default function HomeHeader({
         </div>
       </div>
       
-      {/* 10 to 45 mins (under 6KM) Express Delivery Info Strip */}
-      <div className="mt-2 flex items-center justify-center space-x-1.5 px-3 py-1 bg-[#021d0a] rounded-xl border border-emerald-800 text-white shadow-inner relative z-10">
-        <span className="text-amber-400 text-xs animate-bounce font-sans">⚡</span>
-        <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-100 font-display">
-          10 to 45 minutes (under 6KM) 🚀
-        </span>
+      {/* Animated First-Order Free Delivery & Express Delivery Info Strip */}
+      <div className="mt-2.5 flex items-center justify-between space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-[#011e13] via-[#033624] to-[#011e13] rounded-xl border border-amber-500/40 text-white shadow-lg relative z-10 overflow-hidden">
+        <div className="flex items-center gap-1.5">
+          <span className="text-amber-400 text-xs animate-spin font-sans">✨</span>
+          <span className="text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-200 bg-clip-text text-transparent font-display">
+            🎉 FIRST ORDER FREE DELIVERY 🚚
+          </span>
+          <span className="text-amber-400 text-xs animate-bounce font-sans">🎆</span>
+        </div>
+        <div className="flex items-center gap-1 bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-700/60">
+          <span className="text-amber-400 text-[10px] animate-pulse">⚡</span>
+          <span className="text-[9px] font-extrabold uppercase text-emerald-200">10-45 MINS</span>
+        </div>
       </div>
 
       {/* Elegant Manual Address Form Modal Layout */}
