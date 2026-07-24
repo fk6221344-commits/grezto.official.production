@@ -217,7 +217,7 @@
 }
 
 .animate-drive-van-header {
-  animation: driveVanFullHeader 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: driveVanFullHeader 14s linear infinite;
 }
 
 .animate-billboard-pulse {
