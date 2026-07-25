@@ -65,11 +65,11 @@ const updateStatusBarColor = (colorHex: string, isLight: boolean) => {
 const banners = [
   { 
     id: 2, 
-    badge: "FRESH GROCERY",
-    line1: "100% PURE &",
-    line2: "ORGANIC",
-    sub: "Purest farm-to-table organic greens & essential daily needs.", 
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop"
+    badge: "SPECIAL OFFER",
+    line1: "FIRST ORDER",
+    line2: "100% FREE DELIVERY",
+    sub: "Flat 50% OFF delivery on ₹499+ & 100% FREE on ₹1000+ orders.", 
+    image: "/premium-delivery-banner.png"
   },
   { 
     id: 1, 
