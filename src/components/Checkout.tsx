@@ -46,7 +46,7 @@ import {
   findNearestLandmark,
 } from "../data/villageCoordinates";
 import { calculateDistance } from "../lib/distance";
-import { useCheckoutGPS, MORIGAON_CENTER } from "../hooks/useCheckoutGPS";
+import { useCheckoutGPS, BURABURI_CENTER } from "../hooks/useCheckoutGPS";
 import { triggerSuccessHapticVibration } from "../services/nativeService";
 
 interface SavedAddress {
@@ -488,8 +488,8 @@ export default function Checkout({
     const distance = calculateDistance(
       computedLat,
       computedLng,
-      MORIGAON_CENTER.lat,
-      MORIGAON_CENTER.lng,
+      BURABURI_CENTER.lat,
+      BURABURI_CENTER.lng,
     );
 
     if (isOutOfRange) {

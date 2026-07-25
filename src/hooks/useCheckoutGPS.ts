@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { calculateDistance } from '../lib/distance';
 import { reverseGeocodeCoords, forwardGeocodeAddress, getUnifiedHighSpeedLocation, getCachedPreFetchedLocation } from '../lib/geocoder';
 
-export const MORIGAON_CENTER = { lat: 26.243461, lng: 92.130617 };
+export const BURABURI_CENTER = { lat: 26.243461, lng: 92.130617 };
 
 let cachedGoogleMapsKey = '';
 
@@ -40,8 +40,8 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
 
   // Map coordinate center tracking
   const [coords, setCoords] = useState({ 
-    lat: user.lat || MORIGAON_CENTER.lat, 
-    lng: user.lng || MORIGAON_CENTER.lng 
+    lat: user.lat || BURABURI_CENTER.lat, 
+    lng: user.lng || BURABURI_CENTER.lng 
   });
 
   const getSavedDetails = () => {
@@ -105,25 +105,25 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   // Automatic GPS Sync and calculations
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number, lng: number }>({ 
-    lat: user.lat || MORIGAON_CENTER.lat, 
-    lng: user.lng || MORIGAON_CENTER.lng 
+    lat: user.lat || BURABURI_CENTER.lat, 
+    lng: user.lng || BURABURI_CENTER.lng 
   });
   const [gpsAddress, setGpsAddress] = useState(user.address || '');
   const [distanceToHub, setDistanceToHub] = useState<number | null>(null);
 
   const updateRoadDistance = async (lat: number, lng: number) => {
     try {
-      const res = await fetch(`/api/distance?originLat=${lat}&originLng=${lng}&destLat=${MORIGAON_CENTER.lat}&destLng=${MORIGAON_CENTER.lng}`);
+      const res = await fetch(`/api/distance?originLat=${lat}&originLng=${lng}&destLat=${BURABURI_CENTER.lat}&destLng=${BURABURI_CENTER.lng}`);
       const data = await res.json();
       if (data && typeof data.distance === 'number') {
         setDistanceToHub(data.distance);
       } else {
-        const dist = calculateDistance(lat, lng, MORIGAON_CENTER.lat, MORIGAON_CENTER.lng);
+        const dist = calculateDistance(lat, lng, BURABURI_CENTER.lat, BURABURI_CENTER.lng);
         setDistanceToHub(dist);
       }
     } catch (err) {
       console.error("Failed to fetch road distance:", err);
-      const dist = calculateDistance(lat, lng, MORIGAON_CENTER.lat, MORIGAON_CENTER.lng);
+      const dist = calculateDistance(lat, lng, BURABURI_CENTER.lat, BURABURI_CENTER.lng);
       setDistanceToHub(dist);
     }
   };
@@ -171,8 +171,8 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
 
       if (isIframe) {
         console.log("[Checkout GPS] Iframe environment detected. Skipping live GPS to prevent iframe-lock.");
-        const lat = user.lat || MORIGAON_CENTER.lat;
-        const lng = user.lng || MORIGAON_CENTER.lng;
+        const lat = user.lat || BURABURI_CENTER.lat;
+        const lng = user.lng || BURABURI_CENTER.lng;
         applyLocationDetails(lat, lng);
         return;
       }
@@ -191,8 +191,8 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
         console.warn("[Checkout GPS] Multi-tier Geolocation lookup failed:", nativeErr);
         
         // Final fallback: use previous coords or center
-        const lat = user.lat || MORIGAON_CENTER.lat;
-        const lng = user.lng || MORIGAON_CENTER.lng;
+        const lat = user.lat || BURABURI_CENTER.lat;
+        const lng = user.lng || BURABURI_CENTER.lng;
         applyLocationDetails(lat, lng);
         toast.error("GPS access failed. Please enable location services on your device.");
       }
@@ -209,8 +209,8 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   useEffect(() => {
     fetchAutomaticGPSDetails();
     
-    const startLat = user.lat || MORIGAON_CENTER.lat;
-    const startLng = user.lng || MORIGAON_CENTER.lng;
+    const startLat = user.lat || BURABURI_CENTER.lat;
+    const startLng = user.lng || BURABURI_CENTER.lng;
     updateRoadDistance(startLat, startLng);
     
     if (user.address) {
