@@ -1382,7 +1382,7 @@ async function startServer() {
       message: "A new and faster version of Grezto is available. Please update the app.",
 
       // Live OTA Update Config (Served directly from Railway)
-      otaBundleVersion: "1.0.3", // Bump this to push a live OTA update
+      otaBundleVersion: "1.0.4", // Bump this to push a live OTA update
       otaDownloadUrl: "https://api.grezto.com/ota/dist.zip"
     });
   });

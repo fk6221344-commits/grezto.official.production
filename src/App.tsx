@@ -125,6 +125,7 @@ function MainAppLayout() {
   });
 
   useEffect(() => {
+    console.log('Force OTA update v1.0.4 cache bust');
     initOTAUpdater();
   }, []);
 
