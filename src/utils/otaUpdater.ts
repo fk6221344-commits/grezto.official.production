@@ -64,9 +64,26 @@ export async function initOTAUpdater(): Promise<OTAUpdateInfo | null> {
       console.log('[OTA UPDATER] Live update info retrieved successfully:', info);
       const storedVersion = localStorage.getItem('grezto_ota_bundle_version') || CURRENT_OTA_VERSION;
 
-      if (info.otaBundleVersion && info.otaBundleVersion !== storedVersion) {
-        console.log(`[OTA UPDATER] New OTA bundle version ${info.otaBundleVersion} detected! Updating local cache...`);
-        localStorage.setItem('grezto_ota_bundle_version', info.otaBundleVersion);
+      if (info.otaBundleVersion && info.otaBundleVersion !== storedVersion && info.downloadUrl) {
+        console.log(`[OTA UPDATER] Downloading new OTA bundle version ${info.otaBundleVersion} from custom server...`);
+        
+        try {
+          // Download the zip bundle
+          const downloaded = await CapacitorUpdater.download({
+            url: info.downloadUrl,
+            version: info.otaBundleVersion,
+          });
+
+          console.log('[OTA UPDATER] Download complete. Applying update...');
+          
+          // Set it as the active version (this reloads the app)
+          await CapacitorUpdater.set({ id: downloaded.id });
+          
+          // Update local cache
+          localStorage.setItem('grezto_ota_bundle_version', info.otaBundleVersion);
+        } catch (downloadError) {
+          console.error('[OTA UPDATER] Failed to download or apply OTA update zip:', downloadError);
+        }
       }
     }
 
