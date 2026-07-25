@@ -161,48 +161,6 @@ export default function CategoryList({
         </div>
       )}
 
-      {activeCategory === 'Medicine' && (
-        <div className="space-y-2 mt-3.5" id="medicine-custom-card">
-          <motion.div 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-2.5 px-3 bg-red-950 border border-red-900 rounded-2xl text-center text-[10px] font-black text-white tracking-widest flex items-center justify-center gap-2 shadow-sm"
-            id="medicine-custom-banner"
-          >
-            <span className="w-2 h-2 bg-red-400 rounded-full animate-ping shrink-0" style={{ animationDuration: '2s' }} id="medicine-custom-ping"></span>
-            <span>FOR MEDICINE CONTACT US DIRECTLY!</span>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 gap-2"
-            id="medicine-contact-grid"
-          >
-            <a 
-              href="https://wa.me/919365908084?text=Hello!%20I%20am%20contacting%20you%20through%20the%20Grezto%20app%20to%20order%20medicines."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2 px-3 bg-[#25D366] hover:bg-[#20ba5a] hover:scale-[1.02] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md border-0 active:scale-95 transition-all text-center no-underline cursor-pointer"
-              id="medicine-whatsapp-btn"
-            >
-              <MessageCircle className="w-4 h-4 text-white shrink-0" />
-              <span>WhatsApp</span>
-            </a>
-
-            <a 
-              href="tel:9365908084"
-              className="flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md border-0 active:scale-95 transition-all text-center no-underline cursor-pointer"
-              id="medicine-call-btn"
-            >
-              <Phone className="w-4 h-4 text-white shrink-0" />
-              <span>Call Now</span>
-            </a>
-          </motion.div>
-        </div>
-      )}
-
       {activeCategory === 'Non-Veg' && (
         <motion.div 
           initial={{ opacity: 0, y: 5 }}
