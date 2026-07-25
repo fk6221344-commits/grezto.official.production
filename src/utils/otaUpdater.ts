@@ -32,33 +32,23 @@ export async function initOTAUpdater(): Promise<OTAUpdateInfo | null> {
     CapacitorUpdater.notifyAppReady().catch(() => {});
     console.log('[OTA UPDATER] Checking for live OTA code updates and promotions...');
 
-    // 1. Primary Railway API Endpoint check
-    const railwayEndpoint = 'https://api.grezto.com/api/app-update-info';
-    let res = await fetch(railwayEndpoint, { cache: 'no-store' }).catch(() => null);
+    // Fetch OTA configuration directly from Supabase system_config
+    const { data: sysConfig } = await supabase
+      .from('system_config')
+      .select('*')
+      .eq('id', 'ota_config')
+      .maybeSingle();
 
     let info: OTAUpdateInfo | null = null;
 
-    if (res && res.ok) {
-      info = await res.json().catch(() => null);
-    }
-
-    // 2. Fallback check directly from Supabase system_config
-    if (!info) {
-      const { data: sysConfig } = await supabase
-        .from('system_config')
-        .select('*')
-        .eq('id', 'ota_config')
-        .maybeSingle();
-
-      if (sysConfig) {
-        info = {
-          latestVersionCode: sysConfig.version_code || 1,
-          otaBundleVersion: sysConfig.bundle_version || '1.0.0',
-          forceUpdate: sysConfig.force_update || false,
-          downloadUrl: sysConfig.download_url,
-          activePromoPopup: sysConfig.active_promo || null
-        };
-      }
+    if (sysConfig) {
+      info = {
+        latestVersionCode: sysConfig.version_code || 1,
+        otaBundleVersion: sysConfig.bundle_version || '1.0.0',
+        forceUpdate: sysConfig.force_update || false,
+        downloadUrl: sysConfig.download_url,
+        activePromoPopup: sysConfig.active_promo || null
+      };
     }
 
     if (info) {
