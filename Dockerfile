@@ -13,6 +13,7 @@ RUN npm ci
 # Copy server files, directories, and TS configs
 COPY server.ts tsconfig.json firebase-applet-config.json* ./
 COPY server ./server
+COPY ota-releases ./ota-releases
 
 # Compile only the Express backend to dist/server.cjs using esbuild (ignoring Vite client build)
 RUN npx esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs
