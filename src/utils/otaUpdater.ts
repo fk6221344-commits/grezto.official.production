@@ -55,6 +55,7 @@ export async function initOTAUpdater(): Promise<OTAUpdateInfo | null> {
           latestVersionCode: sysConfig.version_code || 1,
           otaBundleVersion: sysConfig.bundle_version || '1.0.0',
           forceUpdate: sysConfig.force_update || false,
+          downloadUrl: sysConfig.download_url,
           activePromoPopup: sysConfig.active_promo || null
         };
       }
