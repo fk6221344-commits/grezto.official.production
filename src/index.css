@@ -80,7 +80,7 @@
 }
 
 .animated-green-gradient {
-  background: linear-gradient(115deg, #4a0404, #7f0000, #330000, #5c0000, #4a0000, #4a0404) !important;
+  background: linear-gradient(115deg, #012419, #023828, #011e13, #022c22, #01281a, #012419) !important;
   background-size: 280% 280% !important;
   animation: cornerGradientMove 10s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
   will-change: background-position;
