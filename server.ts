@@ -1372,16 +1372,23 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // App Version Info API for In-App Updates
+  // App Version Info API for In-App Updates and Live OTA Updates
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 2, // Change this when releasing a new version
-      forceUpdate: false, // If true, user cannot close the popup
-      downloadUrl: "https://grezto.com",
+      latestVersionCode: 2, // Change this when releasing a new native APK version
+      forceUpdate: false, // If true, user cannot close the native update popup
+      downloadUrl: "https://grezto.com", // Play Store link
       title: "New Update Available! 🚀",
-      message: "A new and faster version of Grezto is available. Please update the app to continue enjoying seamless deliveries."
+      message: "A new and faster version of Grezto is available. Please update the app.",
+
+      // Live OTA Update Config (Served directly from Railway)
+      otaBundleVersion: "1.0.1", // Bump this to push a live OTA update
+      otaDownloadUrl: "https://api.grezto.com/ota/dist.zip"
     });
   });
+
+  // Serve OTA update zip files securely
+  app.use('/ota', express.static(path.join(process.cwd(), 'ota-releases')));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

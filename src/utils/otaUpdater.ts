@@ -5,7 +5,8 @@ export interface OTAUpdateInfo {
   latestVersionCode: number;
   otaBundleVersion?: string;
   forceUpdate?: boolean;
-  downloadUrl?: string;
+  downloadUrl?: string; // Play Store Link
+  otaDownloadUrl?: string; // Zip File Link
   title?: string;
   message?: string;
   activePromoPopup?: {
@@ -29,39 +30,46 @@ const CURRENT_OTA_VERSION = '1.0.0';
 export async function initOTAUpdater(): Promise<OTAUpdateInfo | null> {
   try {
     // Notify native Capgo updater plugin that current bundle is healthy
-    CapacitorUpdater.notifyAppReady().catch(() => {});
-    console.log('[OTA UPDATER] Checking for live OTA code updates and promotions...');
-
-    // Fetch OTA configuration directly from Supabase system_config
-    const { data: sysConfig } = await supabase
-      .from('system_config')
-      .select('*')
-      .eq('id', 'ota_config')
-      .maybeSingle();
+    // 1. Primary Railway API Endpoint check
+    const railwayEndpoint = 'https://api.grezto.com/api/app-update-info';
+    let res = await fetch(railwayEndpoint, { cache: 'no-store' }).catch(() => null);
 
     let info: OTAUpdateInfo | null = null;
 
-    if (sysConfig) {
-      info = {
-        latestVersionCode: sysConfig.version_code || 1,
-        otaBundleVersion: sysConfig.bundle_version || '1.0.0',
-        forceUpdate: sysConfig.force_update || false,
-        downloadUrl: sysConfig.download_url,
-        activePromoPopup: sysConfig.active_promo || null
-      };
+    if (res && res.ok) {
+      info = await res.json().catch(() => null);
+    }
+
+    // 2. Fallback check directly from Supabase system_config
+    if (!info || !info.otaBundleVersion) {
+      const { data: sysConfig } = await supabase
+        .from('system_config')
+        .select('*')
+        .eq('id', 'ota_config')
+        .maybeSingle();
+
+      if (sysConfig) {
+        info = {
+          latestVersionCode: sysConfig.version_code || 1,
+          otaBundleVersion: sysConfig.bundle_version || '1.0.0',
+          forceUpdate: sysConfig.force_update || false,
+          otaDownloadUrl: sysConfig.download_url,
+          activePromoPopup: sysConfig.active_promo || null
+        };
+      }
     }
 
     if (info) {
       console.log('[OTA UPDATER] Live update info retrieved successfully:', info);
       const storedVersion = localStorage.getItem('grezto_ota_bundle_version') || CURRENT_OTA_VERSION;
 
-      if (info.otaBundleVersion && info.otaBundleVersion !== storedVersion && info.downloadUrl) {
+      if (info.otaBundleVersion && info.otaBundleVersion !== storedVersion && info.otaDownloadUrl) {
         console.log(`[OTA UPDATER] Downloading new OTA bundle version ${info.otaBundleVersion} from custom server...`);
         
         try {
           // Download the zip bundle
           const downloaded = await CapacitorUpdater.download({
-            url: info.downloadUrl,
+            url: info.otaDownloadUrl,
             version: info.otaBundleVersion,
           });
 
