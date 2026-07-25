@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Plus, Search, X } from 'lucide-react';
+import Fuse from 'fuse.js';
 import { MerchantProductRow } from '../MerchantProductRow';
 import { VirtualListItem } from '../VirtualListItem';
 
@@ -28,17 +29,36 @@ export function MerchantMenuTab({
   // [PILLAR 4: LAZY LOADING & INFINITE SCROLL STATE]
   const [visibleCount, setVisibleCount] = useState<number>(15);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Reset pagination when products list changes
+  // Setup Fuse.js for fuzzy search
+  const fuse = useMemo(() => {
+    return new Fuse(products, {
+      keys: ['name', 'category'],
+      threshold: 0.4, // Allows for some spelling mistakes (0.0 is exact match, 1.0 matches anything)
+      ignoreLocation: true,
+    });
+  }, [products]);
+
+  // Compute filtered products
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return products;
+    }
+    const results = fuse.search(searchQuery);
+    return results.map(result => result.item);
+  }, [products, searchQuery, fuse]);
+
+  // Reset pagination when filtered products list changes
   useEffect(() => {
     setVisibleCount(15);
-  }, [products.length]);
+  }, [filteredProducts.length]);
 
   // [PILLAR 4: INFINITE SCROLL OBSERVER]
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        setVisibleCount(prev => Math.min(prev + 10, products.length));
+        setVisibleCount(prev => Math.min(prev + 10, filteredProducts.length));
       }
     }, {
       rootMargin: '150px', // Load next chunk 150px before reaching the end
@@ -55,13 +75,13 @@ export function MerchantMenuTab({
       }
       observer.disconnect();
     };
-  }, [products.length]);
+  }, [filteredProducts.length]);
 
-  const chunk = products.slice(0, visibleCount);
+  const chunk = filteredProducts.slice(0, visibleCount);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active dishes & inventory</span>
         <button 
           onClick={() => {
@@ -84,6 +104,27 @@ export function MerchantMenuTab({
         </button>
       </div>
 
+      <div className="relative mb-4">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-4 w-4 text-slate-400" />
+        </div>
+        <input
+          type="text"
+          className="block w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow shadow-sm font-medium"
+          placeholder="Search products by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-slate-400 hover:text-slate-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, idx) => (
@@ -103,10 +144,10 @@ export function MerchantMenuTab({
             </div>
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-100 py-16 text-center text-slate-400">
-          <p className="text-[10px] uppercase font-black tracking-widest">Your menu list is empty</p>
-          <p className="text-xs text-slate-500 mt-1.5 max-w-[200px] mx-auto leading-relaxed">Add food items, milkshakes or organic products above!</p>
+          <p className="text-[10px] uppercase font-black tracking-widest">{searchQuery ? "No matching items found" : "Your menu list is empty"}</p>
+          <p className="text-xs text-slate-500 mt-1.5 max-w-[200px] mx-auto leading-relaxed">{searchQuery ? "Try searching with a different keyword." : "Add food items, milkshakes or organic products above!"}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -127,7 +168,7 @@ export function MerchantMenuTab({
       )}
 
       {/* [PILLAR 4: INFINITE SCROLL SENTINEL] */}
-      {products.length > visibleCount && (
+      {filteredProducts.length > visibleCount && (
         <div 
           ref={sentinelRef} 
           id="merchant-menu-infinite-sentinel" 
