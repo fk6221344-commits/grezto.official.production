@@ -4,7 +4,7 @@ android
 .git
 .github
 .env
-*.zip
+*.rar
 *.rar
 *.tar.gz
 .gcloudignore
