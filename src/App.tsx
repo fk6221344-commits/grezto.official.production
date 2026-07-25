@@ -125,8 +125,8 @@ function MainAppLayout() {
   });
 
   useEffect(() => {
-    console.log('Force OTA update v1.0.4 cache bust');
-    initOTAUpdater();
+    // console.log('Force OTA update v1.0.4 cache bust');
+    // initOTAUpdater(); // Disabled for now to prevent any future issues
   }, []);
 
   const changeActiveMerchantShop = (shop: any | null) => {
