@@ -31,8 +31,8 @@ const GlobalAppUpdateModal: React.FC<Props> = ({ show, updateInfo, onDismiss }) 
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -50 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="fixed top-0 left-0 right-0 z-[9999] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] font-sans border-b border-gray-100"
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          className="fixed left-0 right-0 z-[9999] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] font-sans border-b border-gray-100"
+          style={{ top: 'env(safe-area-inset-top)' }}
         >
           <div className="flex items-center justify-between px-4 py-3.5 max-w-5xl mx-auto w-full">
             <div className="flex items-center gap-3.5 flex-1 pr-2">
