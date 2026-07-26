@@ -246,7 +246,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let hasFirstOrder = false;
 
           if (profileData) {
-             hasFirstOrder = profileData.has_placed_first_order ?? prev.hasPlacedFirstOrder ?? false;
+             hasFirstOrder = profileData.has_placed_first_order ?? user.hasPlacedFirstOrder ?? false;
              setUser(prev => {
                 return { 
                    ...prev, 
@@ -258,7 +258,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
              });
           } else {
-             hasFirstOrder = prev.hasPlacedFirstOrder ?? false;
+             hasFirstOrder = user.hasPlacedFirstOrder ?? false;
           }
 
           // Dynamic Fallback Check for Old Users Migration (runs even if profile is missing)

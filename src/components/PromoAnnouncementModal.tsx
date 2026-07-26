@@ -36,13 +36,13 @@ export default function PromoAnnouncementModal({ onApplyOffer }: PromoAnnounceme
         // Fallback default promo if server is offline
         const activePromo: PromoPayload = data?.activePromoPopup || {
           enabled: true,
-          id: 'promo_first_order_free_v1',
-          title: 'FIRST ORDER FREE DELIVERY 🚚🎉',
-          subtitle: 'Welcome to Grezto! Enjoy ₹0 Delivery Fee on your very first order today.',
+          id: 'promo_super_fast_delivery_v1',
+          title: 'SUPER FAST DELIVERY 🚚🎉',
+          subtitle: 'Welcome to Grezto! Enjoy lightning fast grocery delivery today.',
           badgeText: 'LIMITED TIME OFFER',
           image: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&auto=format&fit=crop&q=80',
-          buttonText: 'CLAIM FREE DELIVERY 🚀',
-          discountCode: 'FIRSTFREE'
+          buttonText: 'ORDER NOW 🚀',
+          discountCode: 'SUPERFAST'
         };
 
         if (activePromo && activePromo.enabled) {

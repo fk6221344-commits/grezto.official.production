@@ -197,18 +197,17 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
         </AnimatePresence>
       </div>
 
-      {subtotal < 35 && (
+      {subtotal < 70 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 bg-orange-50 border border-orange-100 p-4 rounded-3xl flex items-start space-x-3"
+          className="mt-8 bg-red-100 border-2 border-red-500 p-4 rounded-3xl flex items-center justify-center space-x-3 shadow-[0_4px_15px_rgba(239,68,68,0.25)]"
         >
-          <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[11px] font-bold text-orange-700 uppercase tracking-tight">
+          <div className="flex items-center space-x-3 text-red-600">
+            <span className="text-2xl animate-pulse">⚠️</span>
+            <p className="text-[14px] font-black text-red-700 uppercase tracking-widest text-center leading-tight">
               {t('min_order_warning')}
             </p>
-            <p className="text-[10px] text-orange-500 font-bold mt-1 uppercase">Min ₹35 order required to checkout. GPS delivery fee is calculated at the next step.</p>
           </div>
         </motion.div>
       )}
@@ -222,11 +221,13 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
           </div>
           <div className="flex justify-between items-center text-stone-500">
             <span className="text-[10px] font-bold uppercase tracking-widest">Delivery Charges</span>
-            <span className="text-[10px] font-bold uppercase text-amber-600">Calculated by GPS</span>
+            <span className={`text-[12px] font-black uppercase ${deliveryFee === 0 ? 'text-emerald-600 tracking-widest' : 'text-stone-800'}`}>
+              {deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}
+            </span>
           </div>
           <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
             <span className="text-base font-bold text-gray-800 uppercase tracking-tight">To Pay</span>
-            <span className="text-xl font-black text-gray-900 tracking-tight">₹{subtotal}</span>
+            <span className="text-xl font-black text-gray-900 tracking-tight">₹{total}</span>
           </div>
         </div>
 
@@ -243,20 +244,20 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
         </div>
 
         <motion.button
-          whileHover={{ scale: subtotal >= 35 ? 1.02 : 1 }}
-          whileTap={{ scale: subtotal >= 35 ? 0.98 : 1 }}
+          whileHover={{ scale: subtotal >= 70 ? 1.02 : 1 }}
+          whileTap={{ scale: subtotal >= 70 ? 0.98 : 1 }}
           onClick={() => {
-            if (subtotal < 35) {
-              toast.error("Oops! Minimum order amount is ₹35. Please order for ₹35 or more.", { id: 'grezto-min-order-err' });
+            if (subtotal < 70) {
+              toast.error("Oops! Minimum order amount is ₹70. Please order for ₹70 or more.", { id: 'grezto-min-order-err' });
               return;
             }
             onCheckout();
           }}
           className={`w-full mt-8 py-4.5 rounded-2xl text-white text-sm font-bold uppercase tracking-[0.2em] relative overflow-hidden ${
-            subtotal >= 35 ? "bg-stone-900 shadow-xl shadow-stone-900/20 hover:bg-stone-800" : "bg-gray-400 cursor-not-allowed"
+            subtotal >= 70 ? "bg-stone-900 shadow-xl shadow-stone-900/20 hover:bg-stone-800" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          {subtotal >= 35 && <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 opacity-50 blur-xl"></div>}
+          {subtotal >= 70 && <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 opacity-50 blur-xl"></div>}
           <span className="relative z-10 flex items-center justify-center space-x-3">
             <Zap className="w-4 h-4 text-emerald-200 fill-emerald-200" />
             <span>{t('checkout')}</span>

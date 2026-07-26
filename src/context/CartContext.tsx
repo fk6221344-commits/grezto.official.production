@@ -266,8 +266,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   
-  // Delivery fee is computed dynamically at Checkout page based on GPS coordinates.
-  const deliveryFee = 0;
+  // Delivery fee is now calculated dynamically in the Cart context to be available everywhere
+  const calcDeliveryFee = () => {
+    if (subtotal === 0) return 0;
+    
+    // Flat delivery fee rule
+    let baseFee = 25; 
+    
+    // Volume-based Promotional Discounts
+    if (subtotal >= 999) return 0;
+    if (subtotal >= 499) return Math.floor(baseFee / 2); // 50% discount
+    
+    return baseFee;
+  };
+  const deliveryFee = calcDeliveryFee();
 
   const total = subtotal + deliveryFee;
 

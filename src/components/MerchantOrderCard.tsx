@@ -440,7 +440,7 @@ export const MerchantOrderCard = React.memo(({
                         value={r.phone}
                         className={isOverLimit ? "text-rose-500 font-bold" : ""}
                       >
-                        {r.name} {isOverLimit ? `[BLOCKED: ₹${codBalance} overlimit]` : `(COD: ₹${codBalance})`}
+                        {(r.name || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}{isOverLimit ? ` [BLOCKED: ₹${codBalance} overlimit]` : ''}
                       </option>
                     );
                   })}

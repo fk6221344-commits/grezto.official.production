@@ -242,6 +242,17 @@ export function useRiderOrders({
     }
   };
 
+  useEffect(() => {
+    const handleNativeAccept = (e: any) => {
+      const orderId = e.detail;
+      if (orderId) {
+        handleGlobalAcceptOrder(orderId);
+      }
+    };
+    window.addEventListener('rider-accept-order', handleNativeAccept);
+    return () => window.removeEventListener('rider-accept-order', handleNativeAccept);
+  }, []);
+
   return {
     globalRiderProfile,
     globalIncomingRiderOrders: groupMultiVendorOrders(activeIncomingOrders),

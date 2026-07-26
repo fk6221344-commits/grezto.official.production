@@ -48,10 +48,10 @@ export function useAdminProducts(
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(getApiUrl('/api/products?category=All'));
+        const res = await fetch(getApiUrl(`/api/products?category=All&_cb=${Date.now()}`));
         if (res.ok) {
           const resData = await res.json();
-          const data = resData.products;
+          const data = resData.products || resData.data;
           if (data) {
             const mapped = data.map((p: any) => ({
               ...p,

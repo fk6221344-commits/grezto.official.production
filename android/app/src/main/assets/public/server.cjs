@@ -529,7 +529,6 @@ function sanitizeProductPayload(rawProduct) {
     "price",
     "originalPrice",
     "discount",
-    "discount_percentage",
     "category",
     "image",
     "description",
@@ -549,7 +548,7 @@ function sanitizeProductPayload(rawProduct) {
       const val = rawProduct[key];
       if (key === "id" || key === "name" || key === "category" || key === "image" || key === "description" || key === "stockStatus" || key === "shopId" || key === "shopName" || key === "status" || key === "unit") {
         sanitized[key] = String(val).trim();
-      } else if (key === "price" || key === "originalPrice" || key === "discount" || key === "discount_percentage" || key === "rating") {
+      } else if (key === "price" || key === "originalPrice" || key === "discount" || key === "rating") {
         const numVal = Number(val);
         sanitized[key] = isNaN(numVal) ? 0 : numVal;
       } else if (key === "inStock" || key === "isBestSeller" || key === "deleted") {
@@ -2113,17 +2112,17 @@ async function startServer() {
   });
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 2,
+      latestVersionCode: 3,
       // Change this when releasing a new native APK version
-      forceUpdate: false,
+      forceUpdate: true,
       // If true, user cannot close the native update popup
       downloadUrl: "https://grezto.com",
       // Play Store link
       title: "New Update Available! \u{1F680}",
       message: "A new and faster version of Grezto is available. Please update the app.",
       // Live OTA Update Config (Served directly from Railway)
-      otaBundleVersion: "1.0.1",
-      // Bump this to push a live OTA update
+      // Delivering OTA update 1.0.7 to push the REAL fix for the upsert bug
+      otaBundleVersion: "1.0.7",
       otaDownloadUrl: "https://api.grezto.com/ota/dist.zip"
     });
   });

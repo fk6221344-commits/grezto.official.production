@@ -1375,14 +1375,15 @@ async function startServer() {
   // App Version Info API for In-App Updates and Live OTA Updates
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 3, // Change this when releasing a new native APK version
+      latestVersionCode: 4, // Change this when releasing a new native APK version
       forceUpdate: true, // If true, user cannot close the native update popup
       downloadUrl: "https://grezto.com", // Play Store link
       title: "New Update Available! 🚀",
       message: "A new and faster version of Grezto is available. Please update the app.",
 
       // Live OTA Update Config (Served directly from Railway)
-      otaBundleVersion: "1.0.4", // Bump this to push a live OTA update
+      // Delivering OTA update 1.0.8 to push the REAL fix for the upsert bug
+      otaBundleVersion: "1.0.8", 
       otaDownloadUrl: "https://api.grezto.com/ota/dist.zip"
     });
   });

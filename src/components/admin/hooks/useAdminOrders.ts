@@ -186,7 +186,7 @@ export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: bool
     }
     if (newStatus === "Delivered" || newStatus === "delivered") {
        updateData.deliveredAt = new Date().toISOString();
-       updateData.riderFee = 25;
+       updateData.riderFee = 20;
     }
 
     const lastUnderscoreIndex = orderId.lastIndexOf('_');

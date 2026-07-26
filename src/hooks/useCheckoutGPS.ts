@@ -245,19 +245,8 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   const calcDeliveryFee = useMemo(() => {
     if (subtotal === 0) return 0;
     
-    // Count unique shops from cart items
-    const uniqueShops = new Set<string>();
-    if (items && Array.isArray(items)) {
-      items.forEach((item) => {
-        const rawId = (item as any).shopId || (item as any).productShopId || "admin";
-        if (rawId) {
-          uniqueShops.add(String(rawId).trim());
-        }
-      });
-    }
-
-    // Calculate base fee: Single shop or admin = 30. Multi-shop = 35 (capped)
-    let baseFee = uniqueShops.size > 1 ? 35 : 30;
+    // Flat delivery fee rule
+    let baseFee = 25;
 
     // Volume-based Promotional Discounts
     if (subtotal >= 999) return 0;
@@ -271,7 +260,7 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   }, [subtotal, calcDeliveryFee]);
 
   const currentDistance = distanceToHub !== null ? distanceToHub : 0;
-  const isOutOfRange = currentDistance > 6.0;
+  const isOutOfRange = currentDistance > 5.0;
 
   return {
     coords,

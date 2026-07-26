@@ -70,15 +70,13 @@ interface CartCalculationOverlayProps {
   deliveryFee: number;
   total: number;
   isMultiShop?: boolean;
-  isFirstOrder?: boolean;
 }
 
 export function CartCalculationOverlay({
   subtotal,
   deliveryFee,
   total,
-  isMultiShop = false,
-  isFirstOrder = false
+  isMultiShop = false
 }: CartCalculationOverlayProps) {
   return (
     <div className="bg-white border border-stone-150 rounded-[16px] p-3 shadow-[0_1px_6px_rgba(0,0,0,0.01)] space-y-2.5">
@@ -100,7 +98,7 @@ export function CartCalculationOverlay({
             <Truck className="w-3.5 h-3.5 text-[#0e9f6e]" />
             <span>Delivery Charges</span>
           </span>
-          <span className={`text-[13px] font-black font-sans ${isFirstOrder && deliveryFee === 0 ? 'text-[#10b981] drop-shadow-[0_0_4px_rgba(16,185,129,0.8)] animate-pulse tracking-widest text-[14px]' : 'text-[#0e9f6e]'}`}>
+          <span className={`text-[13px] font-black font-sans ${deliveryFee === 0 ? 'text-[#10b981] drop-shadow-[0_0_4px_rgba(16,185,129,0.8)] animate-pulse tracking-widest text-[14px]' : 'text-[#0e9f6e]'}`}>
             {deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}
           </span>
         </div>

@@ -67,18 +67,7 @@ export default function HomeHeader({
           </div>
         </div>
 
-        {/* Ultra-Sharp 3-Line Glowing Commercial Headline Billboard */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 py-2">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] animate-pulse">
-            🎉 FIRST ORDER 🎉
-          </span>
-          <span className="text-base sm:text-lg font-black uppercase tracking-widest bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(251,191,36,0.8)] font-display my-0.5">
-            100% FREE
-          </span>
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] border-b border-amber-400/60 pb-0.5">
-            DELIVERY 🚚
-          </span>
-        </div>
+
 
         {/* Fireworks & Sparkles bursting in background corners */}
         <div className="absolute top-2 left-4 animate-firework-burst text-amber-300 text-sm">✨</div>

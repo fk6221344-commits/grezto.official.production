@@ -88,20 +88,7 @@ const ProductCardBody = React.memo(({
               <span className="text-[10px] font-black text-white uppercase tracking-widest bg-gray-900/50 px-2 py-1 rounded-lg">Out of Stock</span>
             </div>
           ) : null}
-          {(() => {
-            const dVal = product.discount !== undefined && product.discount !== null && product.discount !== '' 
-              ? Number(product.discount) 
-              : (product.discount_percentage !== undefined && product.discount_percentage !== null ? Number(product.discount_percentage) : 0);
-            
-            if (dVal > 0 && !isDisabled) {
-              return (
-                <div className="absolute top-1.5 left-1.5 z-20 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-md border border-white/20">
-                  -{dVal}%
-                </div>
-              );
-            }
-            return null;
-          })()}
+
         </div>
 
         <div className="px-1 flex-1 flex flex-col justify-between">

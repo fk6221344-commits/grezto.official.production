@@ -31,6 +31,18 @@ public class OrderRingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            if (mediaPlayer != null) {
+                try {
+                    if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+                    mediaPlayer.release();
+                } catch (Exception e) {}
+                mediaPlayer = null;
+            }
+            if (vibrator != null) {
+                vibrator.cancel();
+                vibrator = null;
+            }
+            stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -38,12 +50,13 @@ public class OrderRingService extends Service {
         String title = intent != null ? intent.getStringExtra("title") : "🚨 New Order Received! 🚨";
         String body = intent != null ? intent.getStringExtra("body") : "Please open the app to accept.";
         String type = intent != null ? intent.getStringExtra("type") : "new_order";
+        String orderId = intent != null ? intent.getStringExtra("orderId") : null;
 
         // 1. Wake the screen up forcefully
         acquireWakeLock();
 
         // 2. Start the foreground notification
-        startForegroundServiceNotification(title, body);
+        startForegroundServiceNotification(title, body, type, orderId);
 
         // 3. Start looping ringtone & vibration
         startRinging(type);
@@ -63,7 +76,7 @@ public class OrderRingService extends Service {
         }
     }
 
-    private void startForegroundServiceNotification(String title, String body) {
+    private void startForegroundServiceNotification(String title, String body, String type, String orderId) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -77,14 +90,33 @@ public class OrderRingService extends Service {
             notificationManager.createNotificationChannel(channel);
         }
 
-        // The intent that fires when tapping the notification banner OR the Accept button
+        // The intent that fires when tapping the notification banner
         Intent fullScreenIntent = new Intent(this, MainActivity.class);
         fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        fullScreenIntent.putExtra("stop_ring", true);
+        
         PendingIntent pendingIntentFlags = PendingIntent.getActivity(
             this,
             0,
             fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // The intent that fires when tapping the ✅ ACCEPT button
+        Intent acceptIntent = new Intent(this, MainActivity.class);
+        acceptIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        acceptIntent.putExtra("stop_ring", true);
+        if (orderId != null) {
+            acceptIntent.putExtra("accept_orderId", orderId);
+            if ("new_order".equals(type)) {
+                acceptIntent.putExtra("accept_type", "merchant");
+            } else if ("rider_assigned".equals(type)) {
+                acceptIntent.putExtra("accept_type", "rider");
+            }
+        }
+        PendingIntent acceptPendingIntent = PendingIntent.getActivity(
+            this,
+            1, // Unique request code for the ACCEPT action
+            acceptIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
@@ -97,7 +129,7 @@ public class OrderRingService extends Service {
             .setOngoing(true) // Can't swipe away
             .setAutoCancel(false)
             .setContentIntent(pendingIntentFlags)
-            .addAction(0, "✅ ACCEPT", pendingIntentFlags); // The explicit Accept button
+            .addAction(0, "✅ ACCEPT", acceptPendingIntent); // Re-added the ACCEPT button
 
         Notification notification = builder.build();
         startForeground(1001, notification);

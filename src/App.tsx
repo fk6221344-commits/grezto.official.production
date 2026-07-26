@@ -38,7 +38,6 @@ import ReferralInstaller from './components/ReferralInstaller';
 import RiderAssignmentOverlay from './components/RiderAssignmentOverlay';
 import GpsPressingActivator from './components/GpsPressingActivator';
 import AssamOfflineBanner from './components/AssamOfflineBanner';
-import PromoAnnouncementModal from './components/PromoAnnouncementModal';
 import { initOTAUpdater } from './utils/otaUpdater';
 import GlobalAppUpdateModal from './components/GlobalAppUpdateModal';
 
@@ -55,6 +54,7 @@ import { preFetchGPSBackground } from './lib/geocoder';
 import { useHardwareBack } from './hooks/useHardwareBack';
 import { useRegisterBackHandler } from './hooks/useRegisterBackHandler';
 import { useOrderAlerts } from './hooks/useOrderAlerts';
+import { supabase } from './services/supabase';
 import { useRiderOrders } from './hooks/useRiderOrders';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
@@ -428,6 +428,26 @@ function MainAppLayout() {
     });
   };
 
+  useEffect(() => {
+    const handleNativeMerchantAccept = async (e: any) => {
+      const orderId = e.detail;
+      if (orderId) {
+        try {
+          const { data, error } = await supabase.from('orders').select('*').eq('id', orderId).single();
+          if (data && !error) {
+            handleAcceptAndRedirect(data);
+          }
+        } catch (e) {
+          console.error("Failed to accept from notification:", e);
+        }
+      }
+    };
+    window.addEventListener('merchant-accept-order', handleNativeMerchantAccept);
+    return () => {
+      window.removeEventListener('merchant-accept-order', handleNativeMerchantAccept);
+    };
+  }, [handleAcceptAndRedirect]);
+
   return (
     <div className="h-screen w-screen bg-[#fffcf9] flex flex-col overflow-hidden font-sans antialiased selection:bg-red-900/10 selection:text-red-900 relative">
       {/* Dynamic Ambient Background Elements for desktop */}
@@ -771,7 +791,6 @@ function MainAppLayout() {
 
                 <ReferralInstaller />
                 <GlobalAppUpdateModal show={showUpdateModal} updateInfo={updateInfo} onDismiss={dismissUpdate} />
-                <PromoAnnouncementModal />
 
                 {!user.isLoggedIn && activeTab !== 'profile' && (
                   <Profile 

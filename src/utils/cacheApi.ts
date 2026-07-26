@@ -15,7 +15,7 @@ export async function fetchDualLayerHomeData(city?: string) {
 
   try {
     // Layer 2: Redis Network Cache (extremely fast fetch from Server Redis cache with segmented city key support)
-    const url = `/api/home-data?city=${encodeURIComponent(activeCity)}`;
+    const url = `/api/home-data?city=${encodeURIComponent(activeCity)}&_cb=${Date.now()}`;
     const res = await fetch(getApiUrl(url));
     if (res.ok) {
       const serverData = await res.json();
@@ -97,7 +97,7 @@ export async function fetchDualLayerHomeData(city?: string) {
 export async function fetchProductsByCategory(category: string, dispatchEventCallback?: (prods: any[]) => void) {
   // Always fetch from server directly to keep it synced without stale client-side cache
   try {
-    const res = await fetch(getApiUrl(`/api/products?category=${encodeURIComponent(category)}`));
+    const res = await fetch(getApiUrl(`/api/products?category=${encodeURIComponent(category)}&_cb=${Date.now()}`));
     if (res.ok) {
       const data = await res.json();
       const products = data.products || [];

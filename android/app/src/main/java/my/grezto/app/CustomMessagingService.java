@@ -39,12 +39,12 @@ public class CustomMessagingService extends MessagingService {
 
                 String title = data.get("title") != null ? data.get("title") : "New Order!";
                 String body = data.get("body") != null ? data.get("body") : "Tap to open";
-                startFullScreenIntent(title, body, type);
+                startFullScreenIntent(title, body, type, orderId);
             }
         }
     }
 
-    private void startFullScreenIntent(String title, String body, String type) {
+    private void startFullScreenIntent(String title, String body, String type, String orderId) {
         Context context = getApplicationContext();
 
         // START THE RINGTONE SERVICE DIRECTLY IN THE BACKGROUND!
@@ -55,6 +55,9 @@ public class CustomMessagingService extends MessagingService {
             serviceIntent.putExtra("title", title);
             serviceIntent.putExtra("body", body);
             serviceIntent.putExtra("type", type);
+            if (orderId != null) {
+                serviceIntent.putExtra("orderId", orderId);
+            }
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent);

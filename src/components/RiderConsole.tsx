@@ -447,7 +447,15 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
     try {
       if (!supabase) throw new Error("Supabase is not initialized");
 
-      const earnedFee = 20;
+      const delCharge = Number(orderToConfirm.deliveryCharge || 0);
+      let earnedFee = 20;
+      if (delCharge === 0) {
+        earnedFee = 15;
+      } else if (delCharge < 25) {
+        earnedFee = 20; // 50% discount case
+      } else {
+        earnedFee = 20;
+      }
       
       const idsToUpdate = [orderToConfirm.id];
       if (orderToConfirm.id.startsWith('c_') && !orderToConfirm.id.includes('_')) {

@@ -66,8 +66,8 @@ const banners = [
   { 
     id: 2, 
     badge: "SPECIAL OFFER",
-    line1: "FIRST ORDER",
-    line2: "100% FREE DELIVERY",
+    line1: "SUPER FAST",
+    line2: "DELIVERY UNDER 6 KM",
     sub: "Flat 50% OFF delivery on ₹499+ & 100% FREE on ₹1000+ orders.", 
     image: "/premium-delivery-banner.png"
   },

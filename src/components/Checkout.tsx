@@ -292,9 +292,8 @@ export default function Checkout({
   const recipientName = nameVal || user.name || "Jjbuu";
   const recipientPhone = user.phone || "7577950272";
 
-  const isFirstOrderFreeDelivery = user.isLoggedIn && user.hasPlacedFirstOrder === false;
   const finalDeliveryFee =
-    selectedVoucher?.type === "freedelivery" || isFirstOrderFreeDelivery ? 0 : calcDeliveryFee;
+    selectedVoucher?.type === "freedelivery" ? 0 : calcDeliveryFee;
   const voucherDiscount =
     selectedVoucher?.type === "amount" ? selectedVoucher.value : 0;
   const finalTotal = Math.max(0, subtotal + finalDeliveryFee - voucherDiscount);
@@ -493,7 +492,7 @@ export default function Checkout({
     );
 
     if (isOutOfRange) {
-      toast.error("Sorry! We only deliver within 6 KM from our store. You are outside our delivery zone.");
+      toast.error("Sorry! We only deliver within 5 KM from our store. You are outside our delivery zone.");
       return;
     }
 
@@ -918,7 +917,7 @@ export default function Checkout({
                 DELIVERY ZONE RESTRICTION
               </p>
               <p className="text-[11px] font-extrabold leading-normal text-red-600 mt-1">
-                Sorry! We only deliver within 6 KM from our store. You are outside our delivery zone.
+                Sorry! We only deliver within 5 KM from our store. You are outside our delivery zone.
               </p>
               <p className="text-[9px] font-medium text-stone-500 mt-1">
                 Current road distance: <span className="font-extrabold text-red-700">{currentDistance.toFixed(2)} KM</span>
@@ -1179,7 +1178,7 @@ export default function Checkout({
             subtotal={subtotal}
             deliveryFee={finalDeliveryFee}
             total={finalTotal}
-            isFirstOrder={isFirstOrderFreeDelivery}
+
             isMultiShop={items.reduce((acc, item) => {
               const rawId = (item as any).shopId || (item as any).productShopId || "admin";
               acc.add(rawId);

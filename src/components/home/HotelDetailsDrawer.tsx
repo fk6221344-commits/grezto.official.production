@@ -66,7 +66,7 @@ export default function HotelDetailsDrawer({
     setDishes(initialDishes);
     setDishesLoading(true);
 
-    fetch(getApiUrl(`/api/products?shopId=${encodeURIComponent(currentHotelState.id)}`))
+    fetch(getApiUrl(`/api/products?shopId=${encodeURIComponent(currentHotelState.id)}&_cb=${Date.now()}`))
       .then(res => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();

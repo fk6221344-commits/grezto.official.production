@@ -662,6 +662,43 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
     const isDelivered = order.status === 'Delivered';
     const [isExpanded, setIsExpanded] = useState(!isDelivered);
     const [showItemsList, setShowItemsList] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [isCanceling, setIsCanceling] = useState(false);
+
+    // Calculate if order is less than 2 minutes old
+    let isCancelable = false;
+    if (order.status === 'Pending' || order.status === 'Received') {
+        const now = Date.now();
+        let orderTime = now;
+        if (order.createdAt) {
+             if (typeof order.createdAt === 'string') {
+                 orderTime = new Date(order.createdAt).getTime();
+             } else if (typeof order.createdAt.toDate === 'function') {
+                 orderTime = order.createdAt.toDate().getTime();
+             }
+        }
+        if ((now - orderTime) <= 2 * 60 * 1000) {
+            isCancelable = true;
+        }
+    }
+
+    const handleCancelOrder = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsCanceling(true);
+        try {
+             const { supabase } = await import('../services/supabase');
+             if (!supabase) throw new Error("Database connection failed");
+             const { error } = await supabase.from('orders').update({ status: 'Cancelled' }).eq('id', order.id);
+             if (error) throw error;
+             toast.success("Order Cancelled successfully!");
+             setShowCancelConfirm(false);
+        } catch (err: any) {
+             console.error("Cancel failed:", err);
+             toast.error("Failed to cancel order. Please contact support.");
+        } finally {
+             setIsCanceling(false);
+        }
+    };
 
     // Watch the live order status and auto-collapse the order height ONLY after status becomes Delivered
     useEffect(() => {
@@ -840,12 +877,22 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                         <p className="text-sm font-black text-emerald-600">₹{order.finalAmount || order.amount || (Number(order.totalAmount || 0) + Number(order.deliveryCharge || 0))}</p>
                     </div>
                     {order.status !== 'Delivered' ? (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onTrackOrder?.(order); }}
-                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold text-[9px] uppercase tracking-widest py-2.5 px-4 rounded-xl border border-emerald-100/30 transition-all cursor-pointer active:scale-95 flex items-center space-x-1"
-                        >
-                            <span>Track Order ⚡</span>
-                        </button>
+                        <div className="flex items-center space-x-2">
+                            {isCancelable && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowCancelConfirm(true); }}
+                                    className="bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-[9px] uppercase tracking-widest py-2.5 px-3 rounded-xl border border-red-100/30 transition-all cursor-pointer active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onTrackOrder?.(order); }}
+                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold text-[9px] uppercase tracking-widest py-2.5 px-4 rounded-xl border border-emerald-100/30 transition-all cursor-pointer active:scale-95 flex items-center space-x-1"
+                            >
+                                <span>Track Order ⚡</span>
+                            </button>
+                        </div>
                     ) : (
                         <button
                             onClick={() => setIsExpanded(false)}
@@ -864,6 +911,50 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                 totalAmount={order.finalAmount || order.amount || (Number(order.totalAmount || 0) + Number(order.deliveryCharge || 0))}
                 deliveryCharge={Number(order.deliveryCharge || 0)}
             />
+
+            {/* Cancel Confirmation Modal */}
+            <AnimatePresence>
+                {showCancelConfirm && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={(e) => { e.stopPropagation(); setShowCancelConfirm(false); }}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-6 w-full max-w-[320px] shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">⚠️</span>
+                            </div>
+                            <h3 className="text-center font-black text-gray-900 text-lg uppercase tracking-tight mb-2">Cancel Order?</h3>
+                            <p className="text-center text-xs text-gray-500 font-medium mb-6 px-2 leading-relaxed">
+                                Are you sure you want to cancel this order? This action cannot be undone.
+                            </p>
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => setShowCancelConfirm(false)}
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
+                                >
+                                    No, Keep it
+                                </button>
+                                <button
+                                    onClick={handleCancelOrder}
+                                    disabled={isCanceling}
+                                    className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
+                                >
+                                    {isCanceling ? 'Canceling...' : 'Yes, Cancel'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Grezto style Delivery partner information & dialing */}
             {order.partnerPhone && (

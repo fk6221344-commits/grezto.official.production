@@ -161,7 +161,7 @@ export function useMerchantOrders(shop: ShopProps, firebaseAuthReady: boolean) {
       
       if (newStatus === 'Delivered' || newStatus === 'delivered') {
         updateData.deliveredAt = new Date().toISOString();
-        updateData.riderFee = 25;
+        updateData.riderFee = 20; // Updated base rider fee
       }
 
       if (supabase) {

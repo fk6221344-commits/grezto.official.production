@@ -38,10 +38,7 @@ public class MainActivity extends BridgeActivity {
         }
 
         // Check if launched from notification tap
-        Intent intent = getIntent();
-        if (intent != null && intent.getBooleanExtra("stop_ring", false)) {
-            stopOrderRingService();
-        }
+        handleIntent(getIntent());
     }
 
     @Override
@@ -53,8 +50,25 @@ public class MainActivity extends BridgeActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
         if (intent != null && intent.getBooleanExtra("stop_ring", false)) {
             stopOrderRingService();
+            
+            String orderId = intent.getStringExtra("accept_orderId");
+            String acceptType = intent.getStringExtra("accept_type");
+            if (orderId != null && this.bridge != null && this.bridge.getWebView() != null) {
+                String eventName = "rider".equals(acceptType) ? "rider-accept-order" : "merchant-accept-order";
+                final String js = "window.dispatchEvent(new CustomEvent('" + eventName + "', { detail: '" + orderId + "' }));";
+                this.bridge.getWebView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        bridge.getWebView().evaluateJavascript(js, null);
+                    }
+                });
+            }
         }
     }
 

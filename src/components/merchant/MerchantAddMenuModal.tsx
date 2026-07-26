@@ -121,9 +121,6 @@ export function MerchantAddMenuModal({
                   <option value="Others">Others / Packaged 🍿</option>
                 </select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider block">Initial Stock</label>
                 <input 
@@ -132,21 +129,6 @@ export function MerchantAddMenuModal({
                   onChange={e => setNewItem({...newItem, stock: e.target.value === '' ? '' : Number(e.target.value)})}
                   placeholder="Available stock"
                   className="w-full bg-slate-50 border rounded-xl p-3 font-semibold focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[8.5px] font-black text-rose-500 uppercase tracking-wider block">Discount Offer (%)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  max="99"
-                  value={newItem.discount === undefined ? (newItem.discount_percentage === undefined ? '' : newItem.discount_percentage) : newItem.discount}
-                  onChange={e => {
-                    const val = e.target.value === '' ? '' : Number(e.target.value);
-                    setNewItem({...newItem, discount: val, discount_percentage: val});
-                  }}
-                  placeholder="e.g. 10 (-10% badge)"
-                  className="w-full bg-rose-50/50 border border-rose-200 rounded-xl p-3 font-bold text-rose-600 focus:outline-none focus:border-rose-500"
                 />
               </div>
             </div>

@@ -35,7 +35,7 @@ export function MerchantMenuTab({
   const fuse = useMemo(() => {
     return new Fuse(products, {
       keys: ['name', 'category'],
-      threshold: 0.4, // Allows for some spelling mistakes (0.0 is exact match, 1.0 matches anything)
+      threshold: 0.4,
       ignoreLocation: true,
     });
   }, [products]);
@@ -49,7 +49,7 @@ export function MerchantMenuTab({
     return results.map(result => result.item);
   }, [products, searchQuery, fuse]);
 
-  // Reset pagination when filtered products list changes
+  // Reset pagination when products list changes
   useEffect(() => {
     setVisibleCount(15);
   }, [filteredProducts.length]);
@@ -81,7 +81,7 @@ export function MerchantMenuTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active dishes & inventory</span>
         <button 
           onClick={() => {

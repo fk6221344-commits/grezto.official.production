@@ -39,7 +39,7 @@ export default function SearchOverlay({ onClose, onSelect, initialQuery = '' }: 
     // Always fetch latest products catalog in the background to ensure real-time search results are up to date
     const fetchLatestCatalog = async () => {
       try {
-        const res = await fetch(getApiUrl('/api/products?category=All'));
+        const res = await fetch(getApiUrl(`/api/products?category=All&_cb=${Date.now()}`));
         if (res.ok) {
           const serverData = await res.json();
           if (serverData && serverData.products && serverData.products.length > 0) {
