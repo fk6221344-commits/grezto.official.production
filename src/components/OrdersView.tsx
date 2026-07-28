@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { ChevronRight, Package, Clock, CheckCircle2, Navigation, ShoppingBag, MapPin, Check, Phone, Download, MoreVertical, History, ListFilter, ArrowLeft } from 'lucide-react';
 import { auth } from '../services/firebase';
 import { useUser } from '../context/UserContext';
@@ -927,7 +928,7 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
 
             {/* Cancel Confirmation Modal */}
             <AnimatePresence>
-                {showCancelConfirm && (
+                {showCancelConfirm && createPortal(
                     <motion.div 
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
@@ -982,7 +983,8 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                                 </button>
                             </div>
                         </motion.div>
-                    </motion.div>
+                    </motion.div>,
+                    document.body
                 )}
             </AnimatePresence>
 
