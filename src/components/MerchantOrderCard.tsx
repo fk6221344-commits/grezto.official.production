@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Clock, CheckCircle, ChevronUp, ChevronDown, MapPin, ShoppingBag, User } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { stopAlertAlarmLoop } from '../services/notifications';
+import { stopAlertAlarmLoop, startAlertAlarmLoop } from '../services/notifications';
 import OrderedProductsModal from './OrderedProductsModal';
 
 interface LiveTimerProps {
@@ -80,6 +80,7 @@ interface MerchantOrderCardProps {
   handleUpdateStatus: (orderId: string, status: string, riderData?: any) => void;
   mapsAuthError: boolean;
   busyRiders?: string[];
+  isHistory?: boolean;
 }
 
 export const MerchantOrderCard = React.memo(({ 
@@ -88,7 +89,8 @@ export const MerchantOrderCard = React.memo(({
   riders, 
   handleUpdateStatus, 
   mapsAuthError, 
-  busyRiders 
+  busyRiders,
+  isHistory = false
 }: MerchantOrderCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localStatus, setLocalStatus] = useState(order.status || 'Pending');
@@ -107,12 +109,18 @@ export const MerchantOrderCard = React.memo(({
 
   useEffect(() => {
     setLocalStatus(order.status || 'Pending');
-    if (order.status === 'Delivered') {
+    if (order.status === 'Delivered' || (order.status === 'Cancelled' && isHistory)) {
       setIsCardCollapsed(true);
     } else {
       setIsCardCollapsed(false);
     }
-  }, [order.status]);
+    
+    if (order.status === 'Cancelled' && !isHistory) {
+      try {
+        startAlertAlarmLoop();
+      } catch (e) {}
+    }
+  }, [order.status, isHistory]);
 
   useEffect(() => {
     setSelectedRider(order.partnerPhone || '');
@@ -196,7 +204,9 @@ export const MerchantOrderCard = React.memo(({
             {merchantItems?.map((i: any) => `${i.quantity}x ${i.name}`).join(', ')}
           </p>
           <div className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-405 border border-gray-200 text-right font-sans">
-            <span className="font-black text-[7.5px] uppercase tracking-wider block">Delivered ✓</span>
+            <span className="font-black text-[7.5px] uppercase tracking-wider block">
+              {order.status === 'Cancelled' ? 'Cancelled 🚫' : 'Delivered ✓'}
+            </span>
             <span className="text-[6.5px] text-gray-400 font-bold block bg-white px-1 py-0.5 rounded-sm mt-0.5 border border-gray-100">
               {order.parsedCreatedAt ? new Date(order.parsedCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
             </span>
@@ -372,6 +382,33 @@ export const MerchantOrderCard = React.memo(({
           <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">✓ Order Completed</span>
           <span className="text-[8px] text-gray-400 font-extrabold uppercase tracking-widest">Delivered by {order.partnerName || 'Rider'}</span>
         </div>
+      ) : order.status === 'Cancelled' ? (
+         !isHistory ? (
+           <div className="pt-4 flex flex-col items-center gap-3 text-center mt-2">
+             <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 w-full relative overflow-hidden">
+               <div className="absolute inset-0 bg-rose-500/10 animate-pulse"></div>
+               <h4 className="text-rose-600 font-black text-sm uppercase tracking-wider relative z-10">⚠️ Order Cancelled</h4>
+               <p className="text-[9px] text-rose-500/80 font-bold mt-1 uppercase relative z-10">Please stop preparing this order</p>
+             </div>
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 try { stopAlertAlarmLoop(); } catch (e) {}
+                 localStorage.setItem(`acked_cancel_${order.id}`, 'true');
+                 window.dispatchEvent(new Event('merchant-cancel-acked'));
+               }}
+               className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] uppercase tracking-widest rounded-xl shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+             >
+               <span>Acknowledge & Remove</span>
+               <span className="text-[14px]">🗑️</span>
+             </button>
+           </div>
+         ) : (
+           <div className="pt-3 p-3 bg-rose-50 border border-rose-100 rounded-2xl flex flex-col gap-1 text-center mt-2">
+             <span className="text-[10px] font-black uppercase text-rose-600 tracking-wider">🚫 Order Cancelled</span>
+             <span className="text-[8px] text-rose-400 font-extrabold uppercase tracking-widest">Customer cancelled this order</span>
+           </div>
+         )
       ) : (
         <div className="pt-3.5 border-t border-slate-100/60 flex flex-col gap-2 text-left">
           {(order.status === 'Received' || order.status === 'Pending' || order.status === 'Receipt Preparing' || !order.status) && (

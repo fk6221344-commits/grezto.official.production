@@ -10,27 +10,6 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
   const { items, updateQuantity, removeFromCart, subtotal, deliveryFee, total } = useCart();
   const { t } = useLanguage();
 
-  // Helper to dynamically compile a pristine, fully detailed text of the order and redirect to WhatsApp
-  const generateWhatsAppLink = () => {
-    // Obscures target number (917577950272) in base64 to protect privacy
-    const decryptedPhone = atob("OTE3NTc3OTUwMjcy");
-    
-    let text = `*🌿 GREZTO ORGANICS - NEW ORDER* 🌿\n\n`;
-    text = text + `Hello Grezto, I would like to place an order for the following fresh items:\n`;
-    text = text + `------------------------------------\n`;
-    
-    items.forEach((item, idx) => {
-      text = text + `*${idx + 1}.* ${item.name}\n`;
-      text = text + `   _Qty:_ ${item.quantity} x ₹${item.price} = *₹${item.quantity * item.price}*\n`;
-    });
-    
-    text = text + `------------------------------------\n`;
-    text = text + `*Total Pay Amount:* ₹${total}\n\n`;
-    text = text + `Please accept my order. Waiting for confirmation! 🙏`;
-    
-    const encodedText = encodeURIComponent(text);
-    return `https://wa.me/${decryptedPhone}?text=${encodedText}`;
-  };
 
   if (items.length === 0) {
     return (
@@ -149,40 +128,7 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
 
   return (
     <div className="pb-32 px-1 pt-16 relative">
-      {/* Dynamic Absolute Positioning to the top-right corner of the container */}
-      <div className="absolute top-2 right-4 z-50 flex flex-col items-end whitespace-nowrap">
-        {/* Floating Premium WhatsApp Quick Order */}
-        <motion.a
-          title="Order via WhatsApp"
-          animate={{ 
-            y: [0, -3, 0],
-            scale: [1, 1.04, 1],
-            rotate: [0, 1.5, -1.5, 0]
-          }}
-          transition={{ 
-            duration: 3, 
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          whileHover={{ scale: 1.12 }}
-          whileTap={{ scale: 0.95 }}
-          href={generateWhatsAppLink()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-11 h-11 bg-gradient-to-tr from-[#7f1d1d] via-[#10b981] to-[#25D366] rounded-xl flex items-center justify-center shadow-lg shadow-emerald-100/50 text-white border-2 border-white cursor-pointer relative"
-        >
-          {/* Soft pulse ring matching colors */}
-          <span className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[#7f1d1d] to-[#25D366] opacity-35 blur-md -z-10 animate-pulse"></span>
-          
-          {/* Premium, exact WhatsApp SVG Icon */}
-          <svg viewBox="0 0 24 24" className="w-[20px] h-[20px] fill-current text-white" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12.031 2C6.479 2 2 6.478 2 12.029c0 1.882.52 3.633 1.439 5.143L2 22l5.06-1.332a9.914 9.914 0 0 0 4.971 1.302c5.524 0 10.003-4.478 10.003-10.029C22.034 6.478 17.555 2 12.031 2zm5.72 14.116c-.24.675-1.213 1.251-1.682 1.336-.469.085-1.055.155-3.151-.67-2.671-1.058-4.359-3.8-4.494-3.984-.135-.183-1.111-1.479-1.111-2.82 0-1.341.699-1.996.953-2.261.253-.265.55-.328.72-.342.17-.014.368-.014.524.015.155.028.36-.057.565.45.205.52.742 1.815.805 1.942.064.127.106.275.014.444-.092.176-.134.268-.268.43l-.332.388c-.12.14-.247.289-.099.535.148.24.643 1.05 1.378 1.706.948.847 1.745 1.114 1.999 1.22.254.106.402.085.552-.085.148-.17.65-.747.818-.987.169-.24.339-.197.579-.113.24.085 1.5.713 1.761.84.261.127.43.197.495.296.063.099.063.585-.177 1.27z"/>
-          </svg>
-        </motion.a>
-        <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest mt-1 select-none leading-none mr-0.5">
-          order from WhatsApp
-        </span>
-      </div>
+
       {/* Extreme Compact Cart List */}
       <div className="space-y-2.5">
         <AnimatePresence initial={false}>
@@ -197,7 +143,7 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
         </AnimatePresence>
       </div>
 
-      {subtotal < 70 && (
+      {subtotal < 51 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -216,48 +162,36 @@ export default function Cart({ onCheckout }: { onCheckout: () => void }) {
       <div className="mt-6 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-100/30">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Items Total</span>
-            <span className="text-xs font-bold text-gray-800">₹{subtotal}</span>
+            <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Items Total</span>
+            <span className="text-sm font-black text-gray-900">₹{subtotal}</span>
           </div>
-          <div className="flex justify-between items-center text-stone-500">
-            <span className="text-[10px] font-bold uppercase tracking-widest">Delivery Charges</span>
-            <span className={`text-[12px] font-black uppercase ${deliveryFee === 0 ? 'text-emerald-600 tracking-widest' : 'text-stone-800'}`}>
+          <div className="flex justify-between items-center">
+            <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Delivery Charges</span>
+            <span className={`text-sm font-black uppercase ${deliveryFee === 0 ? 'text-emerald-600 tracking-widest' : 'text-gray-900'}`}>
               {deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}
             </span>
           </div>
           <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
-            <span className="text-base font-bold text-gray-800 uppercase tracking-tight">To Pay</span>
+            <span className="text-base font-black text-gray-800 uppercase tracking-tight">To Pay</span>
             <span className="text-xl font-black text-gray-900 tracking-tight">₹{total}</span>
           </div>
         </div>
 
-        {/* Promotional Delivery Offers Banner */}
-        <div className="mt-5 mb-1 flex items-center justify-between gap-3">
-          <div className="flex-1 bg-amber-50 border-2 border-amber-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(251,191,36,0.15)]">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 leading-tight">ORDER ABOVE ₹499</span>
-            <span className="text-[12px] font-black text-amber-700 mt-1.5 flex items-center gap-1.5">🛵 50% OFF Delivery</span>
-          </div>
-          <div className="flex-1 bg-emerald-50 border-2 border-emerald-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(16,185,129,0.15)]">
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">ORDER ABOVE ₹999</span>
-            <span className="text-[12px] font-black text-emerald-700 mt-1.5 flex items-center gap-1.5">🎉 100% FREE</span>
-          </div>
-        </div>
-
         <motion.button
-          whileHover={{ scale: subtotal >= 70 ? 1.02 : 1 }}
-          whileTap={{ scale: subtotal >= 70 ? 0.98 : 1 }}
+          whileHover={{ scale: subtotal >= 51 ? 1.02 : 1 }}
+          whileTap={{ scale: subtotal >= 51 ? 0.98 : 1 }}
           onClick={() => {
-            if (subtotal < 70) {
-              toast.error("Oops! Minimum order amount is ₹70. Please order for ₹70 or more.", { id: 'grezto-min-order-err' });
+            if (subtotal < 51) {
+              toast.error("Oops! Minimum order amount is ₹51. Please order for ₹51 or more.", { id: 'grezto-min-order-err' });
               return;
             }
             onCheckout();
           }}
           className={`w-full mt-8 py-4.5 rounded-2xl text-white text-sm font-bold uppercase tracking-[0.2em] relative overflow-hidden ${
-            subtotal >= 70 ? "bg-stone-900 shadow-xl shadow-stone-900/20 hover:bg-stone-800" : "bg-gray-400 cursor-not-allowed"
+            subtotal >= 51 ? "bg-[#0b7a2d] shadow-xl shadow-[#0b7a2d]/20 hover:bg-[#0a6c28]" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          {subtotal >= 70 && <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 opacity-50 blur-xl"></div>}
+          {subtotal >= 51 && <div className="absolute inset-0 bg-gradient-to-r from-[#0a6c28] via-[#0b7a2d] to-[#0a6c28] opacity-50 blur-xl"></div>}
           <span className="relative z-10 flex items-center justify-center space-x-3">
             <Zap className="w-4 h-4 text-emerald-200 fill-emerald-200" />
             <span>{t('checkout')}</span>

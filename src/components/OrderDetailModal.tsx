@@ -132,7 +132,7 @@ export default function OrderDetailModal({ order, onClose, onUpdateStatus }: Ord
                         <p className="font-extrabold text-slate-950 uppercase">{item.name}</p>
                         <div className="mt-1">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
-                            Qty: {item.quantity} × ₹{item.price}
+                            {item.quantity} {item.unit || 'UNIT'} × ₹{item.price}
                           </span>
                         </div>
                       </div>

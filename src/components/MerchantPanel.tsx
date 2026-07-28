@@ -42,6 +42,13 @@ export default function MerchantPanel({ onClose, shop }: MerchantPanelProps) {
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'settings' | 'analytics'>('orders');
   const [showMerchantInfoMenu, setShowMerchantInfoMenu] = useState(false);
   const [showMerchantHistoryModal, setShowMerchantHistoryModal] = useState(false);
+  const [refreshToggle, setRefreshToggle] = useState(false);
+
+  useEffect(() => {
+    const handleAck = () => setRefreshToggle(p => !p);
+    window.addEventListener('merchant-cancel-acked', handleAck);
+    return () => window.removeEventListener('merchant-cancel-acked', handleAck);
+  }, []);
 
   // Modular custom hooks for state & actions
 
@@ -166,16 +173,22 @@ export default function MerchantPanel({ onClose, shop }: MerchantPanelProps) {
   const ordersActive = useMemo(() => {
     return orders.filter(o => {
        const status = String(o.status || '').toLowerCase().trim();
-       return status !== 'delivered' && status !== 'cancelled';
+       if (status === 'cancelled') {
+           return !localStorage.getItem(`acked_cancel_${o.id}`);
+       }
+       return status !== 'delivered';
     });
-  }, [orders]);
+  }, [orders, refreshToggle]);
 
   const historyOrders = useMemo(() => {
     return orders.filter(o => {
        const status = String(o.status || '').toLowerCase().trim();
-       return status === 'delivered' || status === 'cancelled';
+       if (status === 'cancelled') {
+           return !!localStorage.getItem(`acked_cancel_${o.id}`);
+       }
+       return status === 'delivered';
     });
-  }, [orders]);
+  }, [orders, refreshToggle]);
 
   // Calculate sum counts for widget previews (O(1) offline direct read!)
   const shopRevenue = Number((shop as any).totalRevenue || 0);

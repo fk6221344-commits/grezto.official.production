@@ -506,6 +506,18 @@ export default function Home({
         <SystemOfflineOverlay countdown={countdown} />
       )}
 
+      {/* Categories at the very top (Flipkart style) - fixed to scroll with green bg */}
+      {!searchQuery && (
+        <div className="sticky top-0 z-[60] bg-white shadow-sm border-b border-gray-100 pb-0 pt-1">
+          <CategoryList
+            categories={activeDisplayCategories}
+            activeCategory={activeCategory}
+            onSelectCategory={setActiveCategory}
+            isLoading={isHomeLoading}
+          />
+        </div>
+      )}
+
       {/* Visual Mode Switching segment tabs */}
       {!searchQuery && (
         <div className="px-2 mt-4 select-none flex items-center gap-1.5 min-[360px]:gap-2.5" id="mode-switching-container">
@@ -571,13 +583,6 @@ export default function Home({
                   <HomeBanners onPromoClick={(q) => {
                     window.dispatchEvent(new CustomEvent('grezto-search', { detail: q }));
                   }} />
-
-                  <CategoryList
-                    categories={activeDisplayCategories}
-                    activeCategory={activeCategory}
-                    onSelectCategory={setActiveCategory}
-                    isLoading={isHomeLoading}
-                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -604,6 +609,9 @@ export default function Home({
             setSelectedHotelForDetails={setSelectedHotelForDetails}
             getDishesForHotel={getDishesForHotel}
             isLoading={isHomeLoading}
+            onClose={() => setActiveMode('grocery')}
+            searchQuery={restaurantSearchQuery}
+            setSearchQuery={setRestaurantSearchQuery}
           />
         )}
       </AnimatePresence>

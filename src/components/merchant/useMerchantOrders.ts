@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
+import { getRiderPayout } from '../../utils/riderPayout';
 
 interface ShopProps {
   id: string;
@@ -158,10 +159,11 @@ export function useMerchantOrders(shop: ShopProps, firebaseAuthReady: boolean) {
           updateData.deliveryOtp = generatedOtp;
         }
       }
-      
       if (newStatus === 'Delivered' || newStatus === 'delivered') {
+        const orderData = Array.isArray(globalOrders) ? globalOrders.find((o: any) => o.id === orderId) : null;
+        const delCharge = Number(orderData?.deliveryCharge || 0);
         updateData.deliveredAt = new Date().toISOString();
-        updateData.riderFee = 20; // Updated base rider fee
+        updateData.riderFee = getRiderPayout(delCharge);
       }
 
       if (supabase) {

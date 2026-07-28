@@ -270,14 +270,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const calcDeliveryFee = () => {
     if (subtotal === 0) return 0;
     
-    // Flat delivery fee rule
-    let baseFee = 25; 
-    
-    // Volume-based Promotional Discounts
-    if (subtotal >= 999) return 0;
-    if (subtotal >= 499) return Math.floor(baseFee / 2); // 50% discount
-    
-    return baseFee;
+    if (subtotal >= 800) return 28;
+    if (subtotal >= 499) return 25;
+    return 19;
   };
   const deliveryFee = calcDeliveryFee();
 
@@ -285,6 +280,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (product: any) => {
     if (!product || !product.id) return;
+    
+    if (subtotal + (Number(product.price) || 0) > 1000) {
+      toast.error("Above 1000 you cannot order", { duration: 2000, id: 'cart-limit-add' });
+      return;
+    }
 
     // 🚀 BACKGROUND PRE-WARM: Instantly fetch GPS in background so Checkout is 0-seconds fast!
     preFetchGPSBackground();
@@ -352,6 +352,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     setItems(prev => {
+      const currentSubtotal = prev.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const addedPrice = Number(product.price) || 0;
+      
+      if (currentSubtotal + addedPrice > 1000) {
+        setTimeout(() => toast.error("Above 1000 you cannot order", { duration: 2000, id: 'cart-limit-add-inner' }), 0);
+        return prev;
+      }
+
       const existing = prev.find(i => i.id === product.id);
       if (existing) {
         return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -359,7 +367,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { 
         id: product.id, 
         name: product.name, 
-        price: Number(product.price) || 0, 
+        price: addedPrice, 
         imageUrl: product.image || product.imageUrl || '',
         shopId: product.shopId || product.productShopId || '',
         shopName: product.shopName || '',
@@ -382,13 +390,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = (id: string, delta: number) => {
     if (!id) return;
-    setItems(prev => prev.map(i => {
-      if (i.id === id) {
-        const newQty = i.quantity + delta;
-        return { ...i, quantity: newQty };
+    
+    // Check limit if delta is positive (increasing quantity)
+    if (delta > 0) {
+      const itemToUpdate = items.find(i => i.id === id);
+      if (itemToUpdate && (subtotal + itemToUpdate.price) > 1000) {
+        toast.error("Above 1000 you cannot order", { duration: 2000, id: 'cart-limit-update' });
+        return;
       }
-      return i;
-    }).filter(i => i.quantity > 0));
+    }
+
+    setItems(prev => {
+      if (delta > 0) {
+        const currentSubtotal = prev.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const itemToUpdate = prev.find(i => i.id === id);
+        if (itemToUpdate && (currentSubtotal + itemToUpdate.price) > 1000) {
+          setTimeout(() => toast.error("Above 1000 you cannot order", { duration: 2000, id: 'cart-limit-update-inner' }), 0);
+          return prev;
+        }
+      }
+      
+      return prev.map(i => {
+        if (i.id === id) {
+          const newQty = i.quantity + delta;
+          return { ...i, quantity: newQty };
+        }
+        return i;
+      }).filter(i => i.quantity > 0);
+    });
     triggerMediumHapticVibration();
   };
 

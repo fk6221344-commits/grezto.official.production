@@ -664,32 +664,45 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
     const [showItemsList, setShowItemsList] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [isCanceling, setIsCanceling] = useState(false);
+    const [cancelReason, setCancelReason] = useState("");
 
-    // Calculate if order is less than 2 minutes old
+    // Calculate if order is less than 2.5 minutes old
     let isCancelable = false;
-    if (order.status === 'Pending' || order.status === 'Received') {
+    const currentStatus = (order.status || '').toLowerCase().trim();
+    if (currentStatus !== 'cancelled' && currentStatus !== 'delivered') {
         const now = Date.now();
         let orderTime = now;
         if (order.createdAt) {
              if (typeof order.createdAt === 'string') {
                  orderTime = new Date(order.createdAt).getTime();
+             } else if (order.createdAt.seconds) {
+                 orderTime = order.createdAt.seconds * 1000;
              } else if (typeof order.createdAt.toDate === 'function') {
                  orderTime = order.createdAt.toDate().getTime();
              }
         }
-        if ((now - orderTime) <= 2 * 60 * 1000) {
+        if ((now - orderTime) <= 2.5 * 60 * 1000) {
             isCancelable = true;
         }
     }
 
     const handleCancelOrder = async (e: React.MouseEvent) => {
         e.stopPropagation();
+        if (!cancelReason) {
+            toast.error("Please select a reason for cancellation.");
+            return;
+        }
         setIsCanceling(true);
         try {
              const { supabase } = await import('../services/supabase');
              if (!supabase) throw new Error("Database connection failed");
-             const { error } = await supabase.from('orders').update({ status: 'Cancelled' }).eq('id', order.id);
-             if (error) throw error;
+             
+             let result = await supabase.from('orders').update({ status: 'Cancelled', cancelReason }).eq('id', order.id);
+             if (result.error && result.error.message?.includes('column')) {
+                 result = await supabase.from('orders').update({ status: 'Cancelled' }).eq('id', order.id);
+             }
+             if (result.error) throw result.error;
+             
              toast.success("Order Cancelled successfully!");
              setShowCancelConfirm(false);
         } catch (err: any) {
@@ -933,9 +946,26 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                                 <span className="text-2xl">⚠️</span>
                             </div>
                             <h3 className="text-center font-black text-gray-900 text-lg uppercase tracking-tight mb-2">Cancel Order?</h3>
-                            <p className="text-center text-xs text-gray-500 font-medium mb-6 px-2 leading-relaxed">
-                                Are you sure you want to cancel this order? This action cannot be undone.
+                            <p className="text-center text-xs text-gray-500 font-medium mb-4 px-2 leading-relaxed">
+                                Please let us know why you are canceling this order.
                             </p>
+                            
+                            <div className="flex flex-col space-y-2 mb-6 text-left w-full">
+                                {["Ordered by mistake", "Changed my mind", "Forgot to add items", "Delivery time is too long", "Other"].map(reason => (
+                                    <label key={reason} className="flex items-center space-x-3 text-sm text-gray-700 font-medium cursor-pointer p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-100">
+                                        <input 
+                                            type="radio" 
+                                            name={`cancelReason-${order.id}`} 
+                                            value={reason} 
+                                            checked={cancelReason === reason}
+                                            onChange={() => setCancelReason(reason)}
+                                            className="w-4 h-4 text-red-500 accent-red-500 cursor-pointer"
+                                        />
+                                        <span>{reason}</span>
+                                    </label>
+                                ))}
+                            </div>
+
                             <div className="flex space-x-3">
                                 <button
                                     onClick={() => setShowCancelConfirm(false)}
@@ -945,10 +975,10 @@ const OrderCard = React.memo(({ order, onTrackOrder }: { order: any; onTrackOrde
                                 </button>
                                 <button
                                     onClick={handleCancelOrder}
-                                    disabled={isCanceling}
+                                    disabled={isCanceling || !cancelReason}
                                     className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
                                 >
-                                    {isCanceling ? 'Canceling...' : 'Yes, Cancel'}
+                                    {isCanceling ? 'Canceling...' : 'Submit'}
                                 </button>
                             </div>
                         </motion.div>

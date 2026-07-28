@@ -88,7 +88,7 @@ export default function OrderedProductsModal({ isOpen, onClose, items, totalAmou
                             </p>
                             <div className="mt-2.5">
                               <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
-                                Quantity: {typeof item === 'object' ? (item.quantity || 1) : 1}
+                                {typeof item === 'object' ? `${item.quantity || 1} ${item.unit || 'UNIT'}` : 1}
                               </span>
                             </div>
                           </div>

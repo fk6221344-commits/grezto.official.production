@@ -12,6 +12,7 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { getApiUrl } from "../../../utils/api";
 import toast from "react-hot-toast";
+import { getRiderPayout } from "../../../utils/riderPayout";
 
 export interface Rider {
   id: string;
@@ -711,7 +712,7 @@ export function useRiderOperations() {
             ? bill
             : 0;
         totalGeneratedCod += codAmt;
-        liveEarnings += Number(order.riderFee || 20);
+        liveEarnings += Number(order.riderFee || getRiderPayout(Number(order.deliveryCharge || 0)));
         totalDeliveryCharges += Number(order.deliveryCharge || 0);
       }
     });

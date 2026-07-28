@@ -1,7 +1,21 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { MessageCircle, Phone } from 'lucide-react';
+import { MessageCircle, Phone, Grid, Carrot, Cake, Pizza, Pill, ShoppingBag, Apple, Drumstick, CupSoda, Shirt, Shapes, LucideIcon, Image as ImageIcon } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+
+const CATEGORY_ICONS: Record<string, { icon: LucideIcon, color: string }> = {
+  'all': { icon: Grid, color: 'text-slate-700' },
+  'vegetables': { icon: Carrot, color: 'text-green-600' },
+  'cake': { icon: Cake, color: 'text-pink-600' },
+  'fast food': { icon: Pizza, color: 'text-orange-500' },
+  'medicine': { icon: Pill, color: 'text-blue-500' },
+  'grocery': { icon: ShoppingBag, color: 'text-emerald-600' },
+  'fruits': { icon: Apple, color: 'text-red-500' },
+  'non-veg': { icon: Drumstick, color: 'text-amber-700' },
+  'cold drinks': { icon: CupSoda, color: 'text-cyan-500' },
+  'clothes': { icon: Shirt, color: 'text-indigo-500' },
+  'others': { icon: Shapes, color: 'text-purple-500' },
+};
 
 interface CategoryItem {
   id: string;
@@ -64,52 +78,43 @@ export default function CategoryList({
   }, [onSelectCategory]);
 
   return (
-    <div className="mt-0.5 mx-2.5 p-4 bg-gradient-to-b from-[#fffaf9] to-[#fef5f3] rounded-3xl border border-[#ffeae7] shadow-[0_8px_30px_rgba(239,35,60,0.015)]" id="quick-categories-card">
-      <div className="flex items-center justify-between mb-4 px-1" id="quick-categories-header">
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-1.5" id="quick-categories-title">
-          <span className="w-1.5 h-3.5 bg-[#ef233c] rounded-full inline-block" id="quick-categories-badge-dot"></span>
-          <span>Quick Categories</span>
-        </h3>
-        <div className="flex items-center gap-2" id="quick-categories-action-wrap">
-           <p className="text-[#ef233c] text-[10px] font-black uppercase tracking-widest cursor-pointer hover:opacity-80 active:scale-95 transition-all" id="quick-categories-view-all">View All</p>
-        </div>
-      </div>
-      <div className="flex gap-4 overflow-x-auto pt-3 pb-3 px-1.5 no-scrollbar justify-start items-center category-scroll-container" id="category-scroll-inner">
+    <div className="w-full pb-0" id="quick-categories-card">
+      <div className="flex gap-4 overflow-x-auto pt-2 px-3 no-scrollbar justify-start items-start category-scroll-container" id="category-scroll-inner">
         {categories.filter(Boolean).map((cat) => {
+          const isActive = activeCategory === cat.id;
           return (
             <motion.div
               key={cat.id}
               role="button"
               tabIndex={0}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.93 }}
+              whileTap={{ scale: 0.95 }}
               onClick={(e) => onSelectCategory(cat.id)}
-              className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 cursor-pointer group text-center min-w-[56px] category-scroll-item select-none outline-none"
+              className="flex-shrink-0 flex flex-col items-center justify-start gap-1 cursor-pointer group text-center min-w-[52px] relative pb-1 select-none outline-none"
               id={`category-item-${cat.id}`}
             >
-              <div className={`w-[54px] h-[54px] rounded-[16px] overflow-hidden flex items-center justify-center transition-all duration-300 ${
-                activeCategory === cat.id 
-                  ? "border-[2px] border-[#ef233c] bg-rose-50/40 shadow-[0_8px_24px_rgba(239,35,60,0.25)] scale-105 ring-4 ring-rose-100/50" 
-                  : "border-[1.5px] border-slate-900 bg-white shadow-sm hover:border-slate-700"
+              <div className={`w-8 h-8 flex items-center justify-center transition-all duration-300 ${
+                isActive 
+                  ? "opacity-100" 
+                  : "opacity-75 hover:opacity-100"
               }`} id={`category-img-container-${cat.id}`}>
-                <img 
-                   src={cat.imageUrl || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="} 
-                  alt={cat.name} 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110" 
-                  id={`category-img-${cat.id}`}
-                />
+                {(() => {
+                  const conf = CATEGORY_ICONS[(cat.name || cat.id).toLowerCase()];
+                  const Icon = conf?.icon || ImageIcon;
+                  const colorClass = conf?.color || 'text-slate-700';
+                  return <Icon className={`w-[22px] h-[22px] ${colorClass} transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-95 group-hover:scale-110'}`} strokeWidth={isActive ? 2.5 : 1.75} />;
+                })()}
               </div>
-              <div className="flex flex-col items-center min-h-[22px] justify-start" id={`category-label-wrap-${cat.id}`}>
-                <span className={`text-[9.5px] font-black tracking-wider uppercase text-center max-w-[62px] truncate block transition-colors duration-200 ${
-                  activeCategory === cat.id ? "text-[#ef233c]" : "text-slate-500 font-extrabold"
+              <div className="flex flex-col items-center justify-start" id={`category-label-wrap-${cat.id}`}>
+                <span className={`text-[10px] tracking-wide text-center max-w-[62px] truncate block transition-colors duration-200 ${
+                  isActive ? "text-[#2874f0] font-bold" : "text-gray-600 font-medium"
                 }`} id={`category-label-${cat.id}`}>
                   {cat.id === 'Cake' ? t('cake') : (cat.displayName || t(cat.name as any) || cat.name || cat.id)}
                 </span>
-                {activeCategory === cat.id && (
+                {isActive && (
                   <motion.div 
                     layoutId="activeCategoryIndicator"
-                    className="w-1.5 h-1.5 bg-[#ef233c] rounded-full mt-1 shrink-0" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-[#2874f0] rounded-t-full" 
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   />
                 )}
@@ -119,71 +124,7 @@ export default function CategoryList({
         })}
       </div>
 
-      {activeCategory === 'Cake' && (
-        <div className="space-y-2 mt-3.5" id="cake-custom-card">
-          <motion.div 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-2.5 px-3 bg-pink-900 border border-pink-950 rounded-2xl text-center text-[10px] font-black text-white tracking-widest flex items-center justify-center gap-2 shadow-sm"
-            id="cake-custom-banner"
-          >
-            <span className="w-2 h-2 bg-pink-200 rounded-full animate-ping shrink-0" style={{ animationDuration: '2s' }} id="cake-custom-ping"></span>
-            <span>FOR CUSTOM CAKE DESIGNS, CONTACT US DIRECTLY!</span>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 gap-2"
-            id="cake-contact-grid"
-          >
-            <a 
-              href="https://wa.me/919101776403?text=Hello%20I%20am%20connecting%20you%20from%20Grezto!%20%F0%9F%8D%B0%0AI'm%20interested%20in%20custom%20cake%20designs...."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2 px-3 bg-[#25D366] hover:bg-[#20ba5a] hover:scale-[1.02] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md border-0 active:scale-95 transition-all text-center no-underline cursor-pointer"
-              id="cake-whatsapp-btn"
-            >
-              <MessageCircle className="w-4 h-4 text-white shrink-0" />
-              <span>WhatsApp</span>
-            </a>
-
-            <a 
-              href="tel:9101776403"
-              className="flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md border-0 active:scale-95 transition-all text-center no-underline cursor-pointer"
-              id="cake-call-btn"
-            >
-              <Phone className="w-4 h-4 text-white shrink-0" />
-              <span>Call Now</span>
-            </a>
-          </motion.div>
-        </div>
-      )}
-
-      {activeCategory === 'Non-Veg' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3.5 py-2 px-3 bg-red-900 border border-red-950 rounded-2xl text-center text-[10.5px] font-black text-white tracking-widest flex items-center justify-center gap-2 shadow-sm"
-          id="nonveg-guarantee-banner"
-        >
-          <span className="w-2 h-2 bg-red-200 rounded-full animate-ping shrink-0" style={{ animationDuration: '2s' }} id="nonveg-guarantee-ping"></span>
-          <span>100% PURE NON-VEG</span>
-        </motion.div>
-      )}
-      
-      {activeCategory === 'Vegetables' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3.5 py-2 px-3 bg-green-900 border border-green-950 rounded-2xl text-center text-[10.5px] font-black text-white tracking-widest flex items-center justify-center gap-2 shadow-sm"
-          id="vegetables-guarantee-banner"
-        >
-          <span className="w-2 h-2 bg-green-200 rounded-full animate-ping shrink-0" style={{ animationDuration: '2s' }} id="vegetables-guarantee-ping"></span>
-          <span>100% FRESH VEGETABLES</span>
-        </motion.div>
-      )}
     </div>
   );
 }

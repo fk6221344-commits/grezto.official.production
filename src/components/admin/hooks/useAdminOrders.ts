@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "../../../services/supabase";
 import toast from "react-hot-toast";
 import { safeArray } from "../../../utils/safeArray";
+import { getRiderPayout } from "../../../utils/riderPayout";
 
 export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: boolean, adminSelectedCityFilter: string) {
   const [orders, setOrders] = useState<any[]>([]);
@@ -185,8 +186,10 @@ export function useAdminOrders(isAuthenticated: boolean, firebaseAuthReady: bool
       updateData.deliveryOtp = String(100000 + Math.floor(Math.random() * 900000));
     }
     if (newStatus === "Delivered" || newStatus === "delivered") {
+       const orderData = Array.isArray(orders) ? orders.find((o: any) => o.id === orderId) : null;
+       const delCharge = Number(orderData?.deliveryCharge || 0);
        updateData.deliveredAt = new Date().toISOString();
-       updateData.riderFee = 20;
+       updateData.riderFee = getRiderPayout(delCharge);
     }
 
     const lastUnderscoreIndex = orderId.lastIndexOf('_');

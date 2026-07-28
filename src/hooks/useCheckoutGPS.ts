@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { calculateDistance } from '../lib/distance';
 import { reverseGeocodeCoords, forwardGeocodeAddress, getUnifiedHighSpeedLocation, getCachedPreFetchedLocation } from '../lib/geocoder';
 
-export const BURABURI_CENTER = { lat: 26.243461, lng: 92.130617 };
+export const BURABURI_CENTER = { lat: 26.230840, lng: 92.113442 };
 
 let cachedGoogleMapsKey = '';
 
@@ -245,14 +245,9 @@ export function useCheckoutGPS({ user, updateProfile, subtotal, items }: UseChec
   const calcDeliveryFee = useMemo(() => {
     if (subtotal === 0) return 0;
     
-    // Flat delivery fee rule
-    let baseFee = 25;
-
-    // Volume-based Promotional Discounts
-    if (subtotal >= 999) return 0;
-    if (subtotal >= 499) return Math.floor(baseFee / 2); // 50% discount
-
-    return baseFee;
+    if (subtotal >= 800) return 28;
+    if (subtotal >= 499) return 25;
+    return 19;
   }, [subtotal, items]);
 
   const adjustedTotal = useMemo(() => {

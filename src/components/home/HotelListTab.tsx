@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { ShoppingBag, MapPin, Award, Star, Utensils, ChevronRight } from 'lucide-react';
+import { ShoppingBag, MapPin, Award, Star, Utensils, ChevronRight, ArrowLeft, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductCard from '../ProductCard';
 import AestheticImage from '../AestheticImage';
+import { useRegisterBackHandler } from '../../hooks/useRegisterBackHandler';
 
 const ProductCardSkeleton = () => (
   <div className="bg-white rounded-[1.25rem] p-1 pb-2 flex flex-col justify-between border border-slate-100 shadow-sm animate-pulse select-none">
@@ -65,6 +67,9 @@ interface HotelListTabProps {
   setSelectedHotelForDetails: (hotel: any) => void;
   getDishesForHotel: (hotelId: string) => any[];
   isLoading?: boolean;
+  onClose: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export default function HotelListTab({
@@ -73,13 +78,78 @@ export default function HotelListTab({
   calculateGeodistance,
   setSelectedHotelForDetails,
   getDishesForHotel,
-  isLoading = false
+  isLoading = false,
+  onClose,
+  searchQuery,
+  setSearchQuery
 }: HotelListTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'recommended' | 'all'>('recommended');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Register hardware back button
+  useRegisterBackHandler(() => {
+    if (isSearchFocused) {
+      setIsSearchFocused(false);
+      return true; // Consume event just to close keyboard/dropdown
+    }
+    onClose();
+    return true; // Consume event
+  }, 50, [isSearchFocused]);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  // Generate suggestions for dropdown
+  const searchSuggestions = React.useMemo(() => {
+    if (!normalizedQuery) return [];
+    
+    const suggestions: any[] = [];
+    const seen = new Set();
+    
+    activeHotels.forEach(hotel => {
+      const hName = (hotel.name || '').toLowerCase();
+      // If hotel name matches, add hotel suggestion
+      if (hName.includes(normalizedQuery) && !seen.has(hName)) {
+        seen.add(hName);
+        suggestions.push({ type: 'hotel', text: hotel.name, hotelId: hotel.id });
+      }
+      
+      const dishes = getDishesForHotel(hotel.id) || [];
+      dishes.forEach((dish: any) => {
+        const dName = (dish.name || '').toLowerCase();
+        if (dName.includes(normalizedQuery) && !seen.has(dName)) {
+          seen.add(dName);
+          suggestions.push({ type: 'dish', text: dish.name, hotelId: hotel.id, hotelName: hotel.name });
+        }
+      });
+    });
+    
+    return suggestions.slice(0, 10);
+  }, [normalizedQuery, activeHotels, getDishesForHotel]);
+
+  const filteredHotels = activeHotels.filter(hotel => {
+    if (!normalizedQuery) return true;
+    
+    const hotelName = (hotel.name || '').toLowerCase();
+    const hotelCategory = (hotel.category || '').toLowerCase();
+    
+    // Check if hotel name or category includes query
+    if (hotelName.includes(normalizedQuery) || hotelCategory.includes(normalizedQuery)) {
+      return true;
+    }
+    
+    // Check dishes if available
+    const dishes = getDishesForHotel(hotel.id) || [];
+    const hasMatchingDish = dishes.some((dish: any) => 
+      (dish.name || '').toLowerCase().includes(normalizedQuery) ||
+      (dish.description || '').toLowerCase().includes(normalizedQuery)
+    );
+    
+    return hasMatchingDish;
+  });
 
   // Filter and sort recommended hotels: Only show those that are exclusive (pinned)
   // sorted by rating descending (highest rating first)
-  const recommendedHotels = activeHotels
+  const recommendedHotels = filteredHotels
     .filter(hotel => hotel.pinned === true || hotel.pinned === 'true' || hotel.pinned === 1 || hotel.pinned === '1')
     .sort((a, b) => {
       const ratingA = a.rating !== undefined ? parseFloat(a.rating) : 0;
@@ -87,17 +157,78 @@ export default function HotelListTab({
       return ratingB - ratingA;
     });
 
-  const allHotelsSorted = [...activeHotels];
+  const allHotelsSorted = [...filteredHotels];
 
-  return (
+  const content = (
     <motion.div
       key="hotel_mode"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.08 }}
-      className="px-1 mt-5 space-y-5 text-left"
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[9999] bg-white overflow-y-auto pb-6 text-left flex flex-col"
     >
+      {/* Top Header Section */}
+      <div className="sticky top-0 z-[110] bg-white border-b border-slate-100 shadow-sm px-4 pt-[max(env(safe-area-inset-top),42px)] pb-3 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-[14px] font-black uppercase tracking-wider text-slate-800">
+            Hotels & Restaurants
+          </h2>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
+          </div>
+          <input
+            type="text"
+            className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-2xl block pl-10 pr-4 py-3 font-medium placeholder:font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ef233c]/20 focus:border-[#ef233c]/50 transition-all shadow-sm"
+            placeholder="Search Biryani, Burger, Pizza..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => {
+              // Delay hiding suggestions to allow clicking them
+              setTimeout(() => setIsSearchFocused(false), 200);
+            }}
+          />
+          
+          {/* Autocomplete Suggestions Dropdown */}
+          {isSearchFocused && searchQuery.length > 0 && searchSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 z-50 overflow-hidden">
+              <ul className="max-h-64 overflow-y-auto py-1">
+                {searchSuggestions.map((item, idx) => (
+                  <li 
+                    key={idx}
+                    onClick={() => {
+                       setSearchQuery(item.text);
+                       setIsSearchFocused(false);
+                    }}
+                    className="px-4 py-3 hover:bg-slate-50 active:bg-slate-100 cursor-pointer flex items-center gap-3 border-b border-slate-50 last:border-0 transition-colors"
+                  >
+                    <Search className="w-4 h-4 text-slate-300" />
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-bold text-slate-700">{item.text}</span>
+                      {item.type === 'dish' && (
+                        <span className="text-[10px] font-semibold text-emerald-600">from {item.hotelName}</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="px-3 mt-5 space-y-5 flex-1">
       {/* Elegant segment control under Hotels & Restaurants */}
       <div className="flex items-center justify-center space-x-3 max-w-[320px] mx-auto mb-6" id="hotel-sub-tabs-container">
         <button
@@ -373,6 +504,12 @@ export default function HotelListTab({
           )}
         </div>
       )}
+      </div>
     </motion.div>
   );
+
+  // Use createPortal to mount this full-screen view at the root of the document
+  // This completely escapes any stacking contexts (like transform/opacity) from App.tsx page transitions
+  // ensuring that z-[9999] actually sits on top of TopHeader and BottomNav.
+  return createPortal(content, document.body);
 }

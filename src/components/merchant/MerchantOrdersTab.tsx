@@ -70,6 +70,7 @@ export function MerchantOrdersTab({
             handleUpdateStatus={handleUpdateStatus}
             mapsAuthError={mapsAuthError}
             busyRiders={busyRiders}
+            isHistory={isHistory}
           />
         ))
       )}

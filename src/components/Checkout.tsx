@@ -373,24 +373,12 @@ export default function Checkout({
       toast.error("Please enter City / Village first.");
       return;
     }
-    if (!areaInput.trim()) {
-      toast.error("Please enter Nearby Area first.");
-      return;
-    }
     if (!pincodeInput.trim()) {
       toast.error("Please enter Pincode first.");
       return;
     }
     if (pincodeInput.trim().length !== 6) {
       toast.error("Pincode must be exactly 6 digits.");
-      return;
-    }
-    if (!houseNoInput.trim()) {
-      toast.error("Please enter House No / Name first.");
-      return;
-    }
-    if (!landmarkInput.trim()) {
-      toast.error("Please enter Famous School / Shops landmark first.");
       return;
     }
 
@@ -400,9 +388,9 @@ export default function Checkout({
       state: stateInput.trim(),
       pincode: pincodeInput.trim(),
       city: cityInput.trim(),
-      houseNo: houseNoInput.trim(),
-      area: areaInput.trim(),
-      landmark: landmarkInput.trim(),
+      houseNo: "",
+      area: "",
+      landmark: "",
       lat: coords.lat,
       lng: coords.lng,
     };
@@ -432,6 +420,11 @@ export default function Checkout({
 
   const handlePlaceOrder = async () => {
     if (loading) return;
+    
+    if (subtotal > 1000) {
+      toast.error("1000 Rs se jyada ka order ek baar mein nahi kar sakte. Please reduce items ya phir alag order place karein.");
+      return;
+    }
 
     if (!nameVal.trim()) {
       toast.error("Please enter Name first.");
@@ -443,14 +436,9 @@ export default function Checkout({
       return;
     }
 
-    if (!areaVal.trim()) {
-      toast.error("Please enter Nearby Area first.");
-      return;
-    }
-
     const finalAddress = activeAddress && !isCreatingNewAddress && !editingAddressId
-      ? `House No ${activeAddress.houseNo.trim()}, ${activeAddress.area.trim()}, Near: ${activeAddress.landmark.trim()}, ${activeAddress.city.trim()} - ${activeAddress.pincode.trim()} (GPS: ${activeAddress.lat.toFixed(6)}, ${activeAddress.lng.toFixed(6)})`
-      : `${areaVal.trim()}, ${cityVal.trim()} (GPS Address: ${nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`})`;
+      ? `${activeAddress.city.trim()} - ${activeAddress.pincode.trim()} (GPS: ${activeAddress.lat.toFixed(6)}, ${activeAddress.lng.toFixed(6)})`
+      : `${cityVal.trim()} (GPS Address: ${nominatimAddress || `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`})`;
 
     // Save details to localStorage for future orders and mark details submitted
     if (typeof window !== "undefined") {
@@ -460,8 +448,8 @@ export default function Checkout({
           JSON.stringify({
             name: nameVal.trim(),
             city: cityVal.trim(),
-            area: areaVal.trim(),
-            landmark: landmarkVal.trim(),
+            area: "",
+            landmark: "",
           })
         );
         setIsDetailsSubmitted(true);
@@ -864,7 +852,7 @@ export default function Checkout({
      toast.success("Delivery details saved!");
   };
 
-  const isFormValid = !!(nameInput.trim() && cityInput.trim() && areaInput.trim() && pincodeInput.trim() && houseNoInput.trim() && landmarkInput.trim());
+  const isFormValid = !!(nameInput.trim() && cityInput.trim() && pincodeInput.trim());
 
   return (
     <div className="w-full h-screen bg-[#f8faf8] flex flex-col justify-between font-sans overflow-hidden select-none relative">
@@ -1015,46 +1003,7 @@ export default function Checkout({
                 />
               </div>
 
-              {/* 5. HOUSE NO / NAME */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
-                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
-                  HOUSE NO / NAME
-                </label>
-                <input
-                  type="text"
-                  value={houseNoInput}
-                  onChange={(e) => setHouseNoInput(e.target.value)}
-                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                />
-              </div>
-
-              {/* 6. NEARBY AREA */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
-                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
-                  NEARBY AREA
-                </label>
-                <input
-                  type="text"
-                  value={areaInput}
-                  onChange={(e) => setAreaInput(e.target.value)}
-                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                />
-              </div>
-
-              {/* 7. FAMOUS SCHOOL / SHOPS */}
-              <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
-                <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
-                  FAMOUS SCHOOL / SHOPS (LANDMARK)
-                </label>
-                <input
-                  type="text"
-                  value={landmarkInput}
-                  onChange={(e) => setLandmarkInput(e.target.value)}
-                  className="w-full text-[11px] font-black text-stone-900 bg-transparent outline-none p-0 border-none focus:ring-0 select-text"
-                />
-              </div>
-
-              {/* 8. YOUR NAME */}
+              {/* 5. YOUR NAME */}
               <div className="border-[1.5px] border-stone-200 focus-within:border-[#0b7a2d] rounded-2xl px-4 py-2.5 flex flex-col bg-white transition-all">
                 <label className="text-[8px] font-black uppercase text-stone-400 tracking-widest mb-1 leading-none">
                   YOUR NAME
@@ -1108,10 +1057,10 @@ export default function Checkout({
                       
                       <div className="text-[11px] tracking-tight leading-normal mt-1.5 flex flex-col gap-0.5">
                         <span className="font-extrabold text-stone-800">
-                          House No {addr.houseNo}, {addr.area}
+                          {addr.city}
                         </span>
                         <span className="text-stone-500 text-[10px] font-semibold">
-                          {addr.landmark ? `${addr.landmark}, ` : ""}{addr.city} - {addr.pincode}
+                          {addr.pincode}
                         </span>
                       </div>
 
@@ -1251,7 +1200,7 @@ export default function Checkout({
               className={`w-full py-4 px-3.5 rounded-xl text-white font-black text-[10.5px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all ${
                 isOutOfRange || loading || gpsLoading || ((isCreatingNewAddress || editingAddressId) && !isFormValid)
                   ? "bg-stone-400 cursor-not-allowed opacity-80"
-                  : "bg-stone-900 hover:bg-stone-800 shadow-stone-900/20 hover:shadow-stone-900/30 cursor-pointer"
+                  : "bg-[#0b7a2d] hover:bg-[#0a6c28] shadow-[#0b7a2d]/20 hover:shadow-[#0b7a2d]/30 cursor-pointer"
               }`}
             >
               {loading ? (

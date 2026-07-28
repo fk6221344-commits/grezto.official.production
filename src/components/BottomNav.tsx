@@ -21,7 +21,7 @@ export default function BottomNav({ activeTab, onTabChange }: { activeTab: strin
       <NavButton 
         active={activeTab === 'cart'} 
         icon={
-          <div className="relative">
+          <div className="relative transition-transform duration-300" id="nav-cart-icon">
             <ShoppingCart />
             {items.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[8px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-lg">

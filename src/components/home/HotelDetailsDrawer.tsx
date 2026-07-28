@@ -202,7 +202,7 @@ export default function HotelDetailsDrawer({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center" 
+      className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center" 
       id="hotel-details-drawer-overlay"
     >
       <motion.div 

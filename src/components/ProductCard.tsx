@@ -35,6 +35,57 @@ const ProductCardBody = React.memo(({
   const isOutOfStock = product.stock <= 0;
   const isDisabled = isOutOfStock || isClosed;
 
+  const handleFlyToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isDisabled) return;
+    
+    addToCart(product);
+    
+    const button = e.currentTarget as HTMLElement;
+    const buttonRect = button.getBoundingClientRect();
+    const cartIcon = document.getElementById('nav-cart-icon');
+    
+    if (cartIcon) {
+      const cartRect = cartIcon.getBoundingClientRect();
+      const flyingElement = document.createElement('div');
+      
+      flyingElement.style.position = 'fixed';
+      flyingElement.style.left = `${buttonRect.left + buttonRect.width / 2 - 10}px`;
+      flyingElement.style.top = `${buttonRect.top + buttonRect.height / 2 - 10}px`;
+      flyingElement.style.width = '20px';
+      flyingElement.style.height = '20px';
+      flyingElement.style.backgroundColor = '#10b981';
+      flyingElement.style.borderRadius = '50%';
+      flyingElement.style.zIndex = '99999';
+      flyingElement.style.pointerEvents = 'none';
+      flyingElement.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.5)';
+      flyingElement.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
+      
+      document.body.appendChild(flyingElement);
+      
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flyingElement.style.left = `${cartRect.left + cartRect.width / 2 - 10}px`;
+          flyingElement.style.top = `${cartRect.top + cartRect.height / 2 - 10}px`;
+          flyingElement.style.transform = 'scale(0.3)';
+          flyingElement.style.opacity = '0.5';
+        });
+      });
+      
+      setTimeout(() => {
+        if (document.body.contains(flyingElement)) {
+          document.body.removeChild(flyingElement);
+        }
+        cartIcon.style.transform = 'scale(1.25) translateY(-2px)';
+        cartIcon.style.color = '#10b981';
+        setTimeout(() => {
+          cartIcon.style.transform = 'scale(1) translateY(0)';
+          cartIcon.style.color = '';
+        }, 200);
+      }, 600);
+    }
+  };
+
   // Check if shop is exclusive (pinned)
   let isExclusive = false;
   try {
@@ -125,7 +176,7 @@ const ProductCardBody = React.memo(({
             ) : (
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={(e) => { e.stopPropagation(); if (!isDisabled) addToCart(product); }}
+                onClick={handleFlyToCart}
                 disabled={isDisabled}
                 className={`px-4 py-1.5 rounded-lg text-[9.5px] font-black uppercase tracking-widest transition-all cursor-pointer ${
                   isDisabled 
@@ -283,7 +334,7 @@ const ProductCardBody = React.memo(({
                   ) : (
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => !isOutOfStock && addToCart(product)}
+                      onClick={handleFlyToCart}
                       disabled={isOutOfStock}
                       className={`px-6 py-3.5 rounded-2xl text-[10.5px] font-black uppercase tracking-widest transition-all shadow-md border cursor-pointer ${
                         isOutOfStock 

@@ -244,6 +244,7 @@ export default function SearchOverlay({ onClose, onSelect, initialQuery = '' }: 
   }, []);
 
   const handleSelectQuery = (q: string) => {
+    setQuery(q); // Important: Update the local query state so results render
     if (q && q.trim() !== '') {
       try {
         const newRecent = [q, ...recentSearches.filter(s => s.toLowerCase() !== q.toLowerCase())].slice(0, 5);
@@ -253,7 +254,10 @@ export default function SearchOverlay({ onClose, onSelect, initialQuery = '' }: 
         console.warn("Failed to save recent search", e);
       }
     }
-    onSelect(q);
+    // Just dismiss the keyboard, keep the user in the search overlay interface
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
   };
 
   return (

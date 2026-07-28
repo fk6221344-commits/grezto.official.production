@@ -448,14 +448,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
       if (!supabase) throw new Error("Supabase is not initialized");
 
       const delCharge = Number(orderToConfirm.deliveryCharge || 0);
-      let earnedFee = 20;
-      if (delCharge === 0) {
-        earnedFee = 15;
-      } else if (delCharge < 25) {
-        earnedFee = 20; // 50% discount case
-      } else {
-        earnedFee = 20;
-      }
+      const earnedFee = getRiderPayout(delCharge);
       
       const idsToUpdate = [orderToConfirm.id];
       if (orderToConfirm.id.startsWith('c_') && !orderToConfirm.id.includes('_')) {
@@ -554,7 +547,7 @@ export default function RiderConsole({ onClose, initialProfile }: { onClose?: ()
   };
 
   // Earnings calculations - Lifetime Sync with Rider Management
-  const calculatedEarnings = historyOrders.reduce((acc, order) => acc + Number(order.riderFee || 20), 0);
+  const calculatedEarnings = historyOrders.reduce((acc, order) => acc + Number(order.riderFee || getRiderPayout(Number(order.deliveryCharge || 0))), 0);
   const totalCompletedJobs = historyOrders.length;
   const totalDeliveryCharges = historyOrders.reduce((acc, order) => acc + Number(order.deliveryCharge || 0), 0);
   const remainingDeliveryCharges = totalDeliveryCharges - calculatedEarnings;

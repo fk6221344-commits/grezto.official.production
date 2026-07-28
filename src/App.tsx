@@ -62,7 +62,7 @@ const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || (import.meta.env
 
 function MainAppLayout() {
   const { user, firebaseAuthReady, userShop, logout, updateProfile } = useUser();
-  const { clearCart } = useCart();
+  const { clearCart, subtotal } = useCart();
   const { showUpdateModal, updateInfo, dismissUpdate } = useAppUpdate();
 
   const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
@@ -306,6 +306,10 @@ function MainAppLayout() {
   }, [user.isLoggedIn, user.phone]);
 
   const handleCheckoutTrigger = () => {
+    if (subtotal > 1000) {
+      toast.error("1000 Rs se jyada ka order ek baar mein nahi kar sakte. Please reduce items ya phir alag order place karein.", { duration: 4000 });
+      return;
+    }
     if (!user.isLoggedIn) {
       localStorage.setItem('grezto_pending_checkout', 'true');
       localStorage.setItem('grezto_force_open_signup', 'true');
