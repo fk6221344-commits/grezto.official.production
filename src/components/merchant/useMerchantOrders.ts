@@ -160,7 +160,7 @@ export function useMerchantOrders(shop: ShopProps, firebaseAuthReady: boolean) {
         }
       }
       if (newStatus === 'Delivered' || newStatus === 'delivered') {
-        const orderData = Array.isArray(globalOrders) ? globalOrders.find((o: any) => o.id === orderId) : null;
+        const orderData = Array.isArray(orders) ? orders.find((o: any) => o.id === orderId) : null;
         const delCharge = Number(orderData?.deliveryCharge || 0);
         updateData.deliveredAt = new Date().toISOString();
         updateData.riderFee = getRiderPayout(delCharge);

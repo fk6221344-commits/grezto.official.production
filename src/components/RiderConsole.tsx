@@ -46,6 +46,7 @@ import { RiderSuccessCelebrationModal } from './rider/RiderSuccessCelebrationMod
 import { unlockNotificationAudio } from '../services/notifications';
 import { groupMultiVendorOrders } from '../utils/orderGrouping';
 import { useRegisterBackHandler } from '../hooks/useRegisterBackHandler';
+import { getRiderPayout } from '../utils/riderPayout';
 
 export default function RiderConsole({ onClose, initialProfile }: { onClose?: () => void; initialProfile?: any }) {
   const { user, logout } = useUser();
