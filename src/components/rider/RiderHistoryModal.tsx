@@ -359,9 +359,9 @@ export default function RiderHistoryModal({
                               Cash to Deposit
                             </span>
                             <div className="flex items-baseline gap-1.5">
-                              <span className="text-sm font-bold text-emerald-650">₹{Math.max(0, orderAmt - 20)}</span>
+                              <span className="text-sm font-bold text-emerald-650">₹{Math.max(0, orderAmt - (order.riderFee || 20))}</span>
                               <span className="text-[9.5px] text-slate-450 font-medium block">
-                                (₹{orderAmt} - ₹20 commission)
+                                (₹{orderAmt} - ₹{order.riderFee || 20} commission)
                               </span>
                             </div>
                           </div>
