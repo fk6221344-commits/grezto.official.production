@@ -1135,18 +1135,6 @@ export default function Checkout({
             }, new Set<string>()).size > 1}
           />
         </div>
-
-        {/* Promotional Delivery Offers Banner */}
-        <div className="mt-5 mb-1 px-3.5 flex items-center justify-between gap-3">
-          <div className="flex-1 bg-amber-50 border-2 border-amber-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(251,191,36,0.15)]">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 leading-tight">ORDER ABOVE ₹499</span>
-            <span className="text-[12px] font-black text-amber-700 mt-1.5 flex items-center gap-1.5">🛵 50% OFF Delivery</span>
-          </div>
-          <div className="flex-1 bg-emerald-50 border-2 border-emerald-400/80 p-3 rounded-[1.25rem] flex flex-col items-center justify-center relative shadow-[0_4px_12px_rgba(16,185,129,0.15)]">
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900 leading-tight">ORDER ABOVE ₹999</span>
-            <span className="text-[12px] font-black text-emerald-700 mt-1.5 flex items-center gap-1.5">🎉 100% FREE</span>
-          </div>
-        </div>
       </div>
 
       {/* 8. COMPACT COHESIVE CHECKOUT FOOTER FLOATING ACTION BAR */}
