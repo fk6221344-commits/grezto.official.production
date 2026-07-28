@@ -1375,7 +1375,7 @@ async function startServer() {
   // App Version Info API for In-App Updates and Live OTA Updates
   app.get("/api/app-update-info", (req, res) => {
     res.json({
-      latestVersionCode: 4, // Change this when releasing a new native APK version
+      latestVersionCode: 5, // Change this when releasing a new native APK version
       forceUpdate: true, // If true, user cannot close the native update popup
       downloadUrl: "https://grezto.com", // Play Store link
       title: "New Update Available! 🚀",
